@@ -1,0 +1,63 @@
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix :        <http://darq.sf.net/dose/0.1#>  .
+
+## ------------------------------------------------------------
+
+<> rdfs:comment "SPARQL Endpoint Desctiption" ;
+   rdfs:seeAlso "" .
+<> rdfs:comment "$Id$" .
+
+
+
+:Service a rdfs:Class ;
+	    rdfs:label "Service/endpoint" ;
+		rdfs:comment "An endpoint (will be renamed to endpoint!)" .
+
+:Capability a rdfs:Class ;
+		rdfs:label "Capability" .
+
+:RequiredBindings a rdfs:Class ;
+		rdfs:label "Required Bindings" .
+
+:url a rdf:Property ;
+		rdfs:label "Service URL" ;
+		rdfs:domain :Service .
+	 
+:capability a rdf:Property ;
+		rdfs:label "Capability" ;
+		rdfs:domain :Service ;
+		rdfs:range :Capability .
+
+:isDefinitive a rdf:Property ;
+      rdfs:label "is Definitive" ;
+      rdfs:comment "defines if the service is definitive" .
+      rdfs:domain :Service .
+
+
+:requiredBindings a rdf:Property ;
+      rdfs:label "Limited Access Pattern for a Service" ;
+      rdfs:domain :Service ;
+      rdfs:range :RequiredBindings .
+
+:totalTriples a rdf:Property ;
+		rdfs:label "Total Triples" ;
+		rdfs:comment "Number of triples in dataset" ;
+		rdfs:domain :Service .
+
+:predicate a rdf:Property ;
+		rdfs:label "predicate" ;
+		rdfs:comment "Predicate that an endpoint knows about";
+		rdfs:domain :Capability .
+		
+:sofilter a rdf:Property ;
+		rdfs:label "Subject/Object Filter" ;
+		rdfs:comment "filter for restrictions on subject and object";
+		rdfs:domain :Capability .
+		
+:triples a rdf:Property ;
+		rdfs:label "Number of Triples" ;
+		rdfs:comment "Number of triples with the predicate defined for the Capability";
+		rdfs:domain :Capability .
+		
+		

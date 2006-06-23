@@ -1,0 +1,45 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:	<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dawgt:   <http://www.w3.org/2001/sw/DataAccess/tests/test-dawg#> .
+@prefix mf:     <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#> .
+@prefix qt:     <http://www.w3.org/2001/sw/DataAccess/tests/test-query#> .
+
+<>  rdf:type mf:Manifest ;
+    rdfs:label "Service" ;
+    mf:entries
+    (
+     [  mf:name    "Result Variables" ;
+        mf:action
+            [ qt:query  <service-01.arq> ] ;
+        mf:result  <service-01-result.n3> ;
+      ]
+
+     [  mf:name    "Join (foaf/pubs)" ;
+        mf:action
+            [ qt:query  <service-02.arq> ] ;
+        mf:result  <service-02-result.n3> ;
+      ]
+      
+      [  mf:name    "Join (foaf/pubs) / nested" ;
+        mf:action
+            [ qt:query  <service-02-nested.arq> ] ;
+        mf:result  <service-02-result.n3> ;
+      ]
+
+	[ mf:name "Sub=IRI, Obj=Literal" ;
+  	mf:action [ qt:query <test-m1-01.arq> ; qt:data <model1.nt> ] ;
+  	mf:result <test-m1-01-result.n3> ]
+  	
+  	[ mf:name "Filter on Obj (Literal)" ;
+  mf:action [ qt:query <test-m1-02.arq> ; qt:data <model1.nt> ] ;
+  mf:result <test-m1-02-result.n3> ]
+
+[ mf:name "Obj=IRI" ;
+  mf:action [ qt:query <test-m2-01.arq> ; qt:data <model2.nt> ] ;
+  mf:result <test-m2-01-result.n3> ]
+
+
+
+
+    # End of tests
+   ).

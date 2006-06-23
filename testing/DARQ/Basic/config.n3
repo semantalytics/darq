@@ -1,0 +1,55 @@
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+#@prefix :        <#> .
+
+[]    a       <http://darq.sf.net/dose/0.1#Service> ;
+
+	<http://darq.sf.net/dose/0.1#url> <_testing_fdata-1.ttl> ;
+	
+      <http://darq.sf.net/dose/0.1#capability>
+              [ <http://darq.sf.net/dose/0.1#predicate>
+                        <http://example.org/x/p> ;
+                <http://darq.sf.net/dose/0.1#sofilter>
+                        "" ;
+                <http://darq.sf.net/dose/0.1#triples>
+                        1 ;
+                <http://darq.sf.net/dose/0.1#objectSelectivity>
+                        1.0 ;
+                <http://darq.sf.net/dose/0.1#subjectSelectivity>
+                        1.0
+              ] ;
+      <http://darq.sf.net/dose/0.1#capability>
+              [ <http://darq.sf.net/dose/0.1#predicate>
+                        <http://example.org/ns#p> ;
+                <http://darq.sf.net/dose/0.1#sofilter>
+                        "" ;
+                <http://darq.sf.net/dose/0.1#triples>
+                        1 ;
+               <http://darq.sf.net/dose/0.1#objectSelectivity>
+                        1.0 ;
+                <http://darq.sf.net/dose/0.1#subjectSelectivity>
+                        1.0
+              ] ;
+      <http://darq.sf.net/dose/0.1#totalTriples>
+              "2" ;
+.
+
+[]    a     <http://darq.sf.net/dose/0.1#Service> ;
+ <http://darq.sf.net/dose/0.1#url>
+          <_testing_fdata-2.ttl> ;
+      <http://darq.sf.net/dose/0.1#capability>
+              [ <http://darq.sf.net/dose/0.1#predicate>
+                        <http://example.org/x/#p> ;
+                <http://darq.sf.net/dose/0.1#sofilter>
+                        "" ;
+                <http://darq.sf.net/dose/0.1#triples>
+                        1 ;
+                <http://darq.sf.net/dose/0.1#objectSelectivity>
+                        1.0 ;
+                <http://darq.sf.net/dose/0.1#subjectSelectivity>
+                        1.0
+              ] ;
+      <http://darq.sf.net/dose/0.1#totalTriples>
+              "1" ;
+     .
+
