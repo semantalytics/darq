@@ -1,0 +1,173 @@
+@prefix rdfs: 	<http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: 	<http://www.w3.org/2001/XMLSchema#> .
+@prefix sd: 	<http://darq.sf.net/dose/0.1#> .
+@prefix darq: 	<http://darq.sf.net/darq/0.1#> .
+
+@prefix hp: <http://jena.hpl.hp.com/schemas/hpcorp#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/#> .
+
+
+<> rdfs:comment     "Sample for a Service Description file" ;
+   dc:creator       "Bastian Quilitz" ;
+   dc:date          "2006-05-27" ;
+   dc:format        "RDF" ;
+   dc:identifier    <> ;
+   .
+
+
+
+# definition of a service
+[] a sd:Service ;
+
+ 	rdfs:label "Service for HP Tech Reports" ;
+ 	rdfs:comment "Service for Publications" ;
+
+	# the url of the service
+	sd:url <http://localhost:2020/publications> ;
+	
+	# and its capabilities
+
+	 sd:capability     
+              [ 
+              	# this service can answer triples with the predicate 'rdf:type'
+              	sd:predicate rdf:type ;
+              	
+              	# Restriction on the object
+              	# Every legal SPARQL filter expression is allowed.
+              	#
+              	# only queries for the type <http://jena.hpl.hp.com/2005/06/snippet-manager#TechnicalReport> are allowed
+	            sd:sofilter "REGEX(STR(?object),'<http://jena.hpl.hp.com/2005/06/snippet-manager#TechnicalReport>')" ;
+	            
+				# (same can be used to specify restrictions on the subject) - not implemented yet
+				# "REGEX(STR(?subject),'...')" ;
+                
+                # number of triples that will be returned by a "?s rdf:type ?o" query
+                sd:triples 2196
+
+                # we don't specify any other statistical values. (defaults will be used)
+                # sd:objectSelectivity  (default=1)
+                # sd:subjectSelectivity (default=1/x where x is the value given by sd:triples)
+                
+                
+              ] ;
+              
+              	
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://purl.org/dc/elements/1.1/#date> ;
+                sd:objectSelectivity
+                        8.257638315441783E-4 ;
+                sd:subjectSelectivity
+                        4.5558086560364467E-4 ;
+                sd:triples 2197
+              ] ;
+              
+              
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://purl.org/dc/elements/1.1/#format> ;
+                sd:objectSelectivity
+                        0.011494252873563218 ;
+                sd:subjectSelectivity
+                        6.365372374283895E-4 ;
+                sd:triples 1571
+              ] ;
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://purl.org/dc/elements/1.1/#abstract> ;
+                sd:objectSelectivity
+                        4.574565416285453E-4 ;
+                sd:subjectSelectivity
+                        4.553734061930783E-4 ;
+                sd:triples 2199
+              ] ;
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://purl.org/dc/elements/1.1/#title> ;
+                sd:objectSelectivity
+                        4.5682960255824577E-4 ;
+                sd:subjectSelectivity
+                        4.553734061930783E-4 ;
+                sd:triples 2199
+              ] ;
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://purl.org/dc/elements/1.1/#creator> ;
+                sd:objectSelectivity
+                        4.7058823529411766E-4 ;
+                sd:subjectSelectivity
+                        4.553734061930783E-4 ;
+                sd:triples 5359
+              ] ;
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://jena.hpl.hp.com/2005/06/snippet-manager#keyword> ;
+                sd:objectSelectivity
+                        2.311604253351826E-4 ;
+                sd:subjectSelectivity
+                        6.142506142506142E-4 ;
+                sd:triples 7352
+              ] ;
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate rdfs:label ;
+                sd:objectSelectivity
+                        2.311604253351826E-4 ;
+                sd:subjectSelectivity
+                        2.311604253351826E-4 ;
+                sd:triples 4326
+              ] ;
+      sd:capability
+              [ sd:sofilter "" ;
+                sd:predicate <http://purl.org/dc/elements/1.1/#subject> ;
+                sd:objectSelectivity
+                        2.311604253351826E-4 ;
+                sd:subjectSelectivity
+                        6.142506142506142E-4 ;
+                sd:triples 7352
+              ] ;
+	
+	sd:totalTriples "34751" ;
+	
+	
+	sd:isDefinitive "false"^^xsd:boolean ;
+	
+	.
+	
+	
+[] a sd:Service ;
+ 	rdfs:label "Service for FOAF data from a LDAP source" ;
+ 	rdfs:comment "Service for FOAF data from a LDAP source" ;
+	sd:url <http://localhost:2020/ldap> ;
+	sd:capability [ 
+		sd:predicate foaf:name ; 
+		sd:sofilter "" ; 
+		sd:triples 18000 ; sd:objectSelectivity "0.02"^^xsd:double ;
+		sd:triplerewriter _:FoafNameTripleRewriter
+		] ;
+	sd:capability [ sd:predicate foaf:mbox ; sd:sofilter "" ; sd:triples 18000 ; sd:objectSelectivity 5.5E-5 ] ;
+	sd:capability [ sd:predicate hp:manager ; sd:sofilter "" ; sd:triples 18000; sd:objectSelectivity "0.001"^^xsd:double ] ;
+	sd:capability [ sd:predicate hp:country ; sd:sofilter "" ; sd:triples 18000 ; sd:objectSelectivity "0.2"^^xsd:double ] ;
+	sd:capability [ sd:predicate hp:businessUnit ; sd:sofilter "" ; sd:triples 18000 ; sd:objectSelectivity "0.3"^^xsd:double ] ;
+	sd:capability [ sd:predicate rdf:type ; sd:sofilter "REGEX(STR(?object),'http://xmlns.com/foaf/0.1/#Person')"  ; sd:triples 18000 ; sd:objectSelectivity "1"^^xsd:double ];
+
+	sd:isDefinitive "false"^^xsd:boolean ;
+	
+	sd:requiredBindings [ sd:objectBinding foaf:name ] ;
+	sd:requiredBindings [ sd:objectBinding foaf:mbox ] ;
+	sd:requiredBindings [ sd:objectBinding hp:manager ; sd:objectBinding hp:country ] ;
+	sd:requiredBindings [ sd:subjectBinding rdf:type ] ;
+
+	sd:totalTriples 108000;
+	
+	.
+	
+_:FoafNameTripleRewriter a sd:TripleRewriter ;
+	sd:rewriterClass "demo.rewriter.FoafNameTripleRewriter" ;
+	.
+	
+_:BasicSelectivity a sd:SelectivityFunction ;
+	sd:javaClass "com.hp.hpl.jena.query.federated.engine.optimizer.BasicSelectivityFunction" ;
+	.

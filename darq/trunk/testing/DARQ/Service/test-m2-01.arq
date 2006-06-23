@@ -1,0 +1,8 @@
+SELECT  *
+WHERE
+    { 
+    SERVICE <_testing_model2.nt>
+    {
+    ?a ?b <http://rdf.hp.com/s2> 
+    }
+    }
