@@ -1,0 +1,4 @@
+@prefix z:  <http://example.org/x/#> .
+
+
+z:x z:p   "z:x z:p" .

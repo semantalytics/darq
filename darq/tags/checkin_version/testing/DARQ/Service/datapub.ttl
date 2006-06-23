@@ -1,0 +1,8 @@
+@prefix dc:         <http://purl.org/dc/elements/1.1/> .
+
+_:a dc:title "Book 1" .
+_:a dc:creator "Alice" .
+
+_:b dc:title "Report 1" .
+_:b dc:creator "Bert" .
+_:b dc:creator "DuckSoup" .
