@@ -15,25 +15,36 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import sun.security.krb5.internal.crypto.t;
-
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
-import com.hp.hpl.jena.graph.Node;
-import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.query.ARQ;
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryException;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFactory;
+import com.hp.hpl.jena.query.ResultSetFormatter;
+import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.query.darq.config.Configuration;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
-import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
 import com.hp.hpl.jena.query.junit.QueryTestException;
 import com.hp.hpl.jena.query.junit.TestCaseARQ;
 import com.hp.hpl.jena.query.junit.TestItem;
 import com.hp.hpl.jena.query.resultset.ResultSetRewindable;
 import com.hp.hpl.jena.query.util.DatasetUtils;
 import com.hp.hpl.jena.query.util.GraphUtils;
-import com.hp.hpl.jena.query.vocabulary.ResultSetVocab;
+import com.hp.hpl.jena.query.vocabulary.ResultSetGraphVocab;
 import com.hp.hpl.jena.query.vocabulary.TestManifest;
-import com.hp.hpl.jena.rdf.model.*;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.NodeIterator;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.JenaException;
 import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.util.FileUtils;
@@ -278,7 +289,7 @@ public class QueryTest extends TestCaseARQ
         Model m = GraphUtils.makeDefaultModel() ;
         ResultSetFormatter.asRDF(m, rs) ;
         if ( m.getNsPrefixURI("rs") == null )
-            m.setNsPrefix("rs", ResultSetVocab.getURI() ) ;
+            m.setNsPrefix("rs", ResultSetGraphVocab.getURI() ) ;
         if ( m.getNsPrefixURI("rdf") == null )
             m.setNsPrefix("rdf", RDF.getURI() ) ;
         if ( m.getNsPrefixURI("xsd") == null )
@@ -357,14 +368,14 @@ public class QueryTest extends TestCaseARQ
         
         if ( resultsModel != null )
         {
-            StmtIterator sIter = resultsModel.listStatements(null, RDF.type, ResultSetVocab.ResultSet) ;
+            StmtIterator sIter = resultsModel.listStatements(null, RDF.type, ResultSetGraphVocab.ResultSet) ;
             if ( !sIter.hasNext() )
                 throw new QueryTestException("Can't find the ASK result") ;
             Statement s = sIter.nextStatement() ;
             if ( sIter.hasNext() )
                 throw new QueryTestException("Too many result sets in ASK result") ;
             Resource r = s.getSubject() ;
-            Property p = resultsModel.createProperty(ResultSetVocab.getURI()+"boolean") ;
+            Property p = resultsModel.createProperty(ResultSetGraphVocab.getURI()+"boolean") ;
             
             boolean x = r.getRequiredProperty(p).getBoolean() ;
             if ( x != result )

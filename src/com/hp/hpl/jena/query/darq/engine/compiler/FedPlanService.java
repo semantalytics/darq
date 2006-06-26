@@ -15,8 +15,10 @@ import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanVisitor;
-import com.hp.hpl.jena.query.engine1.compiler.PlanBasicPattern;
-import com.hp.hpl.jena.query.engine1.compiler.PlanElement1;
+import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
+import com.hp.hpl.jena.query.engine1.plan.Transform;
+import com.hp.hpl.jena.query.util.Context;
+
 
 /**
  * 
@@ -33,16 +35,16 @@ public class FedPlanService extends PlanElement1
         return serviceGroup;
     }
     
-    public static PlanElement make(Plan plan, ServiceGroup sg, PlanElement subElt)
+    public static PlanElement make(Context c,ServiceGroup sg, PlanElement subElt)
     {
-        return new FedPlanService(plan, sg, subElt) ;
+        return new FedPlanService(c, sg, subElt) ;
     }
     
     
     
-    private FedPlanService(Plan plan, ServiceGroup sg, PlanElement cElt)
+    private FedPlanService(Context c,ServiceGroup sg, PlanElement cElt)
     {
-        super(plan, cElt) ;
+        super(c, cElt) ;
         serviceGroup = sg ;
     }
 
@@ -51,7 +53,7 @@ public class FedPlanService extends PlanElement1
     public QueryIterator build(QueryIterator input, ExecutionContext execCxt)
     {
 
-    	return new FedQueryIterService(input,serviceGroup,execCxt,getSub());
+    	return new FedQueryIterService(input,serviceGroup,execCxt,getSubElement());
     	
     }
     
@@ -60,7 +62,7 @@ public class FedPlanService extends PlanElement1
         if (visitor instanceof FedPlanVisitor) { 
             ((FedPlanVisitor)visitor).visit(this);
         } else {
-            visitor.visit((PlanBasicPattern) PlanBasicPattern.make(new Plan())) ; 
+        //    visitor.visit((PlanBasicPattern) PlanBasicPattern.make(new Plan())) ; 
         }
     }
 
@@ -72,6 +74,16 @@ public class FedPlanService extends PlanElement1
         // TODO Auto-generated method stub
         
         return OutputUtils.serviceGroupToString(this.serviceGroup);
+    }
+
+    @Override
+    public PlanElement apply(Transform transform, PlanElement x) {
+        return x; //TODO FIXME ?
+    }
+
+    @Override
+    public PlanElement copy(PlanElement newSubElement) {
+        return make(getContext(),serviceGroup,newSubElement);
     }
 
     

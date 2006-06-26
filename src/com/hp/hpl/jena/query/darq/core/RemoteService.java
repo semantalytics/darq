@@ -14,6 +14,7 @@ import java.util.Set;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.core.BindingMap;
+import com.hp.hpl.jena.query.core.Constraint;
 import com.hp.hpl.jena.query.core.ElementFilter;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedFunction;
 import com.hp.hpl.jena.query.darq.engine.optimizer.SelectivityFunction;
@@ -88,11 +89,11 @@ public class RemoteService {
         Query query = new Query();
         parser.setQuery(query);
 
-        ElementFilter elementFilter =  null ;  
+        Constraint constraint = null;  
         
         try
         {
-            elementFilter= (ElementFilter)parser.Constraint();
+            constraint = parser.Constraint();
             
         } catch (ParseException e)
         {
@@ -103,7 +104,7 @@ public class RemoteService {
         BindingMap bindingMap = new BindingMap();
         bindingMap.add("object", t.getObject());
         
-        return elementFilter.getConstraint().isSatisfied( bindingMap, null);
+        return constraint.isSatisfied( bindingMap, null);
 
     }
     

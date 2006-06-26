@@ -103,7 +103,7 @@ public class RemoteQuery {
 
                  Triple newtriple = new Triple(subject,predicate,object);
                  
-                 eg.addElement(new ElementTriplePattern(newtriple));
+                 eg.addElementTriplePattern(new ElementTriplePattern(newtriple));
         }
         
         
