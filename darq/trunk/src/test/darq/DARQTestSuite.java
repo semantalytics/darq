@@ -6,14 +6,14 @@
 package test.darq;
 
 
+import junit.framework.TestSuite;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import test.darq.optimizer.OptimizerAllTests;
-import junit.framework.*;
 
-import com.hp.hpl.jena.query.darq.engine.FedQueryCompiler;
-import com.hp.hpl.jena.query.darq.engine.FedQueryCompilerVisitor;
+import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.optimizer.BasicPlanOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
@@ -52,8 +52,7 @@ public class DARQTestSuite extends TestSuite
         addTest(OptimizerAllTests.suite());
         
         
-        Logger.getLogger(FedQueryCompiler.class).setLevel(Level.DEBUG);
-        Logger.getLogger(FedQueryCompilerVisitor.class).setLevel(Level.DEBUG);
+        Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
         Logger.getLogger(FedQueryEngine.class).setLevel(Level.DEBUG);
         Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
         Logger.getLogger(CostBasedPlanOptimizer.class).setLevel(Level.DEBUG);

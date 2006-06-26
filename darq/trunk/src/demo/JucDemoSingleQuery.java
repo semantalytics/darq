@@ -13,17 +13,13 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
-
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
-import com.hp.hpl.jena.query.darq.engine.FedQueryCompiler;
-import com.hp.hpl.jena.query.darq.engine.FedQueryCompilerVisitor;
+import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 import com.hp.hpl.jena.query.darq.engine.optimizer.BasicPlanOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
 import com.hp.hpl.jena.query.resultset.ResultSetMem;
-import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 public class JucDemoSingleQuery {
 
@@ -34,8 +30,8 @@ public class JucDemoSingleQuery {
      * @param args
      */
     public static void main(String[] args) {
-        Logger.getLogger(FedQueryCompiler.class).setLevel(Level.DEBUG);
-        Logger.getLogger(FedQueryCompilerVisitor.class).setLevel(Level.DEBUG);
+        
+        Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
         Logger.getLogger(FedQueryEngine.class).setLevel(Level.DEBUG);
         Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
         Logger.getLogger(CostBasedPlanOptimizer.class).setLevel(Level.DEBUG);
@@ -51,7 +47,9 @@ public class JucDemoSingleQuery {
                 "  ?y foaf:name ?n .",
                 "  ?y foaf:mbox ?mbox .",
                 "  ?y rdf:type foaf:Person ." ,
-               // "  OPTIONAL {?x dc:date ?date .}",
+             //   "FILTER (REGEX(?n, 'abc') )", 
+               "  OPTIONAL {?x dc:date ?date .}",
+               
                 "}"
         };
  

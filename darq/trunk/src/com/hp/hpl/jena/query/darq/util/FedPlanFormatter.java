@@ -4,21 +4,22 @@
  * [See end of file]
  */
 package com.hp.hpl.jena.query.darq.util;
-
+ 
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanFormatter;
+import com.hp.hpl.jena.query.engine1.PlanFormatter.PlanFormatterVisitor;
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.shared.PrefixMapping;
-
-public class FedPlanFormatter extends PlanFormatter implements FedPlanVisitor {
+ 
+public class FedPlanFormatter extends PlanFormatter.PlanFormatterVisitor implements FedPlanVisitor {
 
     IndentedWriter out = null;
     
     public FedPlanFormatter(IndentedWriter w, PrefixMapping pmap) {
-        super(w, pmap);
+        super(w,pmap);
         out=w;
         
     }
@@ -39,16 +40,16 @@ public class FedPlanFormatter extends PlanFormatter implements FedPlanVisitor {
         
     }
     
-    @Override
+    
     static public void out(IndentedWriter w, PlanElement pElt)
     {
         out(w, (PrefixMapping)null, pElt) ; 
     }
     
-    @Override
+   
     static public void out(IndentedWriter w, PrefixMapping pmap, PlanElement pElt)
     {
-        PlanFormatter fmt = new FedPlanFormatter(w, pmap) ;
+        PlanFormatterVisitor fmt = new FedPlanFormatter(w, pmap) ;
         
         //fmt.startVisit() ;
         pElt.visit(fmt) ;

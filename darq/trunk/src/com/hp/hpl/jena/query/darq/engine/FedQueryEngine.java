@@ -14,6 +14,8 @@ import com.hp.hpl.jena.query.darq.util.OutputUtils;
 import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.QueryEngine;
+import com.hp.hpl.jena.query.engine1.plan.Transform;
+import com.hp.hpl.jena.query.engine1.plan.Transformer;
 import com.hp.hpl.jena.query.util.Context;
 
 public class FedQueryEngine extends QueryEngine {
@@ -40,9 +42,20 @@ public class FedQueryEngine extends QueryEngine {
     public void setConfig(Configuration c) {
         config=c;
     }
+
+    /* (non-Javadoc)
+     * @see com.hp.hpl.jena.query.engine1.QueryEngine#queryPlanHook(com.hp.hpl.jena.query.util.Context, com.hp.hpl.jena.query.engine1.PlanElement)
+     */
+    @Override
+    protected PlanElement queryPlanHook(Context context, PlanElement planElt) {
+        Transform t = new DarqTransform(context,config);
+        PlanElement pe = Transformer.transform(t,planElt);
+       // log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
+        return pe;
+    }
     
     
-    protected PlanElement makePlanForQueryPattern(Plan plan)
+ /*   protected PlanElement makePlanForQueryPattern(Plan plan)
     {
         FedQueryCompiler fqc = new FedQueryCompiler(config);
         PlanElement pe = fqc.makePlan(plan, query.getQueryBlock()) ;
@@ -50,7 +63,9 @@ public class FedQueryEngine extends QueryEngine {
         log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
         // if (log.isDebugEnabled()) JucDemo.waitForKey();  //  REMOVE JUST FOR DEMO !!  
         return pe;
-    }
+    }*/
+    
+    
 
 }
 /*
