@@ -160,6 +160,8 @@ public class Configuration {
         } catch (Exception e) {
             System.err.println(e); // TODO don't catch exception here. 
         }
+        
+        if (serviceRegistry.getAvailableServices().size()==0) log.warn("No Services loaded from config file!");
     }
 
     private void findCapability(RemoteService s) {
@@ -305,6 +307,8 @@ public class Configuration {
                 "?service sd:requiredBindings ?bindinglist .",
                 "?bindinglist ?p ?predicate .", "}" };
 
+        
+        
         try {
 
             Query query = makeQuery(q);
@@ -384,6 +388,7 @@ public class Configuration {
         }
         
         if (!prefixmap.containsKey("sd")) stdNS(sBuff,"sd","http://darq.sf.net/dose/0.1#");
+
         
 
     }

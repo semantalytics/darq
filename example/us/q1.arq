@@ -1,0 +1,8 @@
+PREFIX state: <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#>
+PREFIX city:  <http://www.daml.ri.cmu.edu/ont/USCity.daml#>
+
+SELECT ?cityname {
+	?state state:name "New York" .
+	?city city:state ?state .
+	?city city:name ?cityname .
+}

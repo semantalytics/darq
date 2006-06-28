@@ -17,7 +17,6 @@ import com.hp.hpl.jena.query.darq.core.DarqDataset;
 import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
-import com.hp.hpl.jena.query.darq.engine.optimizer.BasicPlanOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
 import com.hp.hpl.jena.query.resultset.ResultSetMem;
 
@@ -33,7 +32,7 @@ public class JucDemoSingleQuery {
         
         Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
         Logger.getLogger(FedQueryEngine.class).setLevel(Level.DEBUG);
-        Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
+        //Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
         Logger.getLogger(CostBasedPlanOptimizer.class).setLevel(Level.DEBUG);
         
         

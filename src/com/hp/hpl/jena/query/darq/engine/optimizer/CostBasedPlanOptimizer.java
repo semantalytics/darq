@@ -109,7 +109,7 @@ public class CostBasedPlanOptimizer implements PlanOptimizer {
         costs = plan.get(plan.size() - 1).calcCosts();
         lastCosts = costs;
 
-        System.err.println("Costs: " + costs);
+        //System.err.println("Costs: " + costs);
         return result;
 
     }

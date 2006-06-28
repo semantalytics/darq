@@ -4,14 +4,19 @@
 
 
 
+
+  
   
   
   <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
 
 
+
   
 
 
+  
+  
   
   
   
@@ -20,36 +25,48 @@
 
 
 
+
+  
   
   
   <meta name="description" content="DARQ provides transparent query access to multiple, distributed SPARQL services as if querying a single RDF graph.">
 
 
 
+
+  
   
   
   <meta name="keywords" content="SPARQL, RDF, DARQ, federated, query">
 
 
 
+
+  
   
   
   <meta name="DC.title" content="DARQ - Federated Queries with SPARQL">
 
 
 
+
+  
   
   
   <meta name="DC.creator" content="Bastian Quilitz">
 
 
 
+
+  
   
   
   <meta name="DC.description" content="DARQ provides transparent query access to multiple, distributed SPARQL services as if querying a single RDF graph.">
 
 
 
+
+  
   
   
   <style type="text/css">
@@ -111,7 +128,9 @@ font-size: 11pt;
 
 
 
+
 <h1>DARQ -<br>
+
 
 
 
@@ -119,7 +138,9 @@ Federated Queries with SPARQL</h1>
 
 
 
+
 <div style="text-align: center;">Bastian Quilitz <br>
+
 
 
 
@@ -129,16 +150,21 @@ Federated Queries with SPARQL</h1>
 
 
 
+
 <br>
 
 
 
+
 </div>
+<div style="text-align: center;">
 
 
 
-Last update: &nbsp;23.06.2006
+Last update: &nbsp;28.06.2006
+</div>
 <h2>Overview</h2>
+
 
 
 
@@ -151,10 +177,12 @@ details of federation to the query engine.&nbsp;</p>
 
 
 
-<p>DARQ extends&nbsp;Andy Seaborne's <a href="http://jena.sourceforge.net/ARQ/">ARQ</a> by
+
+<p>DARQ extends&nbsp;Andy Seaborne's <a href="http://jena.sourceforge.net/ARQ/">ARQ</a> (included in <a href="http://jena.sf.net">Jena</a>)by
 adding a new query planning algorithm and a modified query execution
 engine. The work on DARQ&nbsp;includes a service description
 language and a basic query optimization algorithm.</p>
+
 
 
 
@@ -166,7 +194,9 @@ issues</a>).</p>
 
 
 
+
 <ul>
+
 
 
 
@@ -174,7 +204,9 @@ issues</a>).</p>
 
 
 
+
   <li>License:&nbsp;<a href="http://jena.sourceforge.net/license.html">as per Jena</a></li>
+
 
 
 
@@ -183,7 +215,10 @@ issues</a>).</p>
 
 
 
-<p>I'll be happy&nbsp;receive comments and feedback. There will be a mailing list soon.</p>
+
+<p><br>
+I'll be happy&nbsp;receive comments and feedback: <a href="http://sourceforge.net/mail/?group_id=168641">mailing list</a></p>
+
 
 
 
@@ -192,7 +227,9 @@ project page can be found <a href="http://www.sf.net/projects/darq/">here</a>.</
 
 
 
+
 <h3>Requirements</h3>
+
 
 
 
@@ -200,9 +237,12 @@ project page can be found <a href="http://www.sf.net/projects/darq/">here</a>.</
 
 
 
+
+  
   
   
   <ul>
+
 
 
 
@@ -210,21 +250,28 @@ project page can be found <a href="http://www.sf.net/projects/darq/">here</a>.</
 
 
 
+
+  
   
   
   </ul>
 
 
 
+
+  
   
   
   <ul>
 
 
 
+
     <li>Jena 2.4</li>
 
+
     <li>ARQ 1.4 (not compatible with ARQ shipped with Jena 2.4!)</li>
+
 
 
 
@@ -232,9 +279,12 @@ project page can be found <a href="http://www.sf.net/projects/darq/">here</a>.</
 
 
 
+
+  
   
   
   </ul>
+
 
 
 
@@ -242,11 +292,14 @@ project page can be found <a href="http://www.sf.net/projects/darq/">here</a>.</
 
 
 
+
 <h2>Contents</h2>
 
 
 
+
 <ol>
+
 
 
 
@@ -255,7 +308,9 @@ and SVN access</a></li>
 
 
 
+
   <li><a href="#Example:_Querying_two_SPARQL_endpoints">Example: Using DARQ</a></li>
+
 
 
 
@@ -264,12 +319,15 @@ Descriptions</a></li>
 
 
 
+
   <li><a href="#Limitations_and_known_issues">Limitations
 and known issues</a></li>
 
 
 
+
 </ol>
+
 
 
 
@@ -278,8 +336,10 @@ and SVN access</h2>
 
 
 
+
 <p>DARQ is&nbsp;only available as Java source code
 from the SVN repository.</p>
+
 
 
 
@@ -289,15 +349,17 @@ from the SVN repository.</p>
 
 
 
+
 <h2><a name="Example:_Querying_two_SPARQL_endpoints"></a>Example:
 Using DARQ</h2>
-
-
-
-<p>DARQ provides&nbsp;a single query interface (same as ARQ),
+<h3>Command line (Linux)</h3>
+<pre>$DARQROOT/bin/darq --query &lt;queryfile&gt; --config &lt;configfile&gt;<br><br>&lt;queryfile&gt;   file with SPARQL query<br>&lt;configfile&gt;  file with <a href="#Service_Descriptions">Service Descriptions</a></pre>
+There is are some <a href="DARQ-Example.html">example queries</a>.<br>
+<h3>Source Code</h3>
+DARQ provides&nbsp;a single query interface (same as ARQ),
 leaving the
 details of federation to the query engine. The example registers the
-DARQ query engine, executes the query and outputs the results.&nbsp;</p>
+DARQ query engine, executes the query and outputs the results.&nbsp;
 
 
 
@@ -306,12 +368,15 @@ configuration file which includes the <a href="#Service_Descriptions">Service De
 
 
 
+
 <pre>// register new FedQueryEngineFactory and load configuration from file<br>FedQueryEngineFactory.register(configfile);<br><br>// create query<br>Query query = QueryFactory.create(querystring);<br><br>// get query engine<br>// DarqDataset is a dummy.<br>QueryExecution qe = QueryExecutionFactory.create(query, new DarqDataset());<br><br>// execute query<br>ResultSet rs = qe.execSelect();<br><br>// output results<br>ResultSetFormatter.out(System.out, rs, query);<br></pre>
+
 
 
 
 <h2><a name="Service_Descriptions"></a>Service
 Descriptions</h2>
+
 
 
 
@@ -323,7 +388,9 @@ optimization.<br>
 
 
 
+
 <br>
+
 
 
 
@@ -331,16 +398,21 @@ Following shows an example for&nbsp;Service Descriptions:<br>
 
 
 
+
 <pre>@prefix rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; .<br>@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .<br>@prefix xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt; .<br>@prefix sd: &lt;http://darq.sf.net/dose/0.1#&gt; .<br><br>@prefix foaf: &lt;http://xmlns.com/foaf/0.1/#&gt; .<br><br># definition of an endpoint<br>[] a sd:Service ;<br> rdfs:label "Foaf Service" ;<br> rdfs:comment "Service for FOAF data" ;<br><br>	# the endpoint url<br>	sd:url "http://localhost:2020/ldap" ;<br><br>	# capabilities of the endpoint<br>	sd:capability [ <br><br>	# the endpoint stores triples with predicate rdf:type<br>	sd:predicate rdf:type ; <br><br>	# Restriction on the subject/object<br> 	# Every legal SPARQL filter expression is allowed.<br>	#<br> 	# only queries for the type http://xmlns.com/foaf/0.1/#Person <br>	# are allowed<br><br>	sd:sofilter "REGEX(STR(?object),'http://xmlns.com/foaf/0.1/#Person')" ; <br>	# could also use ?subject <br><br>	# statistical information<br><br>	# number of triples that will be returned by<br>	#&nbsp;a "?s rdf:type ?o" query<br>	sd:triples 18000 ; <br><br>	# other propeties are:<br>	# Selectivity of a triple pattern, when object/subject is bound<br> 	# sd:objectSelectivity (default=1)<br> 	# sd:subjectSelectivity (default=1/x, <br>	# where x is the value given by sd:triples)<br><br>	];<br><br>	sd:capability [ <br>	<br>	# the endpoint stores triples with predicate foaf:name<br>	sd:predicate foaf:name ; <br><br>	# no filter on subject or object<br>	sd:sofilter "" ; <br><br>	# statistical information<br><br>	# there are 18000 triples with predicate foaf:name<br>	sd:triples 18000 ; <br><br>	# if the object in the triple pattern is bound <br>	# (e.g. ?s foaf:name 'Bastian Quilitz") the result size will be<br>	# reduced by factor 0.02. (on average)<br>	sd:objectSelectivity "0.02"^^xsd:double ;<br><br>	] ;<br><br>	sd:capability [ <br>		sd:predicate foaf:mbox ; <br>		sd:sofilter "" ; <br>		sd:triples 18000 ; <br>		sd:objectSelectivity 5.5E-5 <br>	] ;<br>	<br><br>	# whether the service is definitive or not<br>	# sd:isDefinitive (default=false)<br>	# sd:isDefinitive "true"^^xsd:boolean ;<br>	<br>	# limitations on access patterns<br>	# the query for this service must either contain a triple pattern <br>	# with predicate foaf:name and a bound object or <br>	# a pattern with predicate foaf:mbox and a bound object.<br>	# not shown here: sd:subjectBinding -&gt; subject must be bound<br>	sd:requiredBindings [ sd:objectBinding foaf:name ] ;<br>	sd:requiredBindings [ sd:objectBinding foaf:mbox ] ;<br><br>	# total number of triples in the store<br>	sd:totalTriples 108000; <br>	.<br></pre>
 
 
 
+
+<span style="font-style: italic;"></span>
 <h2><a name="Limitations_and_known_issues"></a>Limitations
 and known issues</h2>
 
 
 
+
 <ul>
+
 
 
 
@@ -350,9 +422,11 @@ No extensive testing has been performed.</li>
 
 
 
+
   <li>Since DARQ uses predicates to decide where to send&nbsp;triple
 patterns,&nbsp;no ?s ?p ?o queries are supported - predicates must
 be bound.</li>
+
 
 
 
@@ -361,11 +435,14 @@ operation finds a blank node an exception will be thrown.</li>
 
 
 
+
   <li>DESCRIBE is not supported.</li>
 
 
 
+
   <li>GRAPH is not supported.</li>
+
 
 
 
@@ -375,11 +452,17 @@ good choice for the moment.</li>
 
 
 
+
 </ul>
 
 
 
+
 <br>
+<br>
+<br>
+<br>
+
 
 
 
@@ -387,12 +470,16 @@ DARQ is hosted by sourceforge.net<br>
 
 
 
+
 <a href="http://sourceforge.net"><img src="sflogo.php" alt="SourceForge.net Logo" border="0" height="62" width="210"></a>
-<div class="footer">$ID$<br>
+<div class="footer">Bastian Quilitz,&nbsp;
+( [my first name] [at] quilitz [dot] de
+)
 
 
 
 </div>
+
 
 
 
