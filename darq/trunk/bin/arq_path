@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$DARQROOT" = "" ]
+then
+    echo "DARQROOT not set" 1>&2
+    exit 1
+    fi
+
+# CP=$(make_classpath "$DARQROOT")
+# echo $CP
+exec "$DARQROOT/bin/make_classpath" "$DARQROOT"
