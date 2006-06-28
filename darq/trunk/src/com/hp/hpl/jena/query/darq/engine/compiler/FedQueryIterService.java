@@ -51,6 +51,8 @@ public class FedQueryIterService extends QueryIterRepeatApply {
     PlanElement subPattern;  //should be null
 
     private ServiceGroup serviceGroup = null;
+    
+    QueryExecution qexec=null;
 
     public FedQueryIterService(QueryIterator input, ServiceGroup sg,
             ExecutionContext context, PlanElement subComp) {
@@ -75,13 +77,14 @@ public class FedQueryIterService extends QueryIterRepeatApply {
         }
 
         ResultSet remoteResults = null;
-        QueryExecution qexec = QueryExecutionFactory.sparqlService(url, q);
+        log.trace(url+"?q="+q);
+        qexec = QueryExecutionFactory.sparqlService(url, q);
         try {
 
             remoteResults = qexec.execSelect();
 
         } finally {
-            qexec.close();
+            
         }
         return remoteResults;
     }
@@ -112,12 +115,12 @@ public class FedQueryIterService extends QueryIterRepeatApply {
         
         ResultSet remoteResults = null;
 
-        QueryExecution qexec = QueryExecutionFactory.create(q, model);
+       qexec = QueryExecutionFactory.create(q, model);
         try {
             remoteResults = qexec.execSelect();
 
         } finally {
-          //  qexec.close();
+          
         }
         return remoteResults;
     }
@@ -163,7 +166,8 @@ public class FedQueryIterService extends QueryIterRepeatApply {
             if (newBindings.size()>0) concatIterator.add(new QueryIterPlainWrapper(newBindings.iterator(), null));
 
         }
-
+        if (qexec!=null) qexec.close();
+        
         return new QueryIterDistinct(concatIterator,getExecContext());
     }
 }

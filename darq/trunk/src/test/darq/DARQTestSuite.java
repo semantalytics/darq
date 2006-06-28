@@ -15,7 +15,6 @@ import test.darq.optimizer.OptimizerAllTests;
 
 import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
-import com.hp.hpl.jena.query.darq.engine.optimizer.BasicPlanOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
 import com.hp.hpl.jena.query.expr.E_Function;
 import com.hp.hpl.jena.query.expr.NodeValue;
@@ -54,7 +53,7 @@ public class DARQTestSuite extends TestSuite
         
         Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
         Logger.getLogger(FedQueryEngine.class).setLevel(Level.DEBUG);
-        Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
+        //Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
         Logger.getLogger(CostBasedPlanOptimizer.class).setLevel(Level.DEBUG);
         
         // Scripted tests for SPARQL and ARQ.

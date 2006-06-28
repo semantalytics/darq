@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+  <title>DARQ - Example</title>
+
+
+  <meta name="author" content="Bastian Quilitz">
+
+  <meta name="description" content="How to run an example.">
+
+  <meta name="keywords" content="SPARQL, RDF, DARQ, federated, query">
+
+  <style type="text/css">
+body { margin: 3em 4em;
+max-width: 36em;
+}
+h1 { margin: 1em 0pt 1.5em;
+font-size: 200%;
+text-align: center;
+}
+h2 { margin: 1.2em 0pt 0.3em;
+font-size: 140%;
+}
+h3 { margin: 1.2em 0pt 0.3em;
+font-size: 100%;
+}
+p { margin: 0pt 0pt 1em;
+}
+dt { margin: 2em 0pt 1em;
+}
+dt, dt tt { font-weight: bold;
+}
+dt tt { font-size: 120%;
+}
+ul { padding-left: 1.2em;
+margin-left: 0pt;
+}
+ol { padding-left: 1.5em;
+margin-left: 0pt;
+}
+li { margin: 0pt 0pt 0.4em;
+padding: 0pt;
+}
+pre { padding: 1em 0pt 1em 1.5em;
+background: rgb(238, 238, 238) none repeat scroll 0% 50%;
+-moz-background-clip: initial;
+-moz-background-origin: initial;
+-moz-background-inline-policy: initial;
+overflow: visible;
+}
+tt { font-size: 90%;
+}
+h1, h2, h3, dt, strong { font-family: Helvetica,Arial,sans-serif;
+color: rgb(0, 0, 153);
+}
+.footer { border-top: 1px solid black;
+margin: 3em 0pt 0pt;
+}
+@media print {
+body { margin: 0pt;
+font-size: 11pt;
+}
+}
+  </style>
+</head>
+<body>
+
+<a href="index.html">back to homepage</a>
+<h1>DARQ<br>
+</h1>
+
+<h2>Example</h2>
+Query for US state and US cities from two SPARQL endpoints. The example can be found in $DARQROOT/example/us/ .
+<h3>Run it</h3>
+
+<ol style="list-style-type: decimal;">
+  <li>Download and setup DARQ</li>
+  <ol style="list-style-type: lower-alpha;">
+    <li>get source code from svn</li>
+    <li>set DARQROOT: &nbsp;<code>export DARQROOT=&lt;path&gt;</code></li>
+    <li>[ set PATH: &nbsp;<code>export PATH=$PATH:$DARQROOT/bin</code> ]</li>
+  </ol>
+  <li>go to&nbsp;$DARQROOT/example/us/</li>
+  <li>run DARQ:</li>
+  <ol>
+
+
+  </ol>
+
+</ol>
+
+<pre>./darq --query q3.arq --config usDescr.n3 --verbose</pre>
+
+<h3>Data</h3>
+The data used for this example can be found at<br>
+<ul>
+  <ul>
+    <li>http://www.daml.ri.cmu.edu/ont/USRegionState.daml</li>
+    <li>http://www.daml.ri.cmu.edu/ont/USCity.daml</li>
+  </ul>
+</ul>
+(The files have been slightly&nbsp;modified.)<br>
+<br>
+<br>
+<a href="index.html">back to homepage</a><br>
+<br>
+<br>
+<br>
+
+<br>
+
+DARQ is hosted by sourceforge.net<br>
+
+<a href="http://sourceforge.net"><img src="sflogo.php" alt="SourceForge.net Logo" border="0" height="62" width="210"></a>
+<div class="footer">28.06.2006, Bastian Quilitz,&nbsp;
+( [my first name] [at] quilitz [dot] de
+)
+
+</div>
+
+</body>
+</html>

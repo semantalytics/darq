@@ -1,0 +1,226 @@
+@prefix sd:      <http://darq.sf.net/dose/0.1#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix :        <#> .
+
+[]    a       sd:Service ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#code> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 51
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.25"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.org/2001/03/daml+oil#imports> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 4
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.3333333333333333"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:range ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.3333333333333333"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 3
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#name> ;			    
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 51
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.08333333333333333"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:label ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.08333333333333333"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 12
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.020833333333333332"^^<http://www.w3.org/2001/XMLSchema#double> ;
+	                sd:predicate <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#borderstate> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.020833333333333332"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 216
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.1"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#region> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.02"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 50
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:subClassOf ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 2
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.org/2001/03/daml+oil#versionInfo> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 1
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.02"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#memberstate> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.1"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 50
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.25"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:comment ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.25"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 4
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#capital> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 51
+              ] ;
+      sd:capability
+              [ sd:predicate rdf:type ;
+                sd:sofilter "REGEX(STR(?object),'http://www.daml.ri.cmu.edu/ont/USRegionState.daml#USRegion') || REGEX(STR(?object),'http://www.daml.org/2001/03/daml+oil#Ontology') || REGEX(STR(?object),'http://www.w3.org/2000/01/rdf-schema#Class') || REGEX(STR(?object),'http://www.daml.ri.cmu.edu/ont/USRegionState.daml#USState') || REGEX(STR(?object),'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property')"^^<http://www.w3.org/2001/XMLSchema#string> ;
+                sd:triples 67
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:domain ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 2
+              ] ;
+
+
+      sd:totalTriples "564" ;
+      sd:url  <http://localhost:2020/usstate> .
+
+
+# #########################################################################################################
+
+
+[]    a       sd:Service ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:comment ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 2
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:domain ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 1
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:subClassOf ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 1
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:label ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 1
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.25"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.org/2001/03/daml+oil#imports> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 4
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.org/2001/03/daml+oil#versionInfo> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "1.0"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 1
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.0196078431372549"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USCity.daml#state> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.00125"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 800
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.001349527665317139"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate <http://www.daml.ri.cmu.edu/ont/USCity.daml#name> ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.00125"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 800
+              ] ;
+      sd:capability
+              [ sd:predicate rdf:type ;
+                sd:sofilter "REGEX(STR(?object),'http://www.daml.ri.cmu.edu/ont/USCity.daml#USCity') || REGEX(STR(?object),'http://www.daml.org/2001/03/daml+oil#Ontology') || REGEX(STR(?object),'http://www.w3.org/2000/01/rdf-schema#Class') || REGEX(STR(?object),'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property')"^^<http://www.w3.org/2001/XMLSchema#string> ;
+                sd:triples 804
+              ] ;
+      sd:capability
+              [ sd:objectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:predicate rdfs:range ;
+                sd:sofilter "" ;
+                sd:subjectSelectivity
+                        "0.5"^^<http://www.w3.org/2001/XMLSchema#double> ;
+                sd:triples 2
+              ] ;
+      sd:totalTriples "2416" ;
+      sd:url  <http://localhost:2020/uscity> .
