@@ -106,7 +106,9 @@ public class CostBasedPlanOptimizer implements PlanOptimizer {
             result.add(e.getElement());
         }
 
-        costs = plan.get(plan.size() - 1).calcCosts();
+        if (plan.size() > 0) costs = plan.get(plan.size() - 1).calcCosts();
+        else costs = plan.get(0).calcCosts();
+        
         lastCosts = costs;
 
         //System.err.println("Costs: " + costs);
@@ -218,7 +220,9 @@ public class CostBasedPlanOptimizer implements PlanOptimizer {
         }
         nsg.setTriples(result);
 
-        costs = plan.get(plan.size() - 1).calcCosts();
+        if (plan.size() > 0) costs = plan.get(plan.size() - 1).calcCosts();
+        else costs = plan.get(0).calcCosts();
+        
 
         return new OptimizerElement<ServiceGroup>(nsg, costs, sg);
     }
