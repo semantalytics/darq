@@ -93,7 +93,8 @@
                 sd:triples 2199
               ] ;
       sd:capability
-              [ sd:sofilter "" ;
+              [ 
+              # sd:sofilter "" ;
                 sd:predicate <http://purl.org/dc/elements/1.1/#creator> ;
                 sd:objectSelectivity
                         4.7058823529411766E-4 ;
