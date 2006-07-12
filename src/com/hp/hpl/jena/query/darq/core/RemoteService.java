@@ -63,15 +63,16 @@ public class RemoteService {
         //! String objectFilter = capabilities.get(t.getPredicate().getURI());
         if (!t.getPredicate().isURI()) return false;
         Capability c = findCapability(t.getPredicate().getURI());
-        String objectFilter = null;
-        if (c!=null) {
-            objectFilter = c.getObjectFilter();
-        }
-
-        // Service does not know about the predicate of the triple
-        if (objectFilter==null) return false;
+      
+        
+        if (c==null) return false; 
+        
+        String objectFilter = null;  
+        objectFilter = c.getObjectFilter();
+        
         
         // There is no constraint for the object
+        if (objectFilter==null) return true;
         if (objectFilter.equals("")) return true;
         
         

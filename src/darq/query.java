@@ -167,6 +167,9 @@ public class query
         // ---------------------------------------------------------------------- DARQ 
         ArgDecl config = new ArgDecl(ArgDecl.HasValue, "config") ;
         cl.add(config) ;
+        
+        
+        
 
 
         try {
@@ -197,12 +200,18 @@ public class query
         boolean verbose = cl.contains(verboseDecl) ;
         if ( verbose ) { 
             qCmd.setMessageLevel(qCmd.getMessageLevel()+1) ;
+            
+        }
+        
+
+        boolean quiet = cl.contains(quietDecl) ;
+        if ( quiet ) { 
+            qCmd.setMessageLevel(qCmd.getMessageLevel()-1) ;
+            Logger.getLogger(FedQueryIterService.class).setLevel(Level.ERROR);
+        } else {
             Logger.getLogger(FedQueryIterService.class).setLevel(Level.TRACE);
         }
         
-        
-        boolean quiet = cl.contains(quietDecl) ;
-        if ( quiet ) qCmd.setMessageLevel(qCmd.getMessageLevel()-1) ;
         
         
         boolean executeQuery = true ;
@@ -391,7 +400,7 @@ public class query
     
     static void usage(java.io.PrintStream out)
     {
-        out.println("Usage: [--data URL] [queryString | --query file]") ;
+        out.println("Usage: [--config URL] [queryString | --query file]") ;
         out.println("   --query file         Read one query from a file") ;
         out.println("   --syntax SYN         Query syntax") ;
         out.println("                            SPARQL (default), ARQ, RDQL, N3QL") ;
@@ -400,15 +409,7 @@ public class query
         //out.println("   --rdfs               Use an RDFS reasoner around the data") ;
         //out.println("   --reasoner URI       Set the reasoner URI explicitly.") ;
         //out.println("   --vocab URL | File   Specify a separate vocabulary (may also be in the data)") ;
-        out.println("   --graph URL          DataSource source (can also be part of query)") ;
-        out.println("   --data URL           Synonym for --graph") ;
-        out.println("   --namedGraph URL     DataSource source (can also be part of query)") ;
-        out.println("   --named URL          Synonym for --namedGraph") ;
-        out.println("                            URLs can be file: or http:") ;
-        out.println("                            No schema => file:") ;
-        out.println("                            Extensions used to guess the format as well") ;
-        out.println("                                .rdf, .n3, .nt, .ttl") ;
-        out.println("   --service URL        Execute query at given service") ;
+        out.println("   --config file        File containing Service Descriptions");
         out.println("   --post               Force the use of HTTP POST") ;
         out.println("   --fmt FMT            Data source format: RDF/XML (default),") ;
         out.println("                            N3, N-TRIPLES, TURTLE") ;
