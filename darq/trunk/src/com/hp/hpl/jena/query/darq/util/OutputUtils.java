@@ -10,9 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
+import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.util.IndentedWriter;
+import com.hp.hpl.jena.shared.PrefixMapping;
 
 public class OutputUtils {
     
@@ -53,8 +56,15 @@ public class OutputUtils {
         
         public static void outServiceGroup(ServiceGroup sg, IndentedWriter out) {
             
+            if (sg instanceof MultipleServiceGroup) {
+                for (RemoteService s:((MultipleServiceGroup)sg).getServices()) out.println("+"+s.getLabel() + " ("+ s.getUrl() + ")");
+            }
+            else {
+                
             out.println(sg.getService().getLabel() + " ("+ sg.getService().getUrl() + ")");
+            }
             out.incIndent();
+            
             
             for ( Triple t: sg.getTriples()) {
                 out.println(t.toString());
@@ -65,10 +75,10 @@ public class OutputUtils {
         }
         
         
-        public static String PlanToString(PlanElement planElement) {
+        public static String PlanToString(PlanElement planElement, PrefixMapping pm) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             IndentedWriter out = new IndentedWriter(os);
-            FedPlanFormatter.out(out,planElement);
+            FedPlanFormatter.out(out,pm, planElement);
             out.flush();
             return new String(os.toByteArray());
         }

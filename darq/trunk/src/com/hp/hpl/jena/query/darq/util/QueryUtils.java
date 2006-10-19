@@ -14,6 +14,7 @@ import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.core.Binding;
 import com.hp.hpl.jena.query.core.Constraint;
 import com.hp.hpl.jena.query.core.ElementFilter;
+import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.lang.arq.ARQParser;
 import com.hp.hpl.jena.query.lang.arq.ParseException;
 import com.hp.hpl.jena.query.util.FmtUtils;
@@ -34,7 +35,7 @@ public class QueryUtils {
         return node;
     }
     
-    public static Constraint replacewithBinding(Constraint c, Binding b) {
+    public static Expr replacewithBinding(Constraint c, Binding b,Query orgQuery) {
         String filter = "FILTER"+c.toString();
         
         for (Iterator it = b.names(); it.hasNext() ;) {
@@ -52,20 +53,25 @@ public class QueryUtils {
           
         StringReader sr = new StringReader(filter);
         ARQParser parser = new ARQParser(sr);
-        parser.setQuery(new Query());
+        Query q= new Query();
+        q.setPrefixMapping(orgQuery.getPrefixMapping());
+        parser.setQuery(q);
         
-        ElementFilter elementFilter= null;
+        Expr expr= null;
 
         try
         {
-            elementFilter = (ElementFilter)parser.Constraint();
+            expr = (Expr)parser.Constraint();
 
         } catch (ParseException e)
         {
             throw new QueryExecException(e); // should not happen !!
         }
         
-        return elementFilter.getConstraint();
+      
+        
+        
+        return expr;
         
     }
   
