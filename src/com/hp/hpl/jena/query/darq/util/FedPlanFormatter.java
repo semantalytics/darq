@@ -5,6 +5,7 @@
  */
 package com.hp.hpl.jena.query.darq.util;
  
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
@@ -13,19 +14,27 @@ import com.hp.hpl.jena.query.engine1.PlanFormatter;
 import com.hp.hpl.jena.query.engine1.PlanFormatter.PlanFormatterVisitor;
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.shared.PrefixMapping;
+import com.sun.org.apache.bcel.internal.classfile.PMGClass;
  
 public class FedPlanFormatter extends PlanFormatter.PlanFormatterVisitor implements FedPlanVisitor {
 
     IndentedWriter out = null;
+    PrefixMapping prefixMapping = null;
     
     public FedPlanFormatter(IndentedWriter w, PrefixMapping pmap) {
         super(w,pmap);
         out=w;
+        prefixMapping=pmap;
         
     }
 
     public void visit(FedPlanService planElt) {
         out.println("Service:"+planElt.getServiceGroup().getService().getLabel()+"("+planElt.getServiceGroup().getService().getUrl()+")");
+        out.incIndent();
+        for (Triple t: planElt.getServiceGroup().getTriples()) {
+            out.println(t.toString(prefixMapping));
+        }
+        out.decIndent();
     }
     
     public void visit(FedPlanMultipleService planElt) {
@@ -35,6 +44,12 @@ public class FedPlanFormatter extends PlanFormatter.PlanFormatterVisitor impleme
             
             out.println("* "+s.getLabel()+"("+s.getUrl()+")");
         }
+        out.incIndent();
+        for (Triple t: planElt.getServiceGroup().getTriples()) {
+            out.println(t.toString(prefixMapping));
+        }
+        out.decIndent();
+        
         
         out.decIndent();
         
@@ -43,8 +58,11 @@ public class FedPlanFormatter extends PlanFormatter.PlanFormatterVisitor impleme
     
     static public void out(IndentedWriter w, PlanElement pElt)
     {
-        out(w, (PrefixMapping)null, pElt) ; 
+        out(w, pElt) ; 
     }
+    
+    
+  
     
    
     static public void out(IndentedWriter w, PrefixMapping pmap, PlanElement pElt)
