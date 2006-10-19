@@ -15,6 +15,7 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.util.FileManager;
 import com.hp.hpl.jena.vocabulary.RDF;
 import com.hp.hpl.jena.vocabulary.RDFS;
 import com.hp.hpl.jena.vocabulary.XSD;
@@ -51,10 +52,12 @@ public class RDFstat {
     private void analyse(String url, String format) {
         
         
-        Model model = ModelFactory.createDefaultModel();
+        Model model = FileManager.get().loadModel(url);//ModelFactory.createDefaultModel();
         
         System.out.print("# loading model ("+url+") ....");
-        model.read(url,format);
+        
+        
+        //model.read(url,format);
         System.out.println("# done.");
 
 
