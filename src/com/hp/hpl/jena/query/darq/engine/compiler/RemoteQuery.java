@@ -108,7 +108,7 @@ public class RemoteQuery {
         
         
         for (Constraint c:serviceGroup.getFilters()) {
-            eg.addElement(new ElementFilter(QueryUtils.replacewithBinding(c,binding)));
+            eg.addElementFilter(new ElementFilter(QueryUtils.replacewithBinding(c,binding,context.getQuery())));
         }
         
         remoteQuery.setQueryElement(eg);
