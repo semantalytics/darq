@@ -201,8 +201,10 @@ public class DarqTransform extends TransformCopy {
         if (msg == null) {
             msg = new MultipleServiceGroup();
             queryIndividuallyTriples.put(t, msg);
+            msg.addB(t);
         }
         msg.addService(s);
+        
 
     }
 

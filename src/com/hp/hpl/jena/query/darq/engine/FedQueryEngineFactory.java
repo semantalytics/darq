@@ -10,8 +10,13 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.darq.config.Configuration;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
+import com.hp.hpl.jena.query.darq.util.DARQLogHook;
 import com.hp.hpl.jena.query.engine.QueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
+import com.hp.hpl.jena.query.engine1.Plan;
+import com.hp.hpl.jena.query.engine1.PlanElement;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 public class FedQueryEngineFactory implements QueryEngineFactory {
   
@@ -19,8 +24,9 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     
     private Configuration config;
     private static FedQueryEngineFactory instance = null;
+
+    private static DARQLogHook loghook = null;
     
-       
     public static void register(Configuration conf) {
         // register only once
         if (!registered) { 
@@ -69,7 +75,44 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
         fqe.setDataset(dataset);
         return fqe;
     }
+    
+    public static void logPlan(Query query, PlanElement planElement) {
+        if (loghook!= null) {
+            loghook.logPlan( query, planElement);
+        }
+    }
+    
+    public static void logPlanOptimized(Query query, PlanElement planElement) {
+        if (loghook!= null) {
+            loghook.logPlanOptimized(query, planElement);
+        }
+    }
 
+    public static void logSubquery(Query query) {
+        if (loghook!= null) {
+            loghook.logSubquery(query);
+        }
+    }
+    
+    public Model getConfig() {
+   
+            return config.getModel();
+
+        
+    }
+
+    /**
+     * @param loghook The loghook to set.
+     */
+    public void setLoghook(DARQLogHook loghook) {
+        this.loghook = loghook;
+    }
+
+    public static void setLogHook(DARQLogHook hook) {
+        loghook=hook;
+    }
+
+    
 }
 /*
  * (c) Copyright 2005, 2006 Hewlett-Packard Development Company, LP

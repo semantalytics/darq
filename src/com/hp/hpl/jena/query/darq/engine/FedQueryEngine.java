@@ -48,8 +48,10 @@ public class FedQueryEngine extends QueryEngine {
      */
     @Override
     protected PlanElement queryPlanHook(Context context, PlanElement planElt) {
+        FedQueryEngineFactory.logPlan(query,planElt);
         Transform t = new DarqTransform(context,config);
         PlanElement pe = Transformer.transform(t,planElt);
+        FedQueryEngineFactory.logPlanOptimized(query,pe);
        // log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
         return pe;
     }
