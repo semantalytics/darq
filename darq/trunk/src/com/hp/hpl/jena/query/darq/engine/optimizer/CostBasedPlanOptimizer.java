@@ -32,6 +32,7 @@ import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 public class CostBasedPlanOptimizer implements PlanOptimizer {
 
     static Log log = LogFactory.getLog(CostBasedPlanOptimizer.class);
+    private int count = 0;
 
     private double lastCosts = PLAN_UNFEASIBLE_RESULTS;
 
@@ -40,6 +41,8 @@ public class CostBasedPlanOptimizer implements PlanOptimizer {
      */
     public List<ServiceGroup> getCheapestPlan(List<ServiceGroup> servicegroups) throws PlanUnfeasibleException{
 
+        count=0;
+        
         List<ServiceGroup> sgs = new ArrayList<ServiceGroup>(servicegroups);
 
         List<OptimizerElement<ServiceGroup>> plan = new ArrayList<OptimizerElement<ServiceGroup>>();
@@ -53,7 +56,7 @@ public class CostBasedPlanOptimizer implements PlanOptimizer {
 
             for (ServiceGroup sg : sgs ) {
 
-          
+                count++;
 
                 OptimizerElement<ServiceGroup> rsg = null;
 
@@ -111,8 +114,10 @@ public class CostBasedPlanOptimizer implements PlanOptimizer {
         
         lastCosts = costs;
 
+        System.err.println("count="+count+"/"+servicegroups.size());
         //System.err.println("Costs: " + costs);
         return result;
+        
 
     }
 
