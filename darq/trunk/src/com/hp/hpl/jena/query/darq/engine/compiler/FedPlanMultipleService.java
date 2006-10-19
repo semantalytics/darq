@@ -7,6 +7,9 @@
 package com.hp.hpl.jena.query.darq.engine.compiler;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
@@ -18,6 +21,7 @@ import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanVisitor;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterConcat;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterDistinct;
+import com.hp.hpl.jena.query.engine1.iterator.QueryIterUnion;
 import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
 import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
 import com.hp.hpl.jena.query.engine1.plan.Transform;
@@ -56,11 +60,24 @@ public class FedPlanMultipleService extends PlanElement1
     
     public QueryIterator build(QueryIterator input, ExecutionContext execCxt)
     {
-        QueryIterConcat concat = new QueryIterConcat(execCxt);
+       /* QueryIterConcat concat = new QueryIterConcat(execCxt);
+        
         for (RemoteService s: serviceGroup.getServices()) {
             concat.add(new FedQueryIterService(input,serviceGroup.getServiceGroup(s),execCxt,null));
         }
-        return new QueryIterDistinct(concat,execCxt);
+        return new QueryIterDistinct(concat,execCxt);*/
+        
+        List<PlanElement> list = new ArrayList<PlanElement>();
+        for (RemoteService s: serviceGroup.getServices()) {
+            list.add(FedPlanService.make(this.getContext(),serviceGroup.getServiceGroup(s),this.getSubElement()) );
+            
+        }
+        
+        return new QueryIterDistinct(new QueryIterUnion(input,list,execCxt),execCxt);
+        
+        
+        
+       
     	
     }
     

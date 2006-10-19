@@ -22,6 +22,7 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.core.Binding;
 import com.hp.hpl.jena.query.core.BindingMap;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
@@ -41,32 +42,25 @@ import com.hp.hpl.jena.util.FileManager;
  * @version $ID$
  */
 
-public class FedQueryIterService extends QueryIterRepeatApply {
+public class FedQueryIterService extends DarqQueryIterator {
 
     Log log = LogFactory.getLog(FedQueryIterService.class);
 
     private static String TESTING_STRING = "_testing_";
 
-    // Node sourceNode ;
-    PlanElement subPattern;  //should be null
-
-    private ServiceGroup serviceGroup = null;
-    
-    QueryExecution qexec=null;
+  
 
     public FedQueryIterService(QueryIterator input, ServiceGroup sg,
             ExecutionContext context, PlanElement subComp) {
-        super(input, context);
-        // sourceNode = _sourceNode ;
-        this.serviceGroup = sg;
-        subPattern = subComp;
+        super(input, sg, context,subComp);
+
 
     }
 
     /**
      * Query the remote Service
      */
-    private ResultSet ExecRemoteQuery(Query q) {
+    protected ResultSet ExecRemoteQuery(Query q) {
 
         String url = serviceGroup.getService().getUrl();
         // check for testing
@@ -80,7 +74,8 @@ public class FedQueryIterService extends QueryIterRepeatApply {
         log.trace(url+"?q="+q);
         qexec = QueryExecutionFactory.sparqlService(url, q);
         try {
-
+            
+            FedQueryEngineFactory.logSubquery(q);
             remoteResults = qexec.execSelect();
 
         } finally {
@@ -125,51 +120,7 @@ public class FedQueryIterService extends QueryIterRepeatApply {
         return remoteResults;
     }
 
-    @Override
-    protected QueryIterator nextStage(Binding binding) {
-
-        RemoteQuery remoteQuery = new RemoteQuery(serviceGroup,
-                getExecContext(), binding);
-
-        long noResults = 0;
-        
-        QueryIterConcat concatIterator = new QueryIterConcat(getExecContext());
-
-        while (remoteQuery.hasNextQuery(noResults)) {
-
-            Query query = remoteQuery.getNextQuery();
-
-            ResultSet remoteResults = ExecRemoteQuery(query);
-            
-            List<Binding> newBindings = new ArrayList<Binding>();
-               
-            while (remoteResults.hasNext()) {
-                
-                noResults++;
-
-                BindingMap bm = new BindingMap(binding);
-                QuerySolution sol = remoteResults.nextSolution();
-
-                for (Iterator solVars = sol.varNames(); solVars.hasNext();) {
-                    String varName = (String) solVars.next();
-
-                    // XXX CHECK if VARIABLE EXISTS IN BINDING !??
-                    RDFNode obj = sol.get(varName);
-                    if (obj != null)
-                        bm.add(varName, obj.asNode());
-                }
-
-                newBindings.add(bm);
-
-            }
-            
-            if (newBindings.size()>0) concatIterator.add(new QueryIterPlainWrapper(newBindings.iterator(), null));
-
-        }
-        if (qexec!=null) qexec.close();
-        
-        return new QueryIterDistinct(concatIterator,getExecContext());
-    }
+   
 }
 
 
