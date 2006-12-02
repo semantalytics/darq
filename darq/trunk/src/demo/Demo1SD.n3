@@ -25,7 +25,7 @@
  	rdfs:comment "Service for Publications" ;
 
 	# the url of the service
-	sd:url <http://localhost:2020/publications> ;
+	sd:url <http://localhost:2222/publications> ;
 	
 	# and its capabilities
 
@@ -141,7 +141,7 @@
 [] a sd:Service ;
  	rdfs:label "Service for FOAF data from a LDAP source" ;
  	rdfs:comment "Service for FOAF data from a LDAP source" ;
-	sd:url <http://localhost:2020/ldap> ;
+	sd:url <http://localhost:2222/ldap> ;
 	sd:capability [ 
 		sd:predicate foaf:name ; 
 		sd:sofilter "" ; 
