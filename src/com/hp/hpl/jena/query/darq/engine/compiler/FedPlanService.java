@@ -8,6 +8,8 @@ package com.hp.hpl.jena.query.darq.engine.compiler;
 
 
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
+import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
 import com.hp.hpl.jena.query.darq.util.OutputUtils;
 import com.hp.hpl.jena.query.engine.QueryIterator;
@@ -52,9 +54,7 @@ public class FedPlanService extends PlanElement1
     
     public QueryIterator build(QueryIterator input, ExecutionContext execCxt)
     {
-
-    	return new FedQueryIterService(input,serviceGroup,execCxt,getSubElement());
-    	
+        return FedQueryEngineFactory.getInstance().getConfig().getDarqQueryIteratorFactory().getNewInstance(input, serviceGroup, execCxt, getSubElement());
     }
     
     public void visit(PlanVisitor visitor) { 

@@ -94,11 +94,21 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
         }
     }
     
-    public Model getConfig() {
+    public Model getConfigModel() {
    
             return config.getModel();
 
         
+    }
+    
+    
+    
+
+    /**
+     * @return the config
+     */
+    public Configuration getConfig() {
+        return config;
     }
 
     /**
