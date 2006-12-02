@@ -53,9 +53,10 @@ public class FedQueryIterService extends DarqQueryIterator {
     public FedQueryIterService(QueryIterator input, ServiceGroup sg,
             ExecutionContext context, PlanElement subComp) {
         super(input, sg, context,subComp);
-
-
     }
+    
+    
+    
 
     /**
      * Query the remote Service
@@ -119,6 +120,12 @@ public class FedQueryIterService extends DarqQueryIterator {
         }
         return remoteResults;
     }
+
+
+
+
+
+
 
    
 }

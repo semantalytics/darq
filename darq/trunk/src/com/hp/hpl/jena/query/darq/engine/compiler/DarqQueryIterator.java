@@ -26,6 +26,7 @@ import com.hp.hpl.jena.query.engine1.iterator.QueryIterRepeatApply;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.sun.org.apache.bcel.internal.generic.DADD;
 
 /**
  * Abstract Class DarqQueryIterator
@@ -33,26 +34,27 @@ import com.hp.hpl.jena.rdf.model.RDFNode;
  * @version $ID$
  *
  */
-public abstract class DarqQueryIterator extends QueryIterRepeatApply{
+public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 
     Log log = LogFactory.getLog(DarqQueryIterator.class);
 
     
 
     // Node sourceNode ;
-    protected PlanElement subPattern;  //should be null
+    protected PlanElement subPattern;  //should be null ?
 
     protected ServiceGroup serviceGroup = null;
     
     protected QueryExecution qexec=null;
+    
 
+   
     public DarqQueryIterator(QueryIterator input, ServiceGroup sg,
             ExecutionContext context, PlanElement subComp) {
         super(input, context);
         // sourceNode = _sourceNode ;
         this.serviceGroup = sg;
         subPattern = subComp;
-
     }
 
     /**

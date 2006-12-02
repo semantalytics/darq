@@ -25,6 +25,11 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.darq.core.Capability;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.RequiredBinding;
+import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
+import com.hp.hpl.jena.query.darq.engine.compiler.DarqQueryIterator;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedQueryIterService;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedQueryIterServiceFactory;
+import com.hp.hpl.jena.query.darq.engine.compiler.IDarqQueryIteratorFactory;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.SelectivityFunction;
@@ -32,9 +37,12 @@ import com.hp.hpl.jena.query.darq.mapping.rewriting.TripleRewriter;
 import com.hp.hpl.jena.query.darq.util.ClassLoadingUtils;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.util.FileManager;
+import com.hp.hpl.jena.vocabulary.RDF;
+import com.hp.hpl.jena.vocabulary.RDFS;
 
 public class Configuration {
 
@@ -50,6 +58,8 @@ public class Configuration {
     
     private PlanOptimizer planOptimizer = new CostBasedPlanOptimizer();
 
+    private IDarqQueryIteratorFactory darqQueryIteratorFactory = new FedQueryIterServiceFactory();
+    
     public Configuration(String configFile) {
 
         this(FileManager.get().loadModel(configFile));
@@ -78,21 +88,21 @@ public class Configuration {
         String q[] = new String[] {
                 "SELECT *",
                 "{",
-                "  ?service  rdf:type sd:Service ;",
+                "  ?service  a sd:Service ;",
                 "            sd:url   ?url ;",
                 "            sd:totalTriples   ?triples ;",
                 "            OPTIONAL { ?service rdfs:comment ?description } .",
                 "            OPTIONAL { ?service rdfs:label ?label } .",
                 "            OPTIONAL { ?service sd:isDefinitive ?definitive } .",
                 "            OPTIONAL { ?service sd:selectivityFunction ?sel ."
-                        + "                   ?sel sd:javaClass ?selclass .} ",
+                        + "                   ?sel sd:javaClass ?selclass .} ", 
                 "}" };
 
         try {
 
             Query query = makeQuery(q);
             QueryExecution qexec = QueryExecutionFactory.create(query, model);
-
+            
             for (ResultSet rs = qexec.execSelect(); rs.hasNext();) {
                 QuerySolution qs = rs.nextSolution();
 
@@ -388,6 +398,8 @@ public class Configuration {
         }
         
         if (!prefixmap.containsKey("sd")) stdNS(sBuff,"sd","http://darq.sf.net/dose/0.1#");
+        if (!prefixmap.containsKey("rdf")) stdNS(sBuff,"rdf",RDF.getURI());
+        if (!prefixmap.containsKey("rdfs")) stdNS(sBuff,"rdfs",RDFS.getURI());
 
         
 
@@ -433,6 +445,29 @@ public class Configuration {
     public void setPlanOptimizer(PlanOptimizer planOptimizer) {
         this.planOptimizer = planOptimizer;
     }
+
+    public Model getModel() {
+        Model retModel= ModelFactory.createDefaultModel();
+        retModel.add(model);
+        return retModel;
+        
+    }
+
+    /**
+     * @return Returns the darqQueryIteratorClass.
+     */
+    public IDarqQueryIteratorFactory getDarqQueryIteratorFactory() {
+        return darqQueryIteratorFactory;
+    }
+
+    /**
+     * @param darqQueryIteratorFactory The darqQueryIteratorClass to set.
+     */
+    public void setDarqQueryIteratorClass(IDarqQueryIteratorFactory darqQueryIteratorFactory) {
+        this.darqQueryIteratorFactory = darqQueryIteratorFactory;
+    }
+
+    
 
 }
 /*
