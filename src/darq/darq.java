@@ -9,7 +9,8 @@ package darq;
 import darq.query;
 import arq.cmd.CmdException;
 import arq.cmd.CmdUtils;
-import arq.cmd.TerminateException;
+
+import arq.cmd.TerminationException;
 
 import java.util.* ;
 //import org.apache.commons.logging.Log;
@@ -37,7 +38,7 @@ public class darq
             else
                 System.err.println(ex.getMessage()) ;
         }
-        catch (TerminateException ex) { System.exit(ex.getCode()) ; }
+   //     catch (TerminationException ex) { System.exit(ex.getCode()) ; }
 
     }
         

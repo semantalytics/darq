@@ -8,6 +8,7 @@ package com.hp.hpl.jena.query.darq.engine.compiler;
 
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
@@ -22,7 +23,9 @@ import com.hp.hpl.jena.query.engine1.PlanVisitor;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterConcat;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterDistinct;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterUnion;
+import com.hp.hpl.jena.query.engine1.plan.BindingImmutable;
 import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
+import com.hp.hpl.jena.query.engine1.plan.PlanDistinct;
 import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
 import com.hp.hpl.jena.query.engine1.plan.Transform;
 import com.hp.hpl.jena.query.util.Context;
@@ -73,7 +76,12 @@ public class FedPlanMultipleService extends PlanElement1
             
         }
         
-        return new QueryIterDistinct(new QueryIterUnion(input,list,execCxt),execCxt);
+        //PlanDistinct planDistinct = PlanDistinct.make(execCxt.getContext(), this.getSubElement(), (Collection) serviceGroup.getUsedVariables());
+        
+        
+        QueryIterator qIter = BindingImmutable.makeConverterIterator((Collection)serviceGroup.getUsedVariables(), (QueryIterator) new QueryIterUnionParallel(input,list,execCxt), execCxt) ;
+        
+        return  new QueryIterDistinct(qIter, execCxt) ;
         
         
         

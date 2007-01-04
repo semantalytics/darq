@@ -12,14 +12,15 @@ import java.util.Set;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.query.core.Constraint;
+
+import com.hp.hpl.jena.query.expr.Expr;
 
 public class ServiceGroup {
 
     
     private List<Triple> triples = new ArrayList<Triple>();
     
-    private List<Constraint> filters = new ArrayList<Constraint>();
+    private List<Expr> filters = new ArrayList<Expr>();
 
     private RemoteService service;
 
@@ -157,7 +158,7 @@ public class ServiceGroup {
      * @param c  Filter to add
      * @return false if the variables in the filter are not a subset of the variables in the statements in this group. 
      */
-    public boolean addFilter(Constraint c) {
+    public boolean addFilter(Expr c) {
         
         if (filters.contains(c)) return true;
         
@@ -177,7 +178,7 @@ public class ServiceGroup {
     }
     
     
-    public List<Constraint> getFilters() {
+    public List<Expr> getFilters() {
         return filters;
     }
     
@@ -186,7 +187,7 @@ public class ServiceGroup {
      * !! DOES NOT check if the variables in the filter are not a subset of the variables in the statements in this group. !! 
      * @param c list of filters
      */
-    public void setFilters(List<Constraint> c) {
+    public void setFilters(List<Expr> c) {
         this.filters=c;
     }
 
@@ -199,7 +200,7 @@ public class ServiceGroup {
     public ServiceGroup clone()  {
         ServiceGroup sg = new ServiceGroup(service);
         sg.triples=new ArrayList<Triple>(this.triples);
-        sg.filters=new ArrayList<Constraint>(this.filters);
+        sg.filters=new ArrayList<Expr>(this.filters);
         sg.usedVariables = new HashSet<String>(usedVariables);
         return sg;
     }

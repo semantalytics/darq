@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.hp.hpl.jena.query.core.Constraint;
+
+import com.hp.hpl.jena.query.expr.Expr;
 
 public class MultipleServiceGroup extends ServiceGroup {
     
@@ -60,7 +61,7 @@ public class MultipleServiceGroup extends ServiceGroup {
     public MultipleServiceGroup clone() {
         MultipleServiceGroup sg = new MultipleServiceGroup();
         sg.setTriples(this.getTriples());
-        sg.setFilters(new ArrayList<Constraint>(this.getFilters()));
+        sg.setFilters(new ArrayList<Expr>(this.getFilters()));
         sg.services= new HashSet<RemoteService>(this.services);
         return sg;
     }

@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import arq.cmd.*;
+import arq.old.*;
 import arq.cmdline.* ;
 
 import com.hp.hpl.jena.Jena;
@@ -88,11 +89,11 @@ public class query
             else
                 System.err.println(ex.getMessage()) ;
         }
-        catch (TerminateException ex) { System.exit(ex.getCode()) ; }
+        //catch (TerminationException ex) { System.exit(ex.getCode()) ; }
     }
         
-    // Like main() except from hereonin code shoudlnot call throw new TerminateException
-    // Call throw new TerminateException(code) instead
+    // Like main() except from hereonin code shoudlnot call throw new TerminationException
+    // Call throw new TerminationException(code) instead
     
     public static void main2(String [] argv)
     {
@@ -103,7 +104,7 @@ public class query
         if ( argv.length == 0 )
         {
             usage() ;
-            throw new TerminateException(0) ;
+            throw new TerminationException(0) ;
         }
         
         CmdLineArgs cl = new CmdLineArgs(argv) ;
@@ -178,19 +179,19 @@ public class query
         {
             System.err.println(ex.getMessage()) ;
             usage(System.err) ;
-            throw new TerminateException(2) ;
+            throw new TerminationException(2) ;
         }
 
         if ( cl.contains(helpDecl) )
         {
             usage() ;
-            throw new TerminateException(0) ;
+            throw new TerminationException(0) ;
         }
         
         if ( cl.contains(versionDecl) )
         {
             System.out.println("ARQ Version: "+ARQ.VERSION+" (Jena: "+Jena.VERSION+")") ;
-            throw new TerminateException(0) ;
+            throw new TerminationException(0) ;
         }
         
         // Now set all the arguments.
@@ -386,14 +387,14 @@ public class query
                 qCmd.query() ;
         } 
         catch (CmdException ex) { throw ex ; }
-        catch (TerminateException ex) { throw ex ; }
+     //   catch (TerminationException ex) { throw ex ; }
         catch (Exception ex)
         {
             System.err.println("Exception from QCmd: "+ex.getMessage()) ;
             ex.printStackTrace(System.err) ;
-            throw new TerminateException(9) ;
+            throw new TerminationException(9) ;
         }
-        //throw new TerminateException(0) ;
+        //throw new TerminationException(0) ;
     }
 
     static void usage() { usage(System.out) ; }
@@ -436,7 +437,7 @@ public class query
     {
         System.err.println("Argument Error: "+s) ;
         //usage(System.err) ;
-        throw new TerminateException(3) ;
+        throw new TerminationException(3) ;
     }
  }
 

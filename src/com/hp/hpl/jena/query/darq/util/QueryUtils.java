@@ -12,7 +12,7 @@ import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
 import com.hp.hpl.jena.query.core.Binding;
-import com.hp.hpl.jena.query.core.Constraint;
+
 import com.hp.hpl.jena.query.core.ElementFilter;
 import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.lang.arq.ARQParser;
@@ -35,7 +35,7 @@ public class QueryUtils {
         return node;
     }
     
-    public static Expr replacewithBinding(Constraint c, Binding b,Query orgQuery) {
+    public static Expr replacewithBinding(Expr c, Binding b,Query orgQuery) {
         String filter = "FILTER"+c.toString();
         
         for (Iterator it = b.names(); it.hasNext() ;) {
