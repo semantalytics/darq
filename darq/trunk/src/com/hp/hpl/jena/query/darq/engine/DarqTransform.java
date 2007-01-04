@@ -59,11 +59,28 @@ public class DarqTransform extends TransformCopy {
 
     Set varsMentioned = new HashSet();
 
+    boolean optimize = true;
+
+    /**
+     * @return the optimize
+     */
+    public boolean isOptimize() {
+        return optimize;
+    }
+
+    /**
+     * @param optimize
+     *            the optimize to set
+     */
+    public void setOptimize(boolean optimize) {
+        this.optimize = optimize;
+    }
+
     public DarqTransform(Context cntxt, Configuration conf) {
         super();
         context = cntxt;
-        config= conf;
-        registry=conf.getServiceRegistry();
+        config = conf;
+        registry = conf.getServiceRegistry();
     }
 
     /*
@@ -78,7 +95,7 @@ public class DarqTransform extends TransformCopy {
 
         groupedTriples.clear(); // new for each PlanBasicGraphPattern !
         queryIndividuallyTriples.clear(); // "
-        
+
         PlanBlockTriples unmatchedTriples = new PlanBlockTriples(context);
 
         List<PlanFilter> filters = new ArrayList<PlanFilter>();
@@ -88,30 +105,30 @@ public class DarqTransform extends TransformCopy {
         for (PlanElement el : (List<PlanElement>) newElts) {
 
             if (el instanceof PlanBlockTriples) {
-                for (Triple t: (List<Triple>)((PlanBlockTriples) el).getPattern()) {
+                for (Triple t : (List<Triple>) ((PlanBlockTriples) el).getPattern()) {
 
-                        List<RemoteService> services = selectServices(registry.getMatchingServices(t));
-                        if (services.size() == 1) {
-                            putIntoGroupedTriples(services.get(0), t);
-                        } else if (services.size() > 1) {
-                            /*
-                             * if there are more than one service, the triple
-                             * has to be passed to the services individually.
-                             * This is because ... TODO
-                             */
-                            for (int j = 0; j < services.size(); j++) {
-                                putIntoQueryIndividuallyTriples(t, services.get(j));
-                            }
-
-                        } else {
-                            
-                            unmatchedTriples.addTriple(t);
-                            log.warn("No service found for statement: " + t + " - it will be queried locally.");
-
+                    List<RemoteService> services = selectServices(registry.getMatchingServices(t));
+                    if (services.size() == 1) {
+                        putIntoGroupedTriples(services.get(0), t);
+                    } else if (services.size() > 1) {
+                        /*
+                         * if there are more than one service, the triple has to
+                         * be passed to the services individually. This is
+                         * because ... TODO
+                         */
+                        for (int j = 0; j < services.size(); j++) {
+                            putIntoQueryIndividuallyTriples(t, services.get(j));
                         }
 
+                    } else {
+
+                        unmatchedTriples.addTriple(t);
+                        log.warn("No service found for statement: " + t + " - it will be queried locally.");
+
                     }
-                
+
+                }
+
             } else if (el instanceof PlanFilter) {
                 filters.add((PlanFilter) el);
             } else {
@@ -125,11 +142,13 @@ public class DarqTransform extends TransformCopy {
         // locally because we don't trust the remote services)
         for (PlanFilter f : filters) {
             acc.add(f);
-            for (ServiceGroup sg : groupedTriples.values()) {
-                sg.addFilter(f.getConstraint());
-            }
-            for (ServiceGroup sg : queryIndividuallyTriples.values()) {
-                sg.addFilter(f.getConstraint());
+            if (optimize) {
+                for (ServiceGroup sg : groupedTriples.values()) {
+                    sg.addFilter(f.getExpr());
+                }
+                for (ServiceGroup sg : queryIndividuallyTriples.values()) {
+                    sg.addFilter(f.getExpr());
+                }
             }
         }
 
@@ -139,15 +158,16 @@ public class DarqTransform extends TransformCopy {
             ArrayList<ServiceGroup> al = new ArrayList<ServiceGroup>(groupedTriples.values());
             al.addAll(queryIndividuallyTriples.values());
 
-            List<ServiceGroup> cheapestPlan;
-            try {
-                cheapestPlan = config.getPlanOptimizer().getCheapestPlan(al);
-            } catch (PlanUnfeasibleException e) {
-                throw new ARQInternalErrorException("No feasible plan: " + e);
+            List<ServiceGroup> cheapestPlan = al;
+            if (optimize) {
+                try {
+                    cheapestPlan = config.getPlanOptimizer().getCheapestPlan(al);
+                } catch (PlanUnfeasibleException e) {
+                    throw new ARQInternalErrorException("No feasible plan: " + e);
+                }
+
+                log.debug("selected: \n" + OutputUtils.serviceGroupListToString(cheapestPlan));
             }
-
-            log.debug("selected: \n" + OutputUtils.serviceGroupListToString(cheapestPlan));
-
             int pos = 0;
             for (ServiceGroup sg : cheapestPlan) {
 
@@ -159,15 +179,14 @@ public class DarqTransform extends TransformCopy {
 
             }
         }
-        
-        if (unmatchedTriples.getPattern().size()>0) acc.add(0,unmatchedTriples);
+
+        if (unmatchedTriples.getPattern().size() > 0)
+            acc.add(0, unmatchedTriples);
 
         PlanElement ex = PlanGroup.make(planElt.getContext(), (List) acc, false);
         return ex;
     }
 
-    
-    
     private List<RemoteService> selectServices(List<RemoteService> services) {
         ArrayList<RemoteService> result = new ArrayList<RemoteService>();
         for (Iterator<RemoteService> it = services.iterator(); it.hasNext();) {
@@ -204,7 +223,6 @@ public class DarqTransform extends TransformCopy {
             msg.addB(t);
         }
         msg.addService(s);
-        
 
     }
 

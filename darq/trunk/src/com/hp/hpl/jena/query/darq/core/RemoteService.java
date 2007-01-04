@@ -14,11 +14,12 @@ import java.util.Set;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.core.BindingMap;
-import com.hp.hpl.jena.query.core.Constraint;
+
 import com.hp.hpl.jena.query.core.ElementFilter;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedFunction;
 import com.hp.hpl.jena.query.darq.engine.optimizer.SelectivityFunction;
 import com.hp.hpl.jena.query.darq.mapping.rewriting.TripleRewriter;
+import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.lang.arq.ARQParser;
 import com.hp.hpl.jena.query.lang.arq.ParseException;
 
@@ -90,7 +91,7 @@ public class RemoteService {
         Query query = new Query();
         parser.setQuery(query);
 
-        Constraint constraint = null;  
+        Expr constraint = null;  
         
         try
         {

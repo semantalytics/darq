@@ -24,6 +24,26 @@ public class FedQueryEngine extends QueryEngine {
     
     Query query ;
     Configuration config;
+    
+    private long transformTime =0;
+    
+    
+    
+    boolean optimize = true;
+
+    /**
+     * @return the optimize
+     */
+    public boolean isOptimize() {
+        return optimize;
+    }
+
+    /**
+     * @param optimize the optimize to set
+     */
+    public void setOptimize(boolean optimize) {
+        this.optimize = optimize;
+    }
 
     public FedQueryEngine(Query q) {
         this(q,null,null);     
@@ -54,11 +74,24 @@ public class FedQueryEngine extends QueryEngine {
     @Override
     protected PlanElement queryPlanHook(Context context, PlanElement planElt) {
         FedQueryEngineFactory.logPlan(query,planElt);
-        Transform t = new DarqTransform(context,config);
+        DarqTransform t = new DarqTransform(context,config);
+        t.setOptimize(optimize);
+        long t2;
+        long t1=System.nanoTime();
         PlanElement pe = Transformer.transform(t,planElt);
+        t2=System.nanoTime();
+        transformTime=t2-t1;
+        
         FedQueryEngineFactory.logPlanOptimized(query,pe);
        // log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
         return pe;
+    }
+
+    /**
+     * @return the transformTime
+     */
+    public long getTransformTime() {
+        return transformTime;
     }
     
     

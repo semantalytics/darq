@@ -63,29 +63,36 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
      */
     protected abstract ResultSet ExecRemoteQuery(Query q) ;
 
+    
+    
    
+
 
     @Override
     protected QueryIterator nextStage(Binding binding) {
 
+       
         RemoteQuery remoteQuery = new RemoteQuery(serviceGroup,
                 getExecContext(), binding);
 
-        long noResults = 0;
+       /* long noResults = 0;
         
         QueryIterConcat concatIterator = new QueryIterConcat(getExecContext());
 
-        while (remoteQuery.hasNextQuery(noResults)) {
+        while (remoteQuery.hasNextQuery(noResults)) {*/
 
             Query query = remoteQuery.getNextQuery();
-
-            ResultSet remoteResults = ExecRemoteQuery(query);
             
             List<Binding> newBindings = new ArrayList<Binding>();
-               
+            try  {   
+                ResultSet remoteResults = ExecRemoteQuery(query);
+            
+           
+          
+            
             while (remoteResults.hasNext()) {
                 
-                noResults++;
+           //     noResults++;
 
                 BindingMap bm = new BindingMap(binding);
                 QuerySolution sol = remoteResults.nextSolution();
@@ -103,11 +110,15 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 
             }
             
-            if (newBindings.size()>0) concatIterator.add(new QueryIterPlainWrapper(newBindings.iterator(), null));
+        /*   if (newBindings.size()>0) concatIterator.add(new QueryIterPlainWrapper(newBindings.iterator(), null));
 
-        }
-        if (qexec!=null) qexec.close();
+        }*/
+            }catch (Exception e) {
+                
+            } finally {
+                if (qexec!=null) qexec.close();
+            }
         
-        return new QueryIterDistinct(concatIterator,getExecContext());
+        return new QueryIterPlainWrapper(newBindings.iterator(), null); //new QueryIterDistinct(concatIterator,getExecContext());
     }
 }
