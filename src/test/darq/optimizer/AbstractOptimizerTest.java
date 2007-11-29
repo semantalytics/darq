@@ -7,14 +7,14 @@ import junit.framework.TestCase;
 
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
-import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
+import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedBasicOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.OptimizerElement;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.darq.util.Permute;
 
 public abstract class AbstractOptimizerTest extends TestCase {
 
-    CostBasedPlanOptimizer optimizer;
+    CostBasedBasicOptimizer optimizer;
 
     public abstract List<ServiceGroup> getTestInput();
 
@@ -71,7 +71,7 @@ public abstract class AbstractOptimizerTest extends TestCase {
      */
     @Override
     protected void setUp() throws Exception {
-        optimizer = new CostBasedPlanOptimizer();
+        optimizer = new CostBasedBasicOptimizer();
 
         super.setUp();
     }
