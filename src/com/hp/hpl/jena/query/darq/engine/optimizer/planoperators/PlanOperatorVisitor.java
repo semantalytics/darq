@@ -1,0 +1,11 @@
+package com.hp.hpl.jena.query.darq.engine.optimizer.planoperators;
+
+import com.hp.hpl.jena.query.darq.engine.optimizer.DynProgPlanGenerator;
+
+public interface PlanOperatorVisitor {
+
+	public void visit(NestedLoopJoin op) ;
+	public void visit(BindJoin op) ;
+	public void visit(OperatorServiceGroup op) ;
+
+}
