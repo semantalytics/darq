@@ -6,16 +6,17 @@
 package test.darq;
 
 
+import java.util.logging.Level;
+
 import junit.framework.TestSuite;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.eclipse.hyades.logging.commons.Logger;
 
 import test.darq.optimizer.OptimizerAllTests;
 
 import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
-import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
+import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedBasicOptimizer;
 import com.hp.hpl.jena.query.expr.E_Function;
 import com.hp.hpl.jena.query.expr.NodeValue;
 
@@ -51,10 +52,10 @@ public class DARQTestSuite extends TestSuite
         addTest(OptimizerAllTests.suite());
         
         
-        Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
+     /*   Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
         Logger.getLogger(FedQueryEngine.class).setLevel(Level.DEBUG);
         //Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
-        Logger.getLogger(CostBasedPlanOptimizer.class).setLevel(Level.DEBUG);
+        Logger.getLogger(CostBasedBasicOptimizer.class).setLevel(Level.DEBUG);*/
         
         // Scripted tests for SPARQL and ARQ.
         addTest(QueryTestSuiteFactory.make(testDirDARQ+"/manifest-darq.ttl")) ;

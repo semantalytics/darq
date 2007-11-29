@@ -18,7 +18,7 @@ public class OptimizerAllTests {
         suite.addTestSuite(JuTestOptimizer6.class);
         suite.addTestSuite(JuTestOptimizer7.class);
         suite.addTestSuite(JuTestOptimizer8.class);
-        suite.addTestSuite(CopyOfJuTestOptimizer8.class);
+     //   suite.addTestSuite(CopyOfJuTestOptimizer8.class);
         //$JUnit-END$
         return suite;
     }
