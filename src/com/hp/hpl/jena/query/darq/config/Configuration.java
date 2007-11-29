@@ -25,13 +25,12 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.darq.core.Capability;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.RequiredBinding;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
-import com.hp.hpl.jena.query.darq.engine.compiler.DarqQueryIterator;
-import com.hp.hpl.jena.query.darq.engine.compiler.FedQueryIterService;
-import com.hp.hpl.jena.query.darq.engine.compiler.FedQueryIterServiceFactory;
-import com.hp.hpl.jena.query.darq.engine.compiler.IDarqQueryIteratorFactory;
-import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
-import com.hp.hpl.jena.query.darq.engine.optimizer.PlanOptimizer;
+import com.hp.hpl.jena.query.darq.engine.compiler.iterators.FedQueryIterServiceFactory;
+import com.hp.hpl.jena.query.darq.engine.compiler.iterators.IDarqQueryIteratorFactory;
+import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedBasicOptimizer;
+import com.hp.hpl.jena.query.darq.engine.optimizer.BasicOptimizer;
+import com.hp.hpl.jena.query.darq.engine.optimizer.DynProgPlanGenerator;
+import com.hp.hpl.jena.query.darq.engine.optimizer.OptimizedPlanGenerator;
 import com.hp.hpl.jena.query.darq.engine.optimizer.SelectivityFunction;
 import com.hp.hpl.jena.query.darq.mapping.rewriting.TripleRewriter;
 import com.hp.hpl.jena.query.darq.util.ClassLoadingUtils;
@@ -56,7 +55,7 @@ public class Configuration {
     private Resource objectBindingCompare;
     private Resource subjectBindingCompare;
     
-    private PlanOptimizer planOptimizer = new CostBasedPlanOptimizer();
+    private OptimizedPlanGenerator planOptimizer = new DynProgPlanGenerator();
 
     private IDarqQueryIteratorFactory darqQueryIteratorFactory = new FedQueryIterServiceFactory();
     
@@ -348,7 +347,7 @@ public class Configuration {
                 if (predicateRes != null) {
                     predicate = predicateRes.asNode();
                 } else {
-                    throw new Exception("must be a URI!");
+                    throw new Exception("must be an URI!");
                 }
 
                 Resource nodeRes = qs.getResource("p");
@@ -435,14 +434,14 @@ public class Configuration {
     /**
      * @return Returns the planOptimizer.
      */
-    public PlanOptimizer getPlanOptimizer() {
+    public OptimizedPlanGenerator getPlanOptimizer() {
         return planOptimizer;
     }
 
     /**
      * @param planOptimizer The planOptimizer to set.
      */
-    public void setPlanOptimizer(PlanOptimizer planOptimizer) {
+    public void setPlanOptimizer(OptimizedPlanGenerator planOptimizer) {
         this.planOptimizer = planOptimizer;
     }
 
