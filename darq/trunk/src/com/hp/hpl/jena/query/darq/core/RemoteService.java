@@ -13,12 +13,11 @@ import java.util.Set;
 
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.core.BindingMap;
-
-import com.hp.hpl.jena.query.core.ElementFilter;
+import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedFunction;
 import com.hp.hpl.jena.query.darq.engine.optimizer.SelectivityFunction;
 import com.hp.hpl.jena.query.darq.mapping.rewriting.TripleRewriter;
+import com.hp.hpl.jena.query.engine.BindingMap;
 import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.lang.arq.ARQParser;
 import com.hp.hpl.jena.query.lang.arq.ParseException;
@@ -104,7 +103,7 @@ public class RemoteService {
         }
 
         BindingMap bindingMap = new BindingMap();
-        bindingMap.add("object", t.getObject());
+        bindingMap.add(Var.alloc("object"), t.getObject());
         
         return constraint.isSatisfied( bindingMap, null);
 
