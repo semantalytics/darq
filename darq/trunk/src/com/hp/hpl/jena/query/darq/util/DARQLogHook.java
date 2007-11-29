@@ -1,7 +1,6 @@
 package com.hp.hpl.jena.query.darq.util;
 
 import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 
 public interface DARQLogHook {

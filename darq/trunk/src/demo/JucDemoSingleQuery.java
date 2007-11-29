@@ -3,9 +3,6 @@ package demo;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
@@ -14,10 +11,7 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
-import com.hp.hpl.jena.query.darq.engine.DarqTransform;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
-import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedPlanOptimizer;
 import com.hp.hpl.jena.query.resultset.ResultSetMem;
 
 public class JucDemoSingleQuery {
@@ -30,10 +24,10 @@ public class JucDemoSingleQuery {
      */
     public static void main(String[] args) {
         
-        Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
+    /*    Logger.getLogger(DarqTransform.class).setLevel(Level.DEBUG);
         Logger.getLogger(FedQueryEngine.class).setLevel(Level.DEBUG);
         //Logger.getLogger(BasicPlanOptimizer.class).setLevel(Level.DEBUG);
-        Logger.getLogger(CostBasedPlanOptimizer.class).setLevel(Level.DEBUG);
+        Logger.getLogger(CostBasedBasicOptimizer.class).setLevel(Level.DEBUG); */
         
         
         String [] q = new String[]{ 

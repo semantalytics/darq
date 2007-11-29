@@ -8,24 +8,20 @@ package com.hp.hpl.jena.query.darq.engine.compiler;
 
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
+import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
+import com.hp.hpl.jena.query.darq.engine.compiler.iterators.QueryIterUnionParallel;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
 import com.hp.hpl.jena.query.darq.util.OutputUtils;
 import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
-import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanVisitor;
-import com.hp.hpl.jena.query.engine1.iterator.QueryIterConcat;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterDistinct;
-import com.hp.hpl.jena.query.engine1.iterator.QueryIterUnion;
-import com.hp.hpl.jena.query.engine1.plan.BindingImmutable;
-import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
-import com.hp.hpl.jena.query.engine1.plan.PlanDistinct;
 import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
 import com.hp.hpl.jena.query.engine1.plan.Transform;
 import com.hp.hpl.jena.query.util.Context;
@@ -79,7 +75,18 @@ public class FedPlanMultipleService extends PlanElement1
         //PlanDistinct planDistinct = PlanDistinct.make(execCxt.getContext(), this.getSubElement(), (Collection) serviceGroup.getUsedVariables());
         
         
-        QueryIterator qIter = BindingImmutable.makeConverterIterator((Collection)serviceGroup.getUsedVariables(), (QueryIterator) new QueryIterUnionParallel(input,list,execCxt), execCxt) ;
+        Set<String> usedVariables=serviceGroup.getUsedVariables();
+        
+        List<Var> vars= new ArrayList<Var>();
+        for (String s:usedVariables) vars.add(Var.alloc(s));
+        
+        for (String s: (List<String>)execCxt.getQuery().getResultVars()) vars.add(Var.alloc(s));
+        
+        
+        
+        QueryIterator qIter = BindingImmutableDistinctUnion.create(vars, (QueryIterator) new QueryIterUnionParallel(input,list,execCxt), execCxt) ;
+        
+    //    QueryIterator qIter = new QueryIterUnionParallel(input,list,execCxt) ;
         
         return  new QueryIterDistinct(qIter, execCxt) ;
         

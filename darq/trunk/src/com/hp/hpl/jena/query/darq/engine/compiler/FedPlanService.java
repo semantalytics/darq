@@ -8,13 +8,11 @@ package com.hp.hpl.jena.query.darq.engine.compiler;
 
 
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
 import com.hp.hpl.jena.query.darq.util.OutputUtils;
 import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
-import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanVisitor;
 import com.hp.hpl.jena.query.engine1.plan.PlanElement1;

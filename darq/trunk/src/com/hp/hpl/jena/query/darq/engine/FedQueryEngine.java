@@ -10,11 +10,8 @@ import org.apache.commons.logging.LogFactory;
 
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.darq.config.Configuration;
-import com.hp.hpl.jena.query.darq.util.OutputUtils;
-import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.QueryEngine;
-import com.hp.hpl.jena.query.engine1.plan.Transform;
 import com.hp.hpl.jena.query.engine1.plan.Transformer;
 import com.hp.hpl.jena.query.util.Context;
 

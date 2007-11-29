@@ -13,10 +13,8 @@ import com.hp.hpl.jena.query.darq.core.DarqDataset;
 import com.hp.hpl.jena.query.darq.util.DARQLogHook;
 import com.hp.hpl.jena.query.engine.QueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
-import com.hp.hpl.jena.query.engine1.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.ModelFactory;
 
 public class FedQueryEngineFactory implements QueryEngineFactory {
   
@@ -114,13 +112,10 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     /**
      * @param loghook The loghook to set.
      */
-    public void setLoghook(DARQLogHook loghook) {
-        this.loghook = loghook;
+    public static void setLoghook(DARQLogHook lh) {
+        loghook = lh;
     }
 
-    public static void setLogHook(DARQLogHook hook) {
-        loghook=hook;
-    }
 
     
 }
