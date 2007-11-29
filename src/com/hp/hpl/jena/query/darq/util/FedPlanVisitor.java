@@ -7,12 +7,14 @@ package com.hp.hpl.jena.query.darq.util;
 
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.engine1.PlanVisitor;
 
 public interface FedPlanVisitor extends PlanVisitor {
     
     public void visit(FedPlanService planElt) ;
     public void visit(FedPlanMultipleService planElt) ;
+	public void visit(PlanNestedLoopJoin planNestedLoopJoin);
 
 }
 /*

@@ -9,13 +9,11 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.engine1.PlanElement;
-import com.hp.hpl.jena.query.engine1.PlanFormatter;
 import com.hp.hpl.jena.query.engine1.PlanFormatterVisitor;
-
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.shared.PrefixMapping;
-import com.sun.org.apache.bcel.internal.classfile.PMGClass;
  
 public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVisitor {
 
@@ -75,6 +73,11 @@ public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVis
         //fmt.finishVisit() ;
         
     }
+
+	public void visit(PlanNestedLoopJoin planNestedLoopJoin) {
+		// TODO Auto-generated method stub
+		
+	}
 
   
 

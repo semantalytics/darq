@@ -9,11 +9,11 @@ import java.io.StringReader;
 import java.util.Iterator;
 
 import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.graph.Node_Variable;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
-import com.hp.hpl.jena.query.core.Binding;
-
-import com.hp.hpl.jena.query.core.ElementFilter;
+import com.hp.hpl.jena.query.core.Var;
+import com.hp.hpl.jena.query.engine.Binding;
 import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.lang.arq.ARQParser;
 import com.hp.hpl.jena.query.lang.arq.ParseException;
@@ -22,8 +22,8 @@ import com.hp.hpl.jena.query.util.FmtUtils;
 public class QueryUtils {
 
     public static Node replacewithBinding(Node node, Binding b) {
-        if (node.isVariable() && b.contains(node.getName())) {
-            Node n = b.get(node.getName());
+        if (node.isVariable() && b.contains(Var.alloc(node))) {
+            Node n = b.get(Var.alloc(node));
             if (n== null) return node; // should not happen!
             if (n.isBlank()) {
                   // we do not support blank nodes
@@ -38,16 +38,16 @@ public class QueryUtils {
     public static Expr replacewithBinding(Expr c, Binding b,Query orgQuery) {
         String filter = "FILTER"+c.toString();
         
-        for (Iterator it = b.names(); it.hasNext() ;) {
-            String varName = (String)it.next();
-            Node n=b.get(varName);
+        for (Iterator it = b.vars(); it.hasNext() ;) {
+            Var var = (Var) it.next();
+            Node n=b.get(var);
             if (n==null) continue;
             
             if (n.isBlank()) { 
                 throw new QueryExecException("Cannot handle Blank Nodes over different graphs.");
             } else {
                 String value = FmtUtils.stringForNode(n);
-                filter=filter.replaceAll("\\?"+varName,value);
+                filter=filter.replaceAll("\\?"+var,value);
             }
         }
           

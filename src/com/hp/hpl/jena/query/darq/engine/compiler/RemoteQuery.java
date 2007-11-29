@@ -11,14 +11,12 @@ import java.util.List;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.core.Binding;
-
 import com.hp.hpl.jena.query.core.ElementFilter;
 import com.hp.hpl.jena.query.core.ElementGroup;
-import com.hp.hpl.jena.query.core.ElementTriplePattern;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.mapping.rewriting.TripleRewriter;
 import com.hp.hpl.jena.query.darq.util.QueryUtils;
+import com.hp.hpl.jena.query.engine.Binding;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.expr.Expr;
 
@@ -104,7 +102,8 @@ public class RemoteQuery {
 
                  Triple newtriple = new Triple(subject,predicate,object);
                  
-                 eg.addElementTriplePattern(new ElementTriplePattern(newtriple));
+                 //eg.addElementTriplePattern(new ElementTriplePattern(newtriple));
+                 eg.addTriplePattern(newtriple);
         }
         
         
@@ -112,7 +111,7 @@ public class RemoteQuery {
             eg.addElementFilter(new ElementFilter(QueryUtils.replacewithBinding(c,binding,context.getQuery())));
         }
         
-        remoteQuery.setQueryElement(eg);
+        remoteQuery.setQueryPattern(eg);
         
         return remoteQuery;
     }
