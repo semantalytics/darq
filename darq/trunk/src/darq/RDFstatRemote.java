@@ -35,7 +35,7 @@ public class RDFstatRemote {
     
     
   
-    private void report(String endpointURL, String graph) {
+    private void report(String endpointURL, String graph) throws Exception {
         
     	 Model model = ModelFactory.createDefaultModel();
          model.setNsPrefix("sd","http://darq.sf.net/dose/0.1#");
@@ -65,21 +65,28 @@ public class RDFstatRemote {
     		if (rs_count.hasNext()) {
     			count= rs_count.nextSolution().getLiteral("callret-0").getLong();
     			totalcount+=count;
-    		}
+    		} else throw new Exception("error getting total size");
     		
     		if (!s.get("p").equals(RDF.type)) {
     		
-    		QueryEngineHTTP qe_objects = new QueryEngineHTTP(endpointURL,"SELECT DISTINCT ?o WHERE {?s <"+s.getResource("p")+"> ?o}");
+    		QueryEngineHTTP qe_objects = new QueryEngineHTTP(endpointURL,"select count distinct ?o  WHERE {?s <"+s.getResource("p")+"> ?o}");
     		qe_objects.addDefaultGraph(graph);
-        	ResultSet rs_objects  = qe_predicates.execSelect();
-    		ResultSetMem rsm_objects = new ResultSetMem(rs_objects);
-    		double osel = 1.0/(new Double(rsm_objects.size()));
+        	ResultSet rs_objects  = qe_objects.execSelect();
+    		double osel =0;
+    		if (rs_objects.hasNext()) {
+    			long no = rs_objects.nextSolution().getLiteral("callret-0").getLong();
+    			osel = 1.0/(new Double(no));
+    		} else throw new Exception("error getting #objects");
     		
-    		QueryEngineHTTP qe_subjects = new QueryEngineHTTP(endpointURL,"SELECT DISTINCT ?s WHERE {?s <"+s.getResource("p")+"> ?o}");
+    		
+    		QueryEngineHTTP qe_subjects = new QueryEngineHTTP(endpointURL,"select count distinct ?s  WHERE {?s <"+s.getResource("p")+"> ?o}");
     		qe_subjects.addDefaultGraph(graph);
-        	ResultSet rs_subjects  = qe_predicates.execSelect();
-    		ResultSetMem rsm_subjects = new ResultSetMem(rs_subjects);
-    		double ssel = 1.0/(new Double(rsm_subjects.size()));
+        	ResultSet rs_subjects  = qe_subjects.execSelect();
+        	double ssel =0;
+    		if (rs_subjects.hasNext()) {
+    			long no = rs_subjects.nextSolution().getLiteral("callret-0").getLong();
+    			ssel = 1.0/(new Double(no));
+    		} else throw new Exception("error getting #subjects");
     	
     		 Resource capability = model.createResource();
              model.add(r,DOSE.capability,capability);
@@ -154,7 +161,12 @@ public class RDFstatRemote {
             System.exit(1);
         }
         RDFstatRemote stat = new RDFstatRemote();
-        stat.report(args[0],args[1]);
+        try {
+			stat.report(args[0],args[1]);
+		} catch (Exception e) {
+			// 
+			e.printStackTrace(System.err);
+		}
       
     }
     
