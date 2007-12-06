@@ -33,9 +33,18 @@ public class RDFstatRemote {
     
     private static String schemaURI= "http://darq.sf.net/dose/0.1#";
     
+    String lastquery = null;
+    
     
   
-    private void report(String endpointURL, String graph) throws Exception {
+    public String getLastquery() {
+		return lastquery;
+	}
+
+
+
+
+	private void report(String endpointURL, String graph) throws Exception {
         
     	 Model model = ModelFactory.createDefaultModel();
          model.setNsPrefix("sd","http://darq.sf.net/dose/0.1#");
@@ -44,10 +53,13 @@ public class RDFstatRemote {
 
          Resource r = model.createResource();
          
+         
+         
          model.add(r,RDF.type,model.createResource("sd:Service"));
          model.add(r,DOSE.url,model.createResource(endpointURL));
-    	
-    	QueryEngineHTTP qe_predicates = new QueryEngineHTTP(endpointURL,"SELECT DISTINCT ?p WHERE {?s ?p ?o}");
+         
+    	lastquery = "SELECT DISTINCT ?p WHERE {?s ?p ?o}";
+    	QueryEngineHTTP qe_predicates = new QueryEngineHTTP(endpointURL,lastquery);
     	qe_predicates.addDefaultGraph(graph);
     	ResultSet rs_predicates  = qe_predicates.execSelect();
     	ResultSetMem rsm_predicates = new ResultSetMem(rs_predicates);
@@ -58,7 +70,8 @@ public class RDFstatRemote {
     	while (rsm_predicates.hasNext()) {
     		QuerySolution s = rsm_predicates.nextSolution();
     		
-    		QueryEngineHTTP qe_count = new QueryEngineHTTP(endpointURL,"SELECT count(*) WHERE {?s <"+s.getResource("p")+"> ?o}");
+    		lastquery = "SELECT count(*) WHERE {?s <"+s.getResource("p")+"> ?o}";
+    		QueryEngineHTTP qe_count = new QueryEngineHTTP(endpointURL,lastquery);
     		qe_count.addDefaultGraph(graph);
     		long count=0;
     		ResultSet rs_count  = qe_count.execSelect();
@@ -69,7 +82,8 @@ public class RDFstatRemote {
     		
     		if (!s.get("p").equals(RDF.type)) {
     		
-    		QueryEngineHTTP qe_objects = new QueryEngineHTTP(endpointURL,"select count distinct ?o  WHERE {?s <"+s.getResource("p")+"> ?o}");
+    			lastquery = "select count distinct ?o  WHERE {?s <"+s.getResource("p")+"> ?o}"; 
+    		QueryEngineHTTP qe_objects = new QueryEngineHTTP(endpointURL,lastquery);
     		qe_objects.addDefaultGraph(graph);
         	ResultSet rs_objects  = qe_objects.execSelect();
     		double osel =0;
@@ -79,7 +93,8 @@ public class RDFstatRemote {
     		} else throw new Exception("error getting #objects");
     		
     		
-    		QueryEngineHTTP qe_subjects = new QueryEngineHTTP(endpointURL,"select count distinct ?s  WHERE {?s <"+s.getResource("p")+"> ?o}");
+    		lastquery= "select count distinct ?s  WHERE {?s <"+s.getResource("p")+"> ?o}";
+    		QueryEngineHTTP qe_subjects = new QueryEngineHTTP(endpointURL,lastquery);
     		qe_subjects.addDefaultGraph(graph);
         	ResultSet rs_subjects  = qe_subjects.execSelect();
         	double ssel =0;
@@ -164,7 +179,7 @@ public class RDFstatRemote {
         try {
 			stat.report(args[0],args[1]);
 		} catch (Exception e) {
-			// 
+			System.err.println("Error for query: "+ stat.getLastquery());
 			e.printStackTrace(System.err);
 		}
       
