@@ -1,6 +1,9 @@
 package darq;
 
-
+/**
+ * currently this is specific for Openlink Virtuoso 5.0.2.
+ * We use the sparql aggregate extensions the come with their query enginge...
+ */
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -82,7 +85,7 @@ public class RDFstatRemote {
     		
     		if (!s.get("p").equals(RDF.type)) {
     		
-    			lastquery = "select count distinct ?o  WHERE {?s <"+s.getResource("p")+"> ?o}"; 
+    			lastquery = "select count distinct ?o  WHERE {?s <"+s.getResource("p")+"> ?o. filter (bif:length(str(?o)) <= 1024) }"; 
     		QueryEngineHTTP qe_objects = new QueryEngineHTTP(endpointURL,lastquery);
     		qe_objects.addDefaultGraph(graph);
         	ResultSet rs_objects  = qe_objects.execSelect();
@@ -93,7 +96,7 @@ public class RDFstatRemote {
     		} else throw new Exception("error getting #objects");
     		
     		
-    		lastquery= "select count distinct ?s  WHERE {?s <"+s.getResource("p")+"> ?o}";
+    		lastquery= "select count distinct ?s  WHERE {?s <"+s.getResource("p")+"> ?o }";
     		QueryEngineHTTP qe_subjects = new QueryEngineHTTP(endpointURL,lastquery);
     		qe_subjects.addDefaultGraph(graph);
         	ResultSet rs_subjects  = qe_subjects.execSelect();
