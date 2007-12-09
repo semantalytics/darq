@@ -10,6 +10,7 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.darq.config.Configuration;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
+import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
 import com.hp.hpl.jena.query.darq.util.DARQLogHook;
 import com.hp.hpl.jena.query.engine.QueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
@@ -89,6 +90,11 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     public static void logSubquery(Query query) {
         if (loghook!= null) {
             loghook.logSubquery(query);
+        }
+    }    
+    public static void logExplain(PlanOperatorBase pob) {
+        if (loghook!= null) {
+            loghook.logOptimizerExplain(pob);
         }
     }
     
