@@ -140,8 +140,8 @@ public class RDFstatRemote {
 				QuerySolution sol = rsm_types.nextSolution();
 				if (filterstring != "")
 					filterstring += " || ";
-				filterstring += "REGEX(STR(?object),'"
-						+ sol.get("o").toString() + "')";
+				filterstring += "REGEX(STR(?object),'<"
+						+ sol.get("o").toString() + ">')";
 
 			}
 
