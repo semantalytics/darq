@@ -25,6 +25,8 @@ import com.hp.hpl.jena.query.lang.arq.ParseException;
 public class RemoteService {
 
     private String url;
+    
+	private String graph;
 
     private String label;
 
@@ -43,10 +45,13 @@ public class RemoteService {
     private Set<Set<RequiredBinding>> requiredBindings = new HashSet<Set<RequiredBinding>>();
 
     private SelectivityFunction selectivityFunction = new CostBasedFunction();
+
+
     
 
-    public RemoteService(String url, String label, String description, boolean isDefinitive) {
+    public RemoteService(String url, String graph, String label, String description, boolean isDefinitive) {
         this.url = url;
+        this.graph = graph;
         this.label = label;
         this.description = description;
         this.isDefinitive = isDefinitive;
@@ -55,8 +60,9 @@ public class RemoteService {
      //   preferedFilters = new HashSet<String>();
         
     }
-
-        
+    public RemoteService(String url, String label, String description, boolean isDefinitive) {
+    	this(url,null,label,description,isDefinitive);
+    }
     public boolean hasCapability(Triple t) {
         
         
@@ -230,7 +236,23 @@ public class RemoteService {
         return url;
     }
     
-    private Capability findCapability(String predicate) {
+    /**
+	 * @return the default-graph
+	 */
+	public String getGraph() {
+		return graph;
+	}
+
+
+	/**
+	 * @param graph the default-graph to set
+	 */
+	public void setGraph(String graph) {
+		this.graph = graph;
+	}
+
+
+	private Capability findCapability(String predicate) {
         for (Capability c:capabilities) {
             if (c.getPredicate().equals(predicate)) return c;
         }

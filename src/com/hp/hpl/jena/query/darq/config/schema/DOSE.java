@@ -49,6 +49,7 @@ public class DOSE {
     public static final Property capability = m_model.createProperty( "http://darq.sf.net/dose/0.1#capability" );
     
     public static final Property url = m_model.createProperty( "http://darq.sf.net/dose/0.1#url" );
+    public static final Property graph = m_model.createProperty( "http://darq.sf.net/dose/0.1#graph" );
     
 }
 

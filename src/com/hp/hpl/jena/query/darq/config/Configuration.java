@@ -89,12 +89,14 @@ public class Configuration {
                 "{",
                 "  ?service  a sd:Service ;",
                 "            sd:url   ?url ;",
+                
                 "            sd:totalTriples   ?triples ;",
                 "            OPTIONAL { ?service rdfs:comment ?description } .",
                 "            OPTIONAL { ?service rdfs:label ?label } .",
                 "            OPTIONAL { ?service sd:isDefinitive ?definitive } .",
                 "            OPTIONAL { ?service sd:selectivityFunction ?sel ."
-                        + "                   ?sel sd:javaClass ?selclass .} ", 
+                        + "                   ?sel sd:javaClass ?selclass .} .", 
+                "			 OPTIONAL { ?service sd:defaultgraph ?graph . }",
                 "}" };
 
         try {
@@ -143,8 +145,14 @@ public class Configuration {
                     isDefinitive = definitive.equalsIgnoreCase("true")
                             || definitive.equalsIgnoreCase("yes");
                 }
+                
+                String defGraph = null;
+                RDFNode defgraphNode = qs.getLiteral("graphname");
+                if (defgraphNode != null && defgraphNode.isLiteral()) {
+                	defGraph = ((Literal) defgraphNode).getString();
+                }
 
-                RemoteService s = new RemoteService(url, label, description,
+                RemoteService s = new RemoteService(url, defGraph, label, description,
                         isDefinitive);
                 s.setTripleCount(tripleCount);
 

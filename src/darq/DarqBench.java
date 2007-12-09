@@ -94,7 +94,7 @@ public class DarqBench {
         FedQueryEngine qe = null;
         
         // one warmup
-        System.out.println("UNOptimized WARMUP");
+ /*       System.out.println("UNOptimized WARMUP");
         
         query = QueryFactory.read(queryfile, null, Syntax.syntaxSPARQL) ;
         qe = (FedQueryEngine)QueryExecutionFactory.create(query, ds);
@@ -138,7 +138,7 @@ public class DarqBench {
         exectime = 0;
         resultsize = 0;
         
-        
+        */
         // one warmup
         
         System.out.println("Optimized WARMUP");
