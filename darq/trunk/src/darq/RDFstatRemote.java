@@ -37,13 +37,15 @@ public class RDFstatRemote {
 
 		model.add(r, RDF.type, model.createResource("sd:Service"));
 		model.add(r, DOSE.url, model.createResource(endpointURL));
-		if (graph!= null) model.add(r, DOSE.graph, model.createLiteral(graph));
+		if (graph != null)
+			model.add(r, DOSE.graph, model.createLiteral(graph));
 
 		if (!typesonly) {
 			lastquery = "SELECT DISTINCT ?p WHERE {?s ?p ?o}";
 			QueryEngineHTTP qe_predicates = new QueryEngineHTTP(endpointURL,
 					lastquery);
-			if (graph!= null) qe_predicates.addDefaultGraph(graph);
+			if (graph != null)
+				qe_predicates.addDefaultGraph(graph);
 			ResultSet rs_predicates = qe_predicates.execSelect();
 			ResultSetMem rsm_predicates = new ResultSetMem(rs_predicates);
 
@@ -56,7 +58,8 @@ public class RDFstatRemote {
 						+ "> ?o}";
 				QueryEngineHTTP qe_count = new QueryEngineHTTP(endpointURL,
 						lastquery);
-				if (graph!= null) qe_count.addDefaultGraph(graph);
+				if (graph != null)
+					qe_count.addDefaultGraph(graph);
 				long count = 0;
 				ResultSet rs_count = qe_count.execSelect();
 				if (rs_count.hasNext()) {
@@ -73,7 +76,8 @@ public class RDFstatRemote {
 							+ "> ?o. filter (bif:length(str(?o)) <= 1024) }";
 					QueryEngineHTTP qe_objects = new QueryEngineHTTP(
 							endpointURL, lastquery);
-					if (graph!= null) qe_objects.addDefaultGraph(graph);
+					if (graph != null)
+						qe_objects.addDefaultGraph(graph);
 					ResultSet rs_objects = qe_objects.execSelect();
 					double osel = 0;
 					if (rs_objects.hasNext()) {
@@ -87,7 +91,8 @@ public class RDFstatRemote {
 							+ s.getResource("p") + "> ?o }";
 					QueryEngineHTTP qe_subjects = new QueryEngineHTTP(
 							endpointURL, lastquery);
-					if (graph!= null) qe_subjects.addDefaultGraph(graph);
+					if (graph != null)
+						qe_subjects.addDefaultGraph(graph);
 					ResultSet rs_subjects = qe_subjects.execSelect();
 					double ssel = 0;
 					if (rs_subjects.hasNext()) {
@@ -129,7 +134,8 @@ public class RDFstatRemote {
 
 		lastquery = "SELECT DISTINCT ?o WHERE {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o. }";
 		QueryEngineHTTP qe_types = new QueryEngineHTTP(endpointURL, lastquery);
-		if (graph!= null) qe_types.addDefaultGraph(graph);
+		if (graph != null)
+			qe_types.addDefaultGraph(graph);
 		ResultSet rs_types = qe_types.execSelect();
 		ResultSetMem rsm_types = new ResultSetMem(rs_types);
 
@@ -150,8 +156,27 @@ public class RDFstatRemote {
 			model.add(capability, DOSE.predicate, RDF.type);
 			model.add(capability, DOSE.sofilter, model
 					.createTypedLiteral(filterstring));
-			model.add(capability, DOSE.triples, model.createTypedLiteral(
-					rsm_types.size(), XSD.integer.getURI()));
+
+			lastquery = "SELECT count(*) WHERE {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?o}";
+			QueryEngineHTTP qe_count = new QueryEngineHTTP(endpointURL,
+					lastquery);
+			if (graph != null)
+				qe_count.addDefaultGraph(graph);
+			long count = 0;
+			ResultSet rs_count = qe_count.execSelect();
+			if (rs_count.hasNext()) {
+				count = rs_count.nextSolution().getLiteral("callret-0")
+						.getLong();
+
+			} else
+				throw new Exception("error getting total size");
+
+			model.add(capability, DOSE.triples, model.createTypedLiteral(count,
+					XSD.integer.getURI()));
+			model.add(capability,model.createProperty(schemaURI,
+							"objectSelectivity"), model.createTypedLiteral(
+							new Double(1.0/count), XSD.xdouble.getURI()));
+
 		}
 
 		model.write(System.out, "N3");
@@ -190,11 +215,10 @@ public class RDFstatRemote {
 		boolean typesonly = false;
 		if (args.length == 3 && args[2].equals("typesonly"))
 			typesonly = true;
-		
-		String graph=null;
+
+		String graph = null;
 		if (args.length == 2)
 			graph = args[1];
-		
 
 		RDFstatRemote stat = new RDFstatRemote();
 		try {
