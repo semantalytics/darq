@@ -60,6 +60,8 @@ public class RDFstatRemote {
          
          model.add(r,RDF.type,model.createResource("sd:Service"));
          model.add(r,DOSE.url,model.createResource(endpointURL));
+         model.add(r,DOSE.graph,model.createLiteral(graph));
+         
          
     	lastquery = "SELECT DISTINCT ?p WHERE {?s ?p ?o}";
     	QueryEngineHTTP qe_predicates = new QueryEngineHTTP(endpointURL,lastquery);

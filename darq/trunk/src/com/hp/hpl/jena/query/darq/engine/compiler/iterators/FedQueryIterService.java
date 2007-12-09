@@ -19,6 +19,7 @@ import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
+import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 /**
  * Process a remote Service
@@ -29,60 +30,50 @@ import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
 
 public class FedQueryIterService extends DarqQueryIterator {
 
-    Log log = LogFactory.getLog(FedQueryIterService.class);
+	Log log = LogFactory.getLog(FedQueryIterService.class);
 
-    private static String TESTING_STRING = "_testing_";
+	private static String TESTING_STRING = "_testing_";
 
-  
+	public FedQueryIterService(QueryIterator input, ServiceGroup sg,
+			ExecutionContext context, PlanElement subComp) {
+		super(input, sg, context, subComp);
+	}
 
-    public FedQueryIterService(QueryIterator input, ServiceGroup sg,
-            ExecutionContext context, PlanElement subComp) {
-        super(input, sg, context,subComp);
-    }
-    
-    
-    
+	/**
+	 * Query the remote Service
+	 */
+	protected ResultSet ExecRemoteQuery(Query q) {
 
-    /**
-     * Query the remote Service
-     */
-    protected ResultSet ExecRemoteQuery(Query q) {
+		q.setBaseURI(""); // FIXME
 
-    	q.setBaseURI(""); // FIXME
-    	
-   // 	System.out.println("Executing "+q);
-    	
-        String url = serviceGroup.getService().getUrl();
-     
+		// System.out.println("Executing "+q);
 
-        ResultSet remoteResults = null;
-        log.trace(url+"?q="+q);
-        qexec = QueryExecutionFactory.sparqlService(url, q);
-        try {
-            
-            FedQueryEngineFactory.logSubquery(q);
-            remoteResults = qexec.execSelect();
-            
-            
+		String url = serviceGroup.getService().getUrl();
 
-        } catch( QueryExceptionHTTP e) {
-        	throw new QueryExecException("Failed to connect to Endpoint: "+ url);
-        }
-        finally {
-            
-        }
-        return remoteResults;
-    }
+		ResultSet remoteResults = null;
+		log.trace(url + "?q=" + q);
+		String defGraph = serviceGroup.getService().getGraph();
+		if (defGraph != null) {
+			qexec = QueryExecutionFactory.sparqlService(url, q, defGraph);
+		} else {
+			qexec = QueryExecutionFactory.sparqlService(url, q);
+		}
 
-    
+		try {
 
+			FedQueryEngineFactory.logSubquery(q);
+			remoteResults = qexec.execSelect();
 
+		} catch (QueryExceptionHTTP e) {
+			throw new QueryExecException("Failed to connect to Endpoint: "
+					+ url);
+		} finally {
 
+		}
+		return remoteResults;
+	}
 
-   
 }
-
-
 
 /*
  * (c) Copyright 2004, 2005, 2006 Hewlett-Packard Development Company, LP All
