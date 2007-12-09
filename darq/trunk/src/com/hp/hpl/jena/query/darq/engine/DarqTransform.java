@@ -26,6 +26,7 @@ import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
+import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
 import com.hp.hpl.jena.query.engine.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
@@ -164,7 +165,9 @@ public class DarqTransform extends TransformCopy {
 			if (optimize) { // run optimizer
 				PlanElement optimizedPlan = null;
 				try {
-					optimizedPlan = config.getPlanOptimizer().getCheapestPlan(al).toARQPlanElement(context);
+					PlanOperatorBase planOperatorBase = config.getPlanOptimizer().getCheapestPlan(al);
+					FedQueryEngineFactory.logExplain(planOperatorBase);
+					optimizedPlan = planOperatorBase.toARQPlanElement(context);
 					
 				} catch (PlanUnfeasibleException e) {
 					throw new QueryBuildException("No feasible plan: "
