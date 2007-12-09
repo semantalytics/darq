@@ -19,7 +19,6 @@ import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
-import com.sun.org.apache.bcel.internal.generic.GETSTATIC;
 
 /**
  * Process a remote Service
