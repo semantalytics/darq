@@ -217,7 +217,7 @@ public class RDFstatRemote {
 			typesonly = true;
 
 		String graph = null;
-		if (args.length == 2)
+		if (args.length >= 2)
 			graph = args[1];
 
 		RDFstatRemote stat = new RDFstatRemote();
