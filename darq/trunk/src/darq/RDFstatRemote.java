@@ -35,7 +35,7 @@ public class RDFstatRemote {
 
 		Resource r = model.createResource();
 
-		model.add(r, RDF.type, model.createResource("sd:Service"));
+		model.add(r, RDF.type, model.createResource(DOSE.getURI()+"Service"));
 		model.add(r, DOSE.url, model.createResource(endpointURL));
 		if (graph != null)
 			model.add(r, DOSE.graph, model.createLiteral(graph));
@@ -146,8 +146,8 @@ public class RDFstatRemote {
 				QuerySolution sol = rsm_types.nextSolution();
 				if (filterstring != "")
 					filterstring += " || ";
-				filterstring += "REGEX(STR(?object),'<"
-						+ sol.get("o").toString() + ">')";
+				filterstring += "REGEX(STR(?object),'"
+						+ sol.get("o").toString() + "')";
 
 			}
 
@@ -175,7 +175,7 @@ public class RDFstatRemote {
 					XSD.integer.getURI()));
 			model.add(capability,model.createProperty(schemaURI,
 							"objectSelectivity"), model.createTypedLiteral(
-							new Double(1.0/count), XSD.xdouble.getURI()));
+							new Double(1.0/rsm_types.size()), XSD.xdouble.getURI()));
 
 		}
 
