@@ -134,8 +134,8 @@ public class DarqBench {
 				return;
 		}
 		
-		unoptimized = new ArrayList<Measures>((int) runs);
-		optimized = new ArrayList<Measures>((int) runs);
+		unoptimized = new ArrayList<Measures>((int) (2*runs));
+		optimized = new ArrayList<Measures>((int) (2*runs));
 
 
 		// create model - it is used for the local parts of the query -
@@ -148,20 +148,11 @@ public class DarqBench {
 		Query query = null;
 		FedQueryEngine qe = null;
 
+		
+		
+		
 		// one warmup
-		System.err.println("UNOptimized WARMUP");
-
-		query = QueryFactory.read(queryfile, null, Syntax.syntaxSPARQL);
-		qe = (FedQueryEngine) QueryExecutionFactory.create(query, ds);
-		qe.setOptimize(false);
-
-		rs = qe.execSelect();
-
-		rsm = new ResultSetMem(rs);
-
-		ResultSetFormatter.out(System.err, rsm, query);
-
-		sleep();
+		
 		System.err.println("Optimized WARMUP");
 
 		query = QueryFactory.read(queryfile, null, Syntax.syntaxSPARQL);
@@ -176,6 +167,21 @@ public class DarqBench {
 
 		sleep();
 
+		
+		System.err.println("UNOptimized WARMUP");
+
+		query = QueryFactory.read(queryfile, null, Syntax.syntaxSPARQL);
+		qe = (FedQueryEngine) QueryExecutionFactory.create(query, ds);
+		qe.setOptimize(false);
+
+		rs = qe.execSelect();
+
+		rsm = new ResultSetMem(rs);
+
+		ResultSetFormatter.out(System.err, rsm, query);
+
+		sleep();
+		
 		// go
 		for (int i = 0; i < runs; i++) {
 
@@ -188,9 +194,22 @@ public class DarqBench {
 
 		}
 
+		for (int i = 0; i < runs; i++) {
+
+			
+			System.err.println("optimizing");
+			run(queryfile, true);
+			sleep();
+			System.err.println("\n\nnot optimizing");
+			run(queryfile, false);
+			sleep();
+
+		}
+
+		
 		System.err.println("----------------------");
 		System.err.println("---- No Optimization ----");
-		System.err.println("Runs: " + runs);
+		System.err.println("Runs: " + 2*runs);
 		System.err.println("Avg. Transform: " + (transformtime_nop / runs)
 				/ 1000000.0);
 		System.err.println("Avg. Execution: " + (exectime_nop / runs)
@@ -223,10 +242,12 @@ public class DarqBench {
 			nopt_total+=(unoptimized.get(i).exectime+unoptimized.get(i).optimizerTime)/ 1000000.0+";";
 		}
 		System.out.println(opt_transform);
-		System.out.println(nopt_transform);
 		System.out.println(opt_exec);
+		System.out.println(opt_total);
+		System.out.println(nopt_transform);
 		System.out.println(nopt_exec);
-
+		System.out.println(nopt_total);
+		System.out.println(resultsize);
 	}
 
 	static void sleep() {
