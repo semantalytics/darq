@@ -16,7 +16,7 @@ public class ModDarq implements ArgModuleGeneral {
     
     public void registerWith(CmdGeneral cmdLine) {
         cmdLine.getUsage().startCategory("DARQ") ;
-        cmdLine.add(argDarqConfig, "--config", "Serice Description File") ;
+        cmdLine.add(argDarqConfig, "--config", "Service Description File") ;
   //      cmdLine.add(argDarqVerbose, "--verbose", "extra output from query processor") ;
     }
 
