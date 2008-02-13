@@ -6,7 +6,7 @@ package de.hu_berlin.informatik.wbi.darq.mapping;
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
-import com.hp.hpl.jena.query.darq.config.Configuration;
+import com.hp.hpl.jena.query.darq.config.MapConfiguration;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
 //import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import de.hu_berlin.informatik.wbi.darq.mapping.MapFedQueryEngine;
@@ -23,12 +23,13 @@ import org.semanticweb.owl.model.OWLOntology;
 
 /**
  * @author Alexander Musidlowski
+ * @version $ID$
  *
  */
 public class MapFedQueryEngineFactory implements QueryEngineFactory{
 
 	private OWLOntology ontology;
-	private Configuration config;
+	private MapConfiguration config;
 	 
     private static MapFedQueryEngineFactory instance = null;
     private static DARQLogHook loghook = null;
@@ -37,7 +38,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
     
     
 
-	private MapFedQueryEngineFactory(Configuration conf, OWLOntology ontology) {
+	private MapFedQueryEngineFactory(MapConfiguration conf, OWLOntology ontology) {
 				// TODO Auto-generated constructor stub
 		this.config = conf;
 		this.ontology = ontology;
@@ -47,7 +48,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	 * erzeugt genau ein Objekt von MapFedQueryEngineFactory 
 	 */
 	 
-	public static void register(Configuration conf, OWLOntology ontology) {
+	public static void register(MapConfiguration conf, OWLOntology ontology) {
 		if (!registered) { 
             instance = new MapFedQueryEngineFactory(conf, ontology);
             QueryEngineRegistry.addFactory(instance);
@@ -56,7 +57,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	}
 	 
 	public static void register(String configFileName, OWLOntology ontology) {
-	        Configuration c = new Configuration(configFileName);
+	        MapConfiguration c = new MapConfiguration(configFileName);
 	        register(c, ontology);
 	}
 	
@@ -121,7 +122,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	    /**
 	     * @return the config
 	     */
-	    public Configuration getConfig() {
+	    public MapConfiguration getConfig() {
 	        return config;
 	    }
 

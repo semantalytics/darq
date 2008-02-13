@@ -8,15 +8,15 @@ import java.util.Stack;
 
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.QueryBuildException;
-import com.hp.hpl.jena.query.darq.config.Configuration;
+import com.hp.hpl.jena.query.darq.config.MapConfiguration;
 import com.hp.hpl.jena.query.darq.config.ServiceRegistry;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.DarqTransform;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
-import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
-import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+//import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
+import com.hp.hpl.jena.query.darq.engine.compiler.MapFedPlanMultipleService;
+import com.hp.hpl.jena.query.darq.engine.compiler.MapFedPlanService;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
 import com.hp.hpl.jena.query.engine.Plan;
@@ -30,13 +30,17 @@ import com.hp.hpl.jena.query.util.Context;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.semanticweb.owl.model.OWLOntology;
-
+/**
+ * @author Alexander Musidlowski
+ * @version $ID$
+ *
+ */
 public class MapDarqTransform extends DarqTransform {
 	
 	protected Plan plan = null;
 	private Context context = null;
 	private ServiceRegistry registry = null;
-	private Configuration config = null;
+	private MapConfiguration config = null;
 	private OWLOntology mapping = null;
 	Log log = LogFactory.getLog(MapDarqTransform.class);
 	boolean optimize = true;
@@ -49,7 +53,7 @@ public class MapDarqTransform extends DarqTransform {
 	HashMap<Triple, MultipleServiceGroup> queryIndividuallyTriples = new HashMap<Triple, MultipleServiceGroup>();
 	//Speicher für Tripel, die an mehrere Services geschickt werden. 
 	
-	public MapDarqTransform(Context cntxt, Configuration conf, OWLOntology ontology) {
+	public MapDarqTransform(Context cntxt, MapConfiguration conf, OWLOntology ontology) {
 		super(cntxt, conf);
 		context = cntxt;
 		config = conf;
@@ -79,12 +83,6 @@ public class MapDarqTransform extends DarqTransform {
 		List<PlanElement> acc = new ArrayList<PlanElement>();
 		//Operatoren des Plans
 		
-//		OWLOntology owlOntology = null; //eventuell manager.createOntology(URI);
-//		String map = "N:/Studium/Diplomarbeit/Ontologien/Buch.owl";
-//		if (map != null){
-//			 owlOntology = MapLoadOntologies.loadCommandline(map);
-//		}//hier prüfen, ob die Parameter aus der Kommandozeile i.O.?
-
 		
 		//Idee: die Tripelliste mit den neu generierten Tripels vorher erzeugen
 		//Problem dabei wird sein, dass es kein Planelement gibt
@@ -236,8 +234,8 @@ public class MapDarqTransform extends DarqTransform {
 				PlanElement optimizedPlan = null;
 				try {
 					PlanOperatorBase planOperatorBase = config.getPlanOptimizer().getCheapestPlan(al);
-					FedQueryEngineFactory.logExplain(planOperatorBase);
-					optimizedPlan = planOperatorBase.toARQPlanElement(context);
+					MapFedQueryEngineFactory.logExplain(planOperatorBase);
+					optimizedPlan = planOperatorBase.toARQPlanElement(context); //FRAGE Join??
 					
 				} catch (PlanUnfeasibleException e) {
 					throw new QueryBuildException("No feasible plan: "
@@ -252,10 +250,10 @@ public class MapDarqTransform extends DarqTransform {
 				for (ServiceGroup sg : al) {
 
 					if (sg instanceof MultipleServiceGroup) {
-						acc.add(pos, FedPlanMultipleService.make(context,
+						acc.add(pos, MapFedPlanMultipleService.make(context,
 								(MultipleServiceGroup) sg, null));
 					} else
-						acc.add(pos, FedPlanService.make(context, sg, null));
+						acc.add(pos, MapFedPlanService.make(context, sg, null));
 					pos++;
 
 				}
