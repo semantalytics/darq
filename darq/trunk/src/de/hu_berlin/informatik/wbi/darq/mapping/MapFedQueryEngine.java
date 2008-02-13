@@ -1,7 +1,12 @@
 package de.hu_berlin.informatik.wbi.darq.mapping;
 
+/**
+ * @author Alexander Musidlowski
+ * @version $ID$
+ *
+ */
 import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.darq.config.Configuration;
+import com.hp.hpl.jena.query.darq.config.MapConfiguration;
 //import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import de.hu_berlin.informatik.wbi.darq.mapping.MapDarqTransform;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
@@ -17,7 +22,7 @@ import org.semanticweb.owl.model.OWLOntology;
 public class MapFedQueryEngine extends FedQueryEngine {
 
 	  Query query ;
-	  Configuration config;
+	  MapConfiguration config;
 	  OWLOntology ontology;
 	  private long transformTime =0;
 	  boolean optimize = true;
@@ -32,24 +37,25 @@ public class MapFedQueryEngine extends FedQueryEngine {
 		this(q,null,null, ontology);
 	}
 	
-	public MapFedQueryEngine(Query q, Configuration conf) {
+	public MapFedQueryEngine(Query q, MapConfiguration conf) {
 		this(q,null,conf,null);
 		// TODO Auto-generated constructor stub
 	}
 
-	public MapFedQueryEngine(Query q, Context p, Configuration conf) {
+	public MapFedQueryEngine(Query q, Context p, MapConfiguration conf) {
 		this(q,p,conf,null);
 		// TODO Auto-generated constructor stub
 	}
 	
-	public MapFedQueryEngine(Query q, Configuration conf, OWLOntology ontology) {
+	public MapFedQueryEngine(Query q, MapConfiguration conf, OWLOntology ontology) {
 		this(q,null, conf,ontology);
 		// TODO Auto-generated constructor stub
 	}
 	
-	public MapFedQueryEngine(Query q, Context p, Configuration conf, OWLOntology ontology) {
+	public MapFedQueryEngine(Query q, Context p, MapConfiguration conf, OWLOntology ontology) {
 		super(q, p, conf);
 		this.ontology = ontology;
+		this.config = conf;
 		// TODO Auto-generated constructor stub
 	}
 	
