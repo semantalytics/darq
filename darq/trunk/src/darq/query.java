@@ -108,23 +108,25 @@ public class query extends CmdARQ
 //            bei mehr als einem --map bekommt man nur Fehler des letzten Map
             String[] mappings = modMapping.getMapping();            
             OWLOntology ontology = null;
-            if ( mappings !=null )
-            {
-            	ontology = MapLoadOntologies.loadCommandline(mappings);	            	
-                MapFedQueryEngineFactory.register(modDarq.getConfig(), ontology);
-                //hier den Weg verfolgen
-               
-            } //else throw new CmdException("Argument Error: No map file. use --map=<file>") ; ist an dieser Stelle nicht
-//            korrekt, da es aufgerufen wird, wenn kein --map angegeben wird. 
+            if ( modDarq.getConfig()!=null ){
+            	if ( mappings !=null ){
+            		ontology = MapLoadOntologies.loadCommandline(mappings);	            	
+            		MapFedQueryEngineFactory.register(modDarq.getConfig(), ontology);
+            	}
+            	else{ 
+            		FedQueryEngineFactory.register(modDarq.getConfig());
+            	}
+            } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
+            	
 /*
 * \End{ MAPPING }
 */
             
-            if ( modDarq.getConfig()!=null )
-            {
-                FedQueryEngineFactory.register(modDarq.getConfig());
-                
-            } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
+//            if ( modDarq.getConfig()!=null )
+//            {
+//                FedQueryEngineFactory.register(modDarq.getConfig());
+//                
+//            } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
             
             
             
