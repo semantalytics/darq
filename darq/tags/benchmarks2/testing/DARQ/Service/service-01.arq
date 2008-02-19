@@ -1,0 +1,14 @@
+BASE <.>
+SELECT  *
+FROM       <dft.n3>
+WHERE
+    { 
+    	SERVICE <_testing_datafoaf.ttl>
+    	{
+    		?x ?y ?z .
+    	}
+    	SERVICE <_testing_datapub.ttl>
+    	{
+	      	?z ?r ?s .
+	    }
+    }

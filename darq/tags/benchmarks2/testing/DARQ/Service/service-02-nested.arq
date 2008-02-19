@@ -1,0 +1,16 @@
+BASE <.>
+SELECT  ?r ?z ?y
+FROM        <dft.n3>
+WHERE
+    { 
+    
+    SERVICE <_testing_datafoaf.ttl> 
+    {
+        { ?x ?y ?z } . 
+    	SERVICE <_testing_datapub.ttl>   
+		{
+        	{ ?s ?r ?z } .
+    	}
+    }   
+}
+  

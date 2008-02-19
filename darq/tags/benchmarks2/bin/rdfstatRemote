@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$DARQROOT" == "" ]
+then
+    echo "DARQROOT not set" 1>&2
+    exit 1
+    fi
+
+CP="$($DARQROOT/bin/arq_path)"
+
+java $SOCKS -cp "$CP" darq.RDFstatRemote "$@"
