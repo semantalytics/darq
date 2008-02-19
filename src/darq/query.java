@@ -20,11 +20,6 @@ import com.hp.hpl.jena.query.resultset.ResultSetException;
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.query.util.Utils;
 import com.hp.hpl.jena.shared.JenaException;
-//import de.hu_berlin.informatik.wbi.darq.mapping.Mapping;
-import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
-//import edu.stanford.smi.protegex.owl.model.OWLModel;
-import org.semanticweb.owl.model.OWLOntology;
-import de.hu_berlin.informatik.wbi.darq.mapping.MapFedQueryEngineFactory;
 
 public class query extends CmdARQ
 {
@@ -41,7 +36,6 @@ public class query extends CmdARQ
     // DARQ 
     
     ModDarq modDarq = new ModDarq();
-    ModMapping modMapping = new ModMapping();
     
     
     public static void main (String [] argv)
@@ -58,7 +52,6 @@ public class query extends CmdARQ
         super.addModule(modRemote) ;
         super.addModule(modTime) ;
         super.addModule(modDarq);
-        super.addModule(modMapping);
         super.add(argRepeat) ;
     }
 
@@ -101,39 +94,17 @@ public class query extends CmdARQ
                 System.out.println();
             }
             
-/*
- * \Begin { MAPPING }
- */           
-//            ModQueryin erzeugt Fehler, wenn --map mehr als ein Argument hat.
-//            bei mehr als einem --map bekommt man nur Fehler des letzten Map
-            String[] mappings = modMapping.getMapping();            
-            OWLOntology ontology = null;
-            if ( modDarq.getConfig()!=null ){
-            	if ( mappings !=null ){
-            		ontology = MapLoadOntologies.loadCommandline(mappings);	            	
-            		MapFedQueryEngineFactory.register(modDarq.getConfig(), ontology);
-            	}
-            	else{ 
-            		FedQueryEngineFactory.register(modDarq.getConfig());
-            	}
+            
+            if ( modDarq.getConfig()!=null )
+            {
+                FedQueryEngineFactory.register(modDarq.getConfig());
+                
             } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
-            	
-/*
-* \End{ MAPPING }
-*/
-            
-//            if ( modDarq.getConfig()!=null )
-//            {
-//                FedQueryEngineFactory.register(modDarq.getConfig());
-//                
-//            } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
-            
-            
             
             
             // XXX ?
             if (query.hasDatasetDescription()) throw new CmdException("Argument Error: No config file. use --config=<file>") ;
-             
+            
             Dataset dataset = new DarqDataset();
             modTime.startTimer() ;
             QueryExecution qe = QueryExecutionFactory.create(query, dataset) ;
@@ -158,7 +129,7 @@ public class query extends CmdARQ
             {
                 System.err.println("Cause:") ;
                 intEx.getCause().printStackTrace(System.err) ;
-                System.err.println() ;                
+                System.err.println() ;
             }
             intEx.printStackTrace(System.err) ;
         }
