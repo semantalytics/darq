@@ -1,0 +1,22 @@
+BASE <.>
+SELECT   ?r ?z ?y
+FROM        <dft.n3>
+FROM NAMED <datafoaf.ttl>
+FROM NAMED <datapub.ttl>
+WHERE
+    { 
+    
+    GRAPH <datafoaf.ttl> 
+    {
+        { ?x ?y ?z } .
+        
+        GRAPH <datapub.ttl>
+    {
+        { ?s ?r ?z } .
+    }
+    }   
+	
+	
+        
+    }
+    ORDER BY ASC(?z)

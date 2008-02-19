@@ -1,0 +1,8 @@
+SELECT  *
+WHERE
+    { 
+    SERVICE <_testing_model1.nt>
+    {
+    <http://rdf.hp.com/r-1> ?y "v-1-1" 
+    }
+    }

@@ -1,0 +1,13 @@
+PREFIX state: <http://www.daml.ri.cmu.edu/ont/USRegionState.daml#>
+PREFIX city:  <http://www.daml.ri.cmu.edu/ont/USCity.daml#>
+
+SELECT ?cityname ?borderstatename {
+	?city city:state ?borderstate .
+	?city city:name ?cityname .	
+
+	?state state:name "New York" .
+	?borderstate state:borderstate ?state .
+	?borderstate state:name ?borderstatename .
+	
+}
+ORDER BY DESC(?borderstatename)
