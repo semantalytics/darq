@@ -2,6 +2,9 @@
 
   <!-- TODO Convert value's to location's -->
 
+ 	
+ 	<property file="build.properties" />
+ 	
     <property name="Name"            value="DARQ"/>
     <property name="name"            value="darq"/>
     
@@ -81,6 +84,14 @@
             description="Create ARQ release">
       <antcall target="clean-build-dirs"/>
     </target>
+ 	
+    <target name="deploy" depends="jar"
+            description="deploy jar to server">
+    	<scp trust="true" file="${lib.dir}/${jarfile}" port="${port1}" todir="${username1}:${password1}@${host1}:${targetFolder1}" />
+    	<scp trust="true" file="${lib.dir}/arq.jar" port="${port1}" todir="${username1}:${password1}@${host1}:${targetFolder1}" />
+    	<scp trust="true" file="${lib.dir}/${jarfile}" port="${port2}" todir="${username2}:${password2}@${host2}:${targetFolder2}" />
+    	    	<scp trust="true" file="${lib.dir}/arq.jar" port="${port2}" todir="${username2}:${password2}@${host2}:${targetFolder2}" />
+    </target>
     
 
 <!-- Section: Grammars, Compilation and JAR -->
@@ -99,7 +110,11 @@
         </tstamp>
      
         <copy todir="${src.build.dir}">
-          <fileset dir="${src.dir}" includes="**"/>
+          <fileset dir="${src.dir}" >
+        	  <include name="**"/>
+        	  <exclude name="**/joseki/*"/>
+          	  <exclude name="**/CopyOf*"/> 
+         </fileset>
           <filterset>
             <filterset refid="filters.general"/>
             <filter token="build-time" value="${BUILD_TIME}" />

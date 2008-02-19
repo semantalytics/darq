@@ -3,11 +3,17 @@ package com.hp.hpl.jena.query.darq.engine.optimizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.core.ARQInternalErrorException;
 import com.hp.hpl.jena.query.darq.core.Capability;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
@@ -17,6 +23,7 @@ import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.Join;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.NestedLoopJoin;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.OperatorServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
+import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PrintVisitor;
 
 public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 
@@ -28,6 +35,27 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 	HashMap<Integer,List<PlanOperatorBase>> CandidateSizeIndex = new HashMap<Integer, List<PlanOperatorBase>>();
 	
 	int finalPlanSize = 0;
+	
+	Object sync = new Object();
+	
+	private class Enumerator implements Runnable {
+
+		PlanOperatorBase p1;
+		PlanOperatorBase p2;
+
+		public Enumerator(PlanOperatorBase p1, PlanOperatorBase p2) {
+			this.p1 = p1;
+			this.p2 = p2;
+		}
+
+		public void run() {
+			List<PlanOperatorBase> toaddlocal =enumerate(p1, p2);
+			synchronized (sync) {
+				addCandidates(toaddlocal);
+			}
+		}
+		
+	}
 
 	public PlanOperatorBase getCheapestPlan(List<ServiceGroup> sgs)
 			throws PlanUnfeasibleException {
@@ -45,32 +73,60 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 		 * candidates.addAll(enumerate(new OperatorServiceGroup(sg1), new
 		 * OperatorServiceGroup(sg2))); } }
 		 */
-		candidates = prune(candidates);
+		//candidates = prune(candidates);
 		//System.out.println(candidates.size());
 
 		for (int i = 2; i <= sgs.size(); i++) {
 
 			List<PlanOperatorBase> tmp = new LinkedList<PlanOperatorBase>(
 					candidates);
+			
+			// ExecutorService executor = Executors.newFixedThreadPool(5);
+			 
+			// ExecutorService executor = Executors.newFixedThreadPool(50);
+			
+			Set<PlanOperatorBase> seen  = new HashSet<PlanOperatorBase>();
 			while (!tmp.isEmpty()) {
 				PlanOperatorBase p1 = tmp.iterator().next();
 				tmp.remove(p1);
+				seen.add(p1);
 				
 				List<PlanOperatorBase> tmp2 =  new LinkedList<PlanOperatorBase>(CandidateSizeIndex.get(i-p1.size()));
-				tmp2.remove(p1);
+				tmp2.removeAll(seen);
+			
+			//	List<PlanOperatorBase> toadd = new LinkedList<PlanOperatorBase>();
 				
+			
 				for (PlanOperatorBase p2 : tmp2) {
 					List<PlanOperatorBase> toadd = enumerate(p1, p2);
+					////
+				
+					 
+				//	 executor.submit(new Enumerator(p1,p2));
+					 
+					 
+					
+					
+					////
 					
 					addCandidates(toadd);
 		//			System.err.println(candidates.size());
 		//			System.err.print(".");
 				}
-
+				
+			//	addCandidates(toadd);
 			//	System.err.println("Before Pruning: " + candidates.size());
 				//candidates = prune(candidates);
 		//		System.err.println("After Pruning: " + candidates.size());
 			}
+	/*		executor.shutdown();
+			  while (!executor.isTerminated()) {
+	               try {
+	                executor.awaitTermination(3600, TimeUnit.SECONDS);
+	            } catch (InterruptedException e) {
+	                throw new ARQInternalErrorException(e);
+	            }
+	            }*/
 			candidates = prune(candidates);
 	//		System.out.println(candidates.size());
 		}
@@ -94,7 +150,7 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 
 	private void addCandidates(List<PlanOperatorBase> toadd) {
 		candidates.addAll(toadd);
-		
+		//System.out.println("adding");
 		// update index
 		for (PlanOperatorBase pob:toadd) {
 			List<PlanOperatorBase> list= CandidateSizeIndex.get(pob.getServiceGroups().size());
@@ -103,13 +159,14 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 				CandidateSizeIndex.put(pob.getServiceGroups().size(),list);
 			}
 			list.add(pob);
+		//	PrintVisitor.printPlan(pob);
 		}
 	}
 	
 	// 
 	private void removeCandidates(List<PlanOperatorBase> toremove) {
 		candidates.removeAll(toremove);
-		
+		//System.out.println("removing");
 		//update index
 		for (PlanOperatorBase pob:toremove) {
 			List<PlanOperatorBase> list= CandidateSizeIndex.get(pob.getServiceGroups().size());
@@ -117,6 +174,7 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 				System.err.println("Index out of sync!!");
 			}
 			list.remove(pob);
+		//	PrintVisitor.printPlan(pob);
 		}
 	}
 	
@@ -154,9 +212,9 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 
 		Join j = null;
 
-		if ( (p2 instanceof OperatorServiceGroup) && p1.joins(p2)) {
-			if (p2.canBeRight()) {
-				j = new BindJoin(p1, p2);
+		if (p1.joins(p2)) {
+			if (rightToBindJoinOK(p2)) {
+				j = new BindJoin(p1, p2.clone());
 				try {
 					j.getCosts();
 					result.add(j);
@@ -165,8 +223,8 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 				}
 			}
 
-			if (p1.canBeRight()) {
-				j = new BindJoin(p2, p1);
+		if (rightToBindJoinOK(p1)) {
+				j = new BindJoin(p2, p1.clone());
 				try {
 					j.getCosts();
 					result.add(j);
@@ -194,6 +252,12 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 
 		return result;
 
+	}
+	
+	private boolean rightToBindJoinOK (PlanOperatorBase pob) {
+		if (pob instanceof BindJoin && pob.getHight()<5) return true;
+		if (pob instanceof OperatorServiceGroup) return true;
+		return false;
 	}
 
 	private List<PlanOperatorBase> prune(List<PlanOperatorBase> candidates) {
@@ -311,7 +375,7 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 		 * sglist.add(sg1); sglist.add(sg2); sglist.add(sg3);
 		 */
 
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 8; i++) {
 
 			service1 = new RemoteService("servicei" + i, "service1" + i,
 					"service1" + i, false);

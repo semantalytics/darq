@@ -98,12 +98,12 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
         }
     }
     
-    public Model getConfigModel() {
+   /* public Model getConfigModel() {
    
             return config.getModel();
 
         
-    }
+    }*/
     
     
     

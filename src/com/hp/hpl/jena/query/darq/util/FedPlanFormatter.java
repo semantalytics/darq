@@ -5,6 +5,9 @@
  */
 package com.hp.hpl.jena.query.darq.util;
  
+import java.io.IOException;
+import java.io.OutputStream;
+
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
@@ -12,6 +15,7 @@ import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
 import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanFormatterVisitor;
+import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.shared.PrefixMapping;
  
@@ -33,6 +37,10 @@ public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVis
         for (Triple t: planElt.getServiceGroup().getTriples()) {
             out.println(t.toString(prefixMapping));
         }
+        for (Expr f: planElt.getServiceGroup().getFilters()) {
+            out.println(f.toString());
+        }
+        
         out.decIndent();
     }
     
@@ -47,6 +55,9 @@ public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVis
         for (Triple t: planElt.getServiceGroup().getTriples()) {
             out.println(t.toString(prefixMapping));
         }
+        for (Expr f: planElt.getServiceGroup().getFilters()) {
+            out.println(f.toString());
+        }
         out.decIndent();
         
         
@@ -54,10 +65,19 @@ public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVis
         
     }
     
+    public void visit(PlanNestedLoopJoin planElt) {
+    	 out.print("NestedLoop: ");
+         out.incIndent();
+         planElt.getLeft().visit(this);
+         planElt.getRight().visit(this);
+         out.decIndent();
+    }
+    
+    
     
     static public void out(IndentedWriter w, PlanElement pElt)
     {
-        out(w, pElt) ; 
+        out(w, null,pElt) ; 
     }
     
     
@@ -73,11 +93,11 @@ public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVis
         //fmt.finishVisit() ;
         
     }
-
-	public void visit(PlanNestedLoopJoin planNestedLoopJoin) {
-		// TODO Auto-generated method stub
-		
-	}
+    static public void out(OutputStream ps, PlanElement pElt)
+    {
+        out(new IndentedWriter(ps), PrefixMapping.Standard,pElt) ;
+    }
+    
 
   
 

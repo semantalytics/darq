@@ -27,7 +27,7 @@ public class PrintVisitor implements PlanOperatorVisitor {
 
 	public void visit(NestedLoopJoin op) {
 		try {
-			out.println("NestedLoppJoin (" +op.getCosts_()+")");
+			out.println("NestedLoppJoin (" +op.getCosts_(null)+"/"+op.getResultsize()+")");
 		} catch (PlanUnfeasibleException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -41,7 +41,7 @@ public class PrintVisitor implements PlanOperatorVisitor {
 
 	public void visit(BindJoin op) {
 		try {
-			out.println("BindJoin (" +op.getCosts_()+")");
+			out.println("BindJoin (" +op.getCosts_(null)+"/"+op.getResultsize()+")");
 		} catch (PlanUnfeasibleException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -29,8 +29,8 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 	}
 
 	@Override
-	public double getCosts_() throws PlanUnfeasibleException {
-		return getResultsize(null) * CT;
+	public double getCosts_(Set<String> bound) throws PlanUnfeasibleException {
+		return getResultsize(bound) * CT;
 	}
 
 	@Override
@@ -110,6 +110,16 @@ public class OperatorServiceGroup extends PlanOperatorBase {
             return FedPlanService.make(context, sg, null);
         }
 	
+	}
+
+	@Override
+	public PlanOperatorBase clone() {
+		return this;
+	}
+
+	@Override
+	public int getHight() {
+		return 1;
 	}
 
 }

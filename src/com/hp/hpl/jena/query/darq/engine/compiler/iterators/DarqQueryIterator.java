@@ -39,7 +39,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 
     protected ServiceGroup serviceGroup = null;
     
-    protected QueryExecution qexec=null;
+ //   protected QueryExecution qexec=null;
     
 
    
@@ -110,7 +110,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
             }/*catch (Exception e) {
                 throw new ARQInternalErrorException(e);
             } */finally {
-                if (qexec!=null) qexec.close();
+       //         if (qexec!=null) qexec.close();
             }
         
         return new QueryIterPlainWrapper(newBindings.iterator(), null); //new QueryIterDistinct(concatIterator,getExecContext());

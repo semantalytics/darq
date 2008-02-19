@@ -75,7 +75,7 @@ public class FedQueryEngine extends QueryEngine {
         t.setOptimize(optimize);
         long t2;
         long t1=System.nanoTime();
-        PlanElement pe = Transformer.transform(t,planElt);
+        PlanElement pe = DarqTransformer.transform(t,planElt);
         t2=System.nanoTime();
         transformTime=t2-t1;
         

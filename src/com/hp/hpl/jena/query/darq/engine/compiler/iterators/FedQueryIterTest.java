@@ -10,12 +10,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
+import com.hp.hpl.jena.query.engineHTTP.QueryEngineHTTP;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
@@ -78,7 +80,7 @@ public class FedQueryIterTest extends DarqQueryIterator {
         
         ResultSet remoteResults = null;
 
-       qexec = QueryExecutionFactory.create(q, model);
+        QueryExecution qexec = QueryExecutionFactory.create(q, model);
         try {
             remoteResults = qexec.execSelect();
 
