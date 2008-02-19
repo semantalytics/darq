@@ -47,7 +47,7 @@ import com.hp.hpl.jena.vocabulary.RDFS;
 
 public class Configuration {
 
-	static Log log = LogFactory.getLog(Configuration.class);
+//	static Log log = LogFactory.getLog(Configuration.class);
 
 	private Model model;
 
@@ -76,6 +76,7 @@ public class Configuration {
 				model.getNsPrefixURI("sd"), "subjectBinding");
 
 		findServices();
+		model= null; // free memory
 	}
 
 	public ServiceRegistry getServiceRegistry() {
@@ -170,15 +171,16 @@ public class Configuration {
 				findRequiredBindings(s);
 
 				serviceRegistry.add(s);
-				log.debug("Service " + url + "added.");
+				// // log.debug("Service " + url + "added.");
 
 			}
 		} catch (Exception e) {
 			System.err.println(e); // TODO don't catch exception here.
 		}
 
-		if (serviceRegistry.getAvailableServices().size() == 0)
-			log.warn("No Services loaded from config file!");
+		if (serviceRegistry.getAvailableServices().size() == 0) {
+			// log.warn("No Services loaded from config file!");
+		}
 	}
 
 	private void findCapability(RemoteService s) {
@@ -214,7 +216,7 @@ public class Configuration {
 
 			Query query = makeQuery(q.toArray(new String[1]));
 
-			log.debug(query);
+			// log.debug(query);
 
 			QueryExecution qexec = QueryExecutionFactory.create(query, model);
 			int capabilitycount = 0;
@@ -255,8 +257,7 @@ public class Configuration {
 					try {
 						osel = ((Literal) objectNode).getDouble();
 					} catch (Exception e) {
-						log
-								.warn("could not read objectselectivity. (No double?)");
+						//log.warn("could not read objectselectivity. (No double?)");
 
 					}
 				}
@@ -267,8 +268,7 @@ public class Configuration {
 					try {
 						ssel = ((Literal) objectNode).getDouble();
 					} catch (Exception e) {
-						log
-								.warn("could not read subjectselectivity. (No double?)");
+						//log.warn("could not read subjectselectivity. (No double?)");
 
 					}
 				}
@@ -292,11 +292,11 @@ public class Configuration {
 
 			}
 			if (capabilitycount == 0) {
-				log.warn("No capabilities found for service with url: "
-						+ s.getUrl());
+				// log.warn("No capabilities found for service with url: "
+						//+ s.getUrl());
 			}
 		} catch (Exception e) {
-			log.error("Exception in findCapability(): " + e);
+			// log.error("Exception in findCapability(): " + e);
 		}
 
 	}
@@ -311,7 +311,7 @@ public class Configuration {
 
 			Query query = makeQuery(q);
 
-			log.debug(query);
+			// log.debug(query);
 
 			QueryExecution qexec = QueryExecutionFactory.create(query, model);
 
@@ -330,7 +330,7 @@ public class Configuration {
 
 			}
 		} catch (Exception e) {
-			log.error("Exception in findPreferedFilter(): " + e);
+			// log.error("Exception in findPreferedFilter(): " + e);
 		}
 
 	}
@@ -346,7 +346,7 @@ public class Configuration {
 
 			Query query = makeQuery(q);
 
-			log.debug(query);
+			// log.debug(query);
 
 			QueryExecution qexec = QueryExecutionFactory.create(query, model);
 
@@ -392,7 +392,7 @@ public class Configuration {
 				s.addRequiredBinding(rl);
 			}
 		} catch (Exception e) {
-			log.error("Exception in findPreferesBound(): " + e);
+			// log.error("Exception in findPreferesBound(): " + e);
 		}
 		// TODO close qexec
 
@@ -451,7 +451,7 @@ public class Configuration {
 			return query;
 		} catch (QueryParseException ex) {
 			System.out.println(qs);
-			log.fatal("INTERNAL ERROR: " + ex.getMessage());
+			// log.fatal("INTERNAL ERROR: " + ex.getMessage());
 			throw new ConfigurationException("Internal Error");
 		}
 	}
@@ -471,12 +471,12 @@ public class Configuration {
 		this.planOptimizer = planOptimizer;
 	}
 
-	public Model getModel() {
+	/*public Model getModel() {
 		Model retModel = ModelFactory.createDefaultModel();
 		retModel.add(model);
 		return retModel;
 
-	}
+	}*/
 
 	/**
 	 * @return Returns the darqQueryIteratorClass.
