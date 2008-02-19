@@ -14,10 +14,13 @@ import java.util.Set;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.RequiredBinding;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.expr.Expr;
+
 
 /**
  * Basic cost-based Optimizer. !! complexity of n! (n= #servicegroups) !!
@@ -145,7 +148,8 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
      * @param bound
      * @return
      */
-    public static OptimizerElement<ServiceGroup> getCheapestPlanForServiceGroup(ServiceGroup sg, Set<String> bound) throws PlanUnfeasibleException{
+    @SuppressWarnings("unchecked")
+	public static OptimizerElement<ServiceGroup> getCheapestPlanForServiceGroup(ServiceGroup sg, Set<String> bound) throws PlanUnfeasibleException{
 
         if (sg instanceof MultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
         
@@ -172,7 +176,12 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
         }
 
         Set<String> bv = new HashSet<String>(bound);
-        ;
+        
+        //  FIXME this is very imprecise. we consider all variables mentioned in filters to be bound. independent of their actual form, e.g =, >, or <
+        for (Expr f : sg.getFilters()) {
+        	for (Var v:(Set<Var>)f.getVarsMentioned()) {
+        	bv.add(v.toString().substring(1));}
+       }
 
         List<OptimizerElement<List<Triple>>> plan = new ArrayList<OptimizerElement<List<Triple>>>();
         double costs = 1;

@@ -17,7 +17,7 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 	/**
 	 * costs per request
 	 */
-	public final static double CR = 20;
+	public final static double CR = 10;
 
 	private double cachedResultSize=-1;
 
@@ -29,10 +29,14 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 //	public final static double SEL = 1 / 100; // TODO FIXME : Replace with
 												// better estimation!!
 
-	public abstract double getCosts_() throws PlanUnfeasibleException;
+	public abstract double getCosts_(Set<String> bound) throws PlanUnfeasibleException;
 	
 	public double getCosts() throws PlanUnfeasibleException {
-		if (cachedCosts ==-1) cachedCosts = getCosts_();
+		return getCosts(null);
+	}
+	
+	public double getCosts(Set<String> bound) throws PlanUnfeasibleException {
+		if (cachedCosts ==-1 || bound!=null) cachedCosts = getCosts_(bound);
 		return cachedCosts;
 	}
 
@@ -64,7 +68,7 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 
 	public int compareTo(PlanOperatorBase pob) {
 		try {
-			return new Double(this.getCosts()-pob.getCosts()).intValue();
+			return new Double(this.getCosts(null)-pob.getCosts(null)).intValue();
 		} catch (PlanUnfeasibleException e) {
 		
 		}
@@ -85,7 +89,7 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 	public String toString() {
 		
 		try {
-			return "(Costs: "+getCosts()+")"+super.toString();
+			return "(Costs: "+getCosts(null)+")"+super.toString();
 		} catch (PlanUnfeasibleException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -106,5 +110,8 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 		return getServiceGroups().size();
 	}
 	
+	public abstract PlanOperatorBase clone();
+	
+	public abstract int getHight();
 	
 }

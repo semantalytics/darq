@@ -15,10 +15,13 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
+import com.hp.hpl.jena.query.darq.util.DarqSerializer;
 import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
+import com.hp.hpl.jena.query.engineHTTP.QueryEngineHTTP;
 import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
+import com.hp.hpl.jena.query.util.IndentedLineBuffer;
 
 /**
  * Process a remote Service
@@ -29,9 +32,11 @@ import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
 
 public class FedQueryIterService extends DarqQueryIterator {
 
+	private static final int MAXTRIES = 4;
+
 	Log log = LogFactory.getLog(FedQueryIterService.class);
 
-	private static String TESTING_STRING = "_testing_";
+	
 
 	public FedQueryIterService(QueryIterator input, ServiceGroup sg,
 			ExecutionContext context, PlanElement subComp) {
@@ -48,27 +53,50 @@ public class FedQueryIterService extends DarqQueryIterator {
 		// System.out.println("Executing "+q);
 
 		String url = serviceGroup.getService().getUrl();
-
+		
+		IndentedLineBuffer buff = new IndentedLineBuffer() ;
+		
+        DarqSerializer.serializeDARQ(q, buff.getIndentedWriter()) ;
+        String query =  buff.toString();
+		
+        
+		
 		ResultSet remoteResults = null;
-		log.trace(url + "?q=" + q);
+	//	log.trace(url + "?q=" + q);
 		String defGraph = serviceGroup.getService().getGraph();
+		QueryEngineHTTP qexec = new QueryEngineHTTP(url,query);
 		if (defGraph != null) {
-			qexec = QueryExecutionFactory.sparqlService(url, q, defGraph);
-		} else {
-			qexec = QueryExecutionFactory.sparqlService(url, q);
+			qexec.addDefaultGraph(defGraph);
 		}
+	
+		//System.out.println(url + "?q=" + q);
+		
+		int tries = 0;
+		boolean retry = true;
+		do {
+			try {
 
-		try {
-
-			FedQueryEngineFactory.logSubquery(q);
-			remoteResults = qexec.execSelect();
-
-		} catch (QueryExceptionHTTP e) {
-			throw new QueryExecException("Failed to connect to Endpoint: "
-					+ url);
-		} finally {
-
-		}
+				FedQueryEngineFactory.logSubquery(q);
+				remoteResults = qexec.execSelect();
+				retry = false;
+			} catch (QueryExceptionHTTP e) {
+				if (tries < MAXTRIES) {
+					try {
+						tries++;
+						Thread.sleep(20 * tries);
+					} catch (InterruptedException e1) {
+					}
+				} else {
+					throw new QueryExecException(
+							"Failed to connect to Endpoint: " + url + "("+defGraph+"): " +e + "\n Query: "+query);
+				}
+			} finally {
+				
+			}
+		} while (retry);
+		
+		qexec.close();
+		
 		return remoteResults;
 	}
 

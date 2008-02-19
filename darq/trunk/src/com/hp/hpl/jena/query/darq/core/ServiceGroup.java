@@ -5,14 +5,17 @@
  */
 package com.hp.hpl.jena.query.darq.core;
 
+import java.awt.image.RescaleOp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.hp.hpl.jena.graph.Graph;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
 
+import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.expr.Expr;
 
 public class ServiceGroup {
@@ -164,7 +167,12 @@ public class ServiceGroup {
         
         Set<String> filtervars = new HashSet<String>();
         
-        c.varsMentioned(filtervars);
+        Set<Var> vars = new HashSet<Var>();
+        c.varsMentioned(vars);
+       
+        for (Var v:vars) {
+        	filtervars.add(v.toString().substring(1));
+        }
        
         // is filtervars a subset of usedvars ?
         filtervars.removeAll(usedVariables); 
@@ -175,6 +183,12 @@ public class ServiceGroup {
         
         return false;
         
+    }
+    
+    public boolean addFilters(List<Expr> lc) {
+    	boolean result=true;
+    	for (Expr c:lc) result = result && addFilter(c);
+    	return result;
     }
     
     
@@ -227,7 +241,9 @@ public class ServiceGroup {
      */
     @Override
     public int hashCode() {
-        return service.getUrl().hashCode() ^ triples.hashCode() ^ filters.hashCode();
+    	int hc = service.getUrl().hashCode() ^ triples.hashCode() ^ filters.hashCode();
+    	if (service.getGraph()!=null) hc= hc ^ service.getGraph().hashCode() ;
+        return hc;
     }
     
    

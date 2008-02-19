@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
@@ -18,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.QueryBuildException;
+import com.hp.hpl.jena.query.core.ElementBasicGraphPattern;
 import com.hp.hpl.jena.query.darq.config.Configuration;
 import com.hp.hpl.jena.query.darq.config.ServiceRegistry;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
@@ -25,8 +27,13 @@ import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.PlanGroupDarq;
+import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
+import com.hp.hpl.jena.query.darq.util.FedPlanFormatter;
+import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
+import com.hp.hpl.jena.query.darq.util.PlanFilterAddVisitor;
 import com.hp.hpl.jena.query.engine.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
@@ -34,7 +41,9 @@ import com.hp.hpl.jena.query.engine1.plan.PlanBlockTriples;
 import com.hp.hpl.jena.query.engine1.plan.PlanFilter;
 import com.hp.hpl.jena.query.engine1.plan.PlanGroup;
 import com.hp.hpl.jena.query.engine1.plan.TransformCopy;
+import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.util.Context;
+import com.hp.hpl.jena.query.util.IndentedWriter;
 
 public class DarqTransform extends TransformCopy {
 
@@ -54,6 +63,8 @@ public class DarqTransform extends TransformCopy {
 	HashMap<RemoteService, ServiceGroup> groupedTriples = new HashMap<RemoteService, ServiceGroup>();
 
 	HashMap<Triple, MultipleServiceGroup> queryIndividuallyTriples = new HashMap<Triple, MultipleServiceGroup>();
+
+	List<ServiceGroup> sgsPos = new LinkedList<ServiceGroup>();
 
 	Set varsMentioned = new HashSet();
 
@@ -81,60 +92,95 @@ public class DarqTransform extends TransformCopy {
 		registry = conf.getServiceRegistry();
 	}
 
+	
+	public PlanElement transform(PlanBasicGraphPattern planElt, List newElts,PlanElement parent) {
+		/*
+		 * We do this only if we have a basic graph pattern with one triple:
+		 * PlanGroups with one Triple will be converted to PlanBasicGraphPattern
+		 * by ARQ :( We need to handle that!
+		 * There are also some other cases where PlanBasicGraphPattern is not in a group... :((
+		 */
+		
+		if (parent instanceof PlanGroup) return planElt;
+	/*	 if (!( (newElts.size()==1) && (newElts.get(0) instanceof
+		 PlanBlockTriples) &&
+		 (((PlanBlockTriples)newElts.get(0)).getSubElements().size()==1) ) )
+		 return planElt;*/
+		 
+		List<PlanElement> acc = new ArrayList<PlanElement>();
+		acc.add(planElt);
+		return make(acc, planElt.getContext());
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see com.hp.hpl.jena.query.engine1.plan.TransformBase#transform(com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern,
 	 *      java.util.List)
 	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public PlanElement transform(PlanBasicGraphPattern planElt, List newElts) {
 
+	@Override
+	public PlanElement transform(PlanGroup planElt, List newElts) {
+		return make(newElts, planElt.getContext());
+	}
+
+	private PlanElement make(List newElts, Context context) {
 		groupedTriples.clear(); // new for each PlanBasicGraphPattern !
 		queryIndividuallyTriples.clear(); // "
 
-		PlanBlockTriples unmatchedTriples = new PlanBlockTriples(context);
+		List<Triple> unmatchedTriples = new LinkedList<Triple>();
 
 		List<PlanFilter> filters = new ArrayList<PlanFilter>();
 
 		List<PlanElement> acc = new ArrayList<PlanElement>();
 
 		// planning
-		for (PlanElement el : (List<PlanElement>) newElts) {
+		for (PlanElement elm : (List<PlanElement>) newElts) {
 
-			if (el instanceof PlanBlockTriples) {
-				for (Triple t : (List<Triple>) ((PlanBlockTriples) el)
-						.getPattern()) {
+			if (elm instanceof PlanBasicGraphPattern) {
 
-					List<RemoteService> services = selectServices(registry
-							.getMatchingServices(t));
-					if (services.size() == 1) {
-						putIntoGroupedTriples(services.get(0), t);
-					} else if (services.size() > 1) {
-						/*
-						 * if there are more than one service, the triple has to
-						 * be passed to the services individually. This is
-						 * because ... TODO
-						 */
-						for (int j = 0; j < services.size(); j++) {
-							putIntoQueryIndividuallyTriples(t, services.get(j));
+				for (PlanElement el : (List<PlanElement>) elm.getSubElements()) {
+
+					if (el instanceof PlanBlockTriples) {
+						for (Triple t : (List<Triple>) ((PlanBlockTriples) el)
+								.getPattern()) {
+
+							List<RemoteService> services = selectServices(registry
+									.getMatchingServices(t));
+							if (services.size() == 1) {
+								putIntoGroupedTriples(services.get(0), t);
+							} else if (services.size() > 1) {
+								/*
+								 * if there are more than one service, the
+								 * triple has to be passed to the services
+								 * individually. This is because ... TODO
+								 */
+								for (int j = 0; j < services.size(); j++) {
+									putIntoQueryIndividuallyTriples(t, services
+											.get(j));
+								}
+
+							} else {
+
+								unmatchedTriples.add(t);
+								log.warn("No service found for statement: " + t
+										+ " - it will be queried locally.");
+
+							}
+
 						}
-
+					} else if (el instanceof PlanFilter) {
+						filters.add((PlanFilter) el);
 					} else {
-
-						unmatchedTriples.addTriple(t);
-						log.warn("No service found for statement: " + t
-								+ " - it will be queried locally.");
+						acc.add(0, el);
 
 					}
-
 				}
 
-			} else if (el instanceof PlanFilter) {
-				filters.add((PlanFilter) el);
+			} else if (elm instanceof PlanFilter) {
+				filters.add((PlanFilter) elm);
 			} else {
-				acc.add(0, el);
+				acc.add(0, elm);
 
 			}
 
@@ -157,27 +203,30 @@ public class DarqTransform extends TransformCopy {
 		// build new subplan
 		if (groupedTriples.size() > 0 || queryIndividuallyTriples.size() > 0) {
 
-			ArrayList<ServiceGroup> al = new ArrayList<ServiceGroup>(
-					groupedTriples.values());
-			al.addAll(queryIndividuallyTriples.values());
-			
-			
+			/*
+			 * ArrayList<ServiceGroup> al = new ArrayList<ServiceGroup>(
+			 * groupedTriples.values());
+			 * al.addAll(queryIndividuallyTriples.values());
+			 */
+
+			ArrayList<ServiceGroup> al = new ArrayList<ServiceGroup>(sgsPos);
+
 			if (optimize) { // run optimizer
 				PlanElement optimizedPlan = null;
 				try {
-					PlanOperatorBase planOperatorBase = config.getPlanOptimizer().getCheapestPlan(al);
+					PlanOperatorBase planOperatorBase = config
+							.getPlanOptimizer().getCheapestPlan(al);
 					FedQueryEngineFactory.logExplain(planOperatorBase);
 					optimizedPlan = planOperatorBase.toARQPlanElement(context);
-					
+
 				} catch (PlanUnfeasibleException e) {
-					throw new QueryBuildException("No feasible plan: "
-							+ e);
+					throw new QueryBuildException("No feasible plan: " + e);
 				}
-				acc.add(0,optimizedPlan);
-				log.debug("selected: \n"
-						+ optimizedPlan.toString());
-				
-			} else { // no optimization -> just add elements 
+				acc.add(0, optimizedPlan);
+				// log.debug("selected: \n"
+				// + optimizedPlan.toString());
+
+			} else { // no optimization -> just add elements
 				int pos = 0;
 				for (ServiceGroup sg : al) {
 
@@ -192,13 +241,20 @@ public class DarqTransform extends TransformCopy {
 			}
 		}
 
-		// unmatched patterns are executed locally 
-		if (unmatchedTriples.getPattern().size() > 0)
-			acc.add(0, unmatchedTriples);
+		// unmatched patterns are executed locally
+		if (unmatchedTriples.size() > 0) {
+			ElementBasicGraphPattern elementBasicGraphPattern = new ElementBasicGraphPattern();
+			for (Triple t : unmatchedTriples)
+				elementBasicGraphPattern.addTriple(t);
+			acc.add(0, PlanBasicGraphPattern.make(context,
+					elementBasicGraphPattern));
+		}
 
-		
-		PlanElement ex = PlanGroup
-				.make(planElt.getContext(), (List) acc, false);
+		PlanElement ex = PlanGroupDarq.make(context, (List) acc, false);
+
+		// FedPlanFormatter.out(new IndentedWriter(System.out), ex);
+		// System.out.println("-----");
+
 		return ex;
 	}
 
@@ -225,6 +281,7 @@ public class DarqTransform extends TransformCopy {
 		if (tg == null) {
 			tg = new ServiceGroup(s);
 			groupedTriples.put(s, tg);
+			sgsPos.add(tg);
 		}
 
 		tg.addB(t);
@@ -235,6 +292,7 @@ public class DarqTransform extends TransformCopy {
 		if (msg == null) {
 			msg = new MultipleServiceGroup();
 			queryIndividuallyTriples.put(t, msg);
+			sgsPos.add(msg);
 			msg.addB(t);
 		}
 		msg.addService(s);

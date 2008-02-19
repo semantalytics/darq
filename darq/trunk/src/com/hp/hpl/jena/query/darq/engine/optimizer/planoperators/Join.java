@@ -4,16 +4,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
-import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 
 public abstract class Join extends PlanOperatorBase{
 
-	private PlanOperatorBase left;
+	protected PlanOperatorBase left;
 
-	private PlanOperatorBase right;
+	protected PlanOperatorBase right;
 
 	private Set<String> joinedVariables ;
+	
+	private int cachedHight =  -99;
 
 
 	public Join(PlanOperatorBase left, PlanOperatorBase right)
@@ -63,30 +64,6 @@ public abstract class Join extends PlanOperatorBase{
 
 
 	@Override
-	public double getResultsize(Set<String> boundVariables) throws PlanUnfeasibleException {
-		for (String s:left.getBoundVariables()) {
-			if (right.getBoundVariables().contains(s)) return (left.getResultsize(boundVariables)+right.getResultsize(boundVariables))/2d;
-		}
-		return left.getResultsize(boundVariables)*right.getResultsize(boundVariables);
-	}
-	
-	
-
-	@Override
-	public double getCosts_() throws PlanUnfeasibleException {
-		double result = getCosts__();
-		if (! (left instanceof OperatorServiceGroup)) {
-			result += left.getCosts();
-		}
-		if (! (right instanceof OperatorServiceGroup)) {
-			result += right.getCosts();
-		}
-		return result;
-	}
-	
-	public abstract double getCosts__() throws PlanUnfeasibleException ;
-
-	@Override
 	public boolean isCompatible(PlanOperatorBase pob) {
 		// TODO Auto-generated method stub
 		if (pob.getServiceGroups().containsAll(this.getServiceGroups()) && this.getServiceGroups().containsAll(pob.getServiceGroups())) return true;
@@ -101,7 +78,11 @@ public abstract class Join extends PlanOperatorBase{
 	}
 	
 	
-	
+	@Override
+	public int getHight() {
+		if (cachedHight==-99) cachedHight=Math.max(getLeft().getHight(), getRight().getHight())+1; 
+		return cachedHight;
+	}
 	
 
 }

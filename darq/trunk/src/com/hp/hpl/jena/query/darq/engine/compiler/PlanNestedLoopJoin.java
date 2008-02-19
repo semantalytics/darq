@@ -113,6 +113,24 @@ public class PlanNestedLoopJoin extends PlanElement0
 
 
 
+	/**
+	 * @return the left
+	 */
+	public PlanElement getLeft() {
+		return left;
+	}
+
+
+
+	/**
+	 * @return the right
+	 */
+	public PlanElement getRight() {
+		return right;
+	}
+
+
+
 
 
     

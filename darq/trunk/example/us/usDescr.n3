@@ -129,7 +129,7 @@
 
 
       sd:totalTriples "564" ;
-      sd:url  <http://localhost:2222/usstates> .
+      sd:url  <http://localhost:2020/usstates> .
 
 
 # #########################################################################################################
@@ -223,7 +223,7 @@
                 sd:triples 2
               ] ;
       sd:totalTriples "2416" ;
-      sd:url  <http://localhost:2222/uscities> .
+      sd:url  <http://localhost:2020/uscities> .
       
       
       
@@ -318,4 +318,4 @@
                 sd:triples 2
               ] ;
       sd:totalTriples "2416" ;
-      sd:url  <http://localhost:2222/uscities2> .
+      sd:url  <http://localhost:2020/uscities2> .

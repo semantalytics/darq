@@ -220,6 +220,9 @@ public class NestedLoopJoinIterator extends QueryIteratorBase {
 		right = null;
 		resultIterLeft = null;
 		resultIterRight = null;
+		
+		resultLeft=null;
+		resultRight=null;
 
 		initerror = false;
 		initialized = false;
