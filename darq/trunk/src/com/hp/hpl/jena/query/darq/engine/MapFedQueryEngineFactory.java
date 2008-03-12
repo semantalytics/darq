@@ -1,25 +1,21 @@
 /**
  * 
  */
-package de.hu_berlin.informatik.wbi.darq.mapping;
+package com.hp.hpl.jena.query.darq.engine;
+
+import org.semanticweb.owl.model.OWLOntology;
 
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.darq.config.MapConfiguration;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
-//import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
-import de.hu_berlin.informatik.wbi.darq.mapping.MapFedQueryEngine;
-import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
-import com.hp.hpl.jena.query.darq.util.DARQLogHook;
+import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.MapPlanOperatorBase;
+import com.hp.hpl.jena.query.darq.util.MapDARQLogHook;
 import com.hp.hpl.jena.query.engine.QueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.rdf.model.Model;
-
-//import org.apache.commons.logging.Log;
-//import org.apache.commons.logging.LogFactory;
-import org.semanticweb.owl.model.OWLOntology; 
 
 /**
  * @author Alexander Musidlowski
@@ -30,35 +26,37 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 
 	private OWLOntology ontology;
 	private MapConfiguration config;
+	private Integer transitivity;
 	 
     private static MapFedQueryEngineFactory instance = null;
-    private static DARQLogHook loghook = null;
+    private static MapDARQLogHook loghook = null;
 
     static boolean registered = false;
     
     
 
-	private MapFedQueryEngineFactory(MapConfiguration conf, OWLOntology ontology) {
+	private MapFedQueryEngineFactory(MapConfiguration conf, OWLOntology ontology, Integer transitivity) {
 				// TODO Auto-generated constructor stub
 		this.config = conf;
 		this.ontology = ontology;
+		this.transitivity = transitivity;
 	}
 
 	/*
 	 * erzeugt genau ein Objekt von MapFedQueryEngineFactory 
 	 */
 	 
-	public static void register(MapConfiguration conf, OWLOntology ontology) {
+	public static void register(MapConfiguration conf, OWLOntology ontology, Integer transitivity) {
 		if (!registered) { 
-            instance = new MapFedQueryEngineFactory(conf, ontology);
+            instance = new MapFedQueryEngineFactory(conf, ontology, transitivity);
             QueryEngineRegistry.addFactory(instance);
             registered=true;
         }	    
 	}
 	 
-	public static void register(String configFileName, OWLOntology ontology) {
+	public static void register(String configFileName, OWLOntology ontology, Integer transitivity) {
 	        MapConfiguration c = new MapConfiguration(configFileName);
-	        register(c, ontology);
+	        register(c, ontology, transitivity);
 	}
 	
 	 /**
@@ -69,7 +67,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	}
 	
 	 public QueryExecution create(Query query, Dataset dataset) {
-	        MapFedQueryEngine fqe= new MapFedQueryEngine(query, config, ontology);
+	        MapFedQueryEngine fqe= new MapFedQueryEngine(query, config, ontology, transitivity);
 	        fqe.setDataset(dataset);
 	        return fqe;
 	 }
@@ -77,6 +75,10 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	 public OWLOntology getOntology() {
 		   
          return ontology;
+	 }
+	 public Integer getTransitivity() {
+		   
+         return transitivity;
 	 }
 	 
 	 /**********************************/	    
@@ -109,7 +111,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	            loghook.logSubquery(query);
 	        }
 	    }    
-	    public static void logExplain(PlanOperatorBase pob) {
+	    public static void logExplain(MapPlanOperatorBase pob) {
 	        if (loghook!= null) {
 	            loghook.logOptimizerExplain(pob);
 	        }
@@ -129,7 +131,7 @@ public class MapFedQueryEngineFactory implements QueryEngineFactory{
 	    /**
 	     * @param loghook The loghook to set.
 	     */
-	    public static void setLoghook(DARQLogHook lh) {
+	    public static void setLoghook(MapDARQLogHook lh) {
 	        loghook = lh;
 	    }
 

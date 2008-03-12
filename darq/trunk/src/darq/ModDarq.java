@@ -6,7 +6,7 @@ import arq.cmdline.CmdArgModule;
 import arq.cmdline.CmdGeneral;
 
 public class ModDarq implements ArgModuleGeneral {
-    // TODO Auto-generated method stub
+
 
     protected final ArgDecl argDarqConfig = new ArgDecl(ArgDecl.HasValue, "config") ;
    // protected final ArgDecl argDarqVerbose = new ArgDecl(ArgDecl.NoValue, "verbose") ;

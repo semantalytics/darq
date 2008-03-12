@@ -14,6 +14,7 @@ import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.query.core.ARQInternalErrorException;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
+import com.hp.hpl.jena.query.darq.engine.MapFedQueryEngineFactory;
 import com.hp.hpl.jena.query.engineHTTP.HttpQuery;
 import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
 import com.hp.hpl.jena.query.resultset.ResultSetException;
@@ -21,10 +22,10 @@ import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.query.util.Utils;
 import com.hp.hpl.jena.shared.JenaException;
 //import de.hu_berlin.informatik.wbi.darq.mapping.Mapping;
+//import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
 import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
 //import edu.stanford.smi.protegex.owl.model.OWLModel;
 import org.semanticweb.owl.model.OWLOntology;
-import de.hu_berlin.informatik.wbi.darq.mapping.MapFedQueryEngineFactory;
 
 public class query extends CmdARQ
 {
@@ -106,12 +107,14 @@ public class query extends CmdARQ
  */           
 //            ModQueryin erzeugt Fehler, wenn --map mehr als ein Argument hat.
 //            bei mehr als einem --map bekommt man nur Fehler des letzten Map
-            String[] mappings = modMapping.getMapping();            
+            String[] mappings = modMapping.getMapping();     
+            int transitivity = modMapping.gettransitivity();
             OWLOntology ontology = null;
             if ( modDarq.getConfig()!=null ){
             	if ( mappings !=null ){
-            		ontology = MapLoadOntologies.loadCommandline(mappings);	            	
-            		MapFedQueryEngineFactory.register(modDarq.getConfig(), ontology);
+//            		ontology = MapLoadOntologies_old.loadCommandline(mappings);
+            		ontology = MapLoadOntologies.loadCommandline(mappings);	           
+            		MapFedQueryEngineFactory.register(modDarq.getConfig(), ontology, transitivity);
             	}
             	else{ 
             		FedQueryEngineFactory.register(modDarq.getConfig());
