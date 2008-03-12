@@ -1,4 +1,5 @@
-package de.hu_berlin.informatik.wbi.darq.mapping;
+package com.hp.hpl.jena.query.darq.engine;
+
 
 /**
  * @author Alexander Musidlowski
@@ -8,11 +9,7 @@ package de.hu_berlin.informatik.wbi.darq.mapping;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.darq.config.MapConfiguration;
 //import com.hp.hpl.jena.query.darq.engine.DarqTransform;
-import de.hu_berlin.informatik.wbi.darq.mapping.MapDarqTransform;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 //import com.hp.hpl.jena.query.engine.QueryEngineFactory;
-import de.hu_berlin.informatik.wbi.darq.mapping.MapFedQueryEngineFactory;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.plan.Transformer;
 import com.hp.hpl.jena.query.util.Context;
@@ -24,47 +21,59 @@ public class MapFedQueryEngine extends FedQueryEngine {
 	  Query query ;
 	  MapConfiguration config;
 	  OWLOntology ontology;
+	  Integer transitivity;
 	  private long transformTime =0;
 	  boolean optimize = true;
 	    
 	  
 	public MapFedQueryEngine(Query q) {
-		this(q,null,null,null);
-		// TODO Auto-generated constructor stub
+		this(q,null,null,null,0);
 	}
 	//FRAGE ist diese Methode sinnvoll?
 	public MapFedQueryEngine(Query q, OWLOntology ontology) {
-		this(q,null,null, ontology);
+		this(q,null,null,ontology,0);
+	}
+	
+	public MapFedQueryEngine(Query q, OWLOntology ontology, Integer transitivity) {
+		this(q,null,null,ontology,transitivity);
 	}
 	
 	public MapFedQueryEngine(Query q, MapConfiguration conf) {
-		this(q,null,conf,null);
-		// TODO Auto-generated constructor stub
+		this(q,null,conf,null, 0);
 	}
 
 	public MapFedQueryEngine(Query q, Context p, MapConfiguration conf) {
-		this(q,p,conf,null);
-		// TODO Auto-generated constructor stub
+		this(q,p,conf,null,0);
 	}
 	
 	public MapFedQueryEngine(Query q, MapConfiguration conf, OWLOntology ontology) {
-		this(q,null, conf,ontology);
-		// TODO Auto-generated constructor stub
+		this(q,null,conf,ontology,0);
 	}
 	
-	public MapFedQueryEngine(Query q, Context p, MapConfiguration conf, OWLOntology ontology) {
+	public MapFedQueryEngine(Query q, MapConfiguration conf, OWLOntology ontology, Integer transitivity) {
+		this(q,null,conf,ontology,transitivity);
+	}
+	public MapFedQueryEngine(Query q, Context p, MapConfiguration conf, OWLOntology ontology, Integer transitivity) {
 		super(q, p, conf);
 		this.ontology = ontology;
 		this.config = conf;
-		// TODO Auto-generated constructor stub
+		this.transitivity = transitivity;
 	}
 	
+	/*
+	 * Get/Set nicht notwendig hier
+	 */
 	public OWLOntology getOntology() {
 		return ontology;
 	}
-	
 	public void setOntology(OWLOntology ontology) {
 		this.ontology = ontology;
+	}
+	public Integer getTransitivity() {
+		return transitivity;
+	}
+	public void setTransitivity(Integer transitivity) {
+		this.transitivity = transitivity;
 	}
 
 	 /* (non-Javadoc)
@@ -73,7 +82,7 @@ public class MapFedQueryEngine extends FedQueryEngine {
     @Override
     protected PlanElement queryPlanHook(Context context, PlanElement planElt) {
         MapFedQueryEngineFactory.logPlan(query,planElt);
-        MapDarqTransform t = new MapDarqTransform(context,config, ontology);
+        MapDarqTransform t = new MapDarqTransform(context,config, ontology, transitivity);
         t.setOptimize(optimize);
         long t2;
         long t1=System.nanoTime();
@@ -85,6 +94,7 @@ public class MapFedQueryEngine extends FedQueryEngine {
        // log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
         return pe;
     }
+	
 
 	
 }
