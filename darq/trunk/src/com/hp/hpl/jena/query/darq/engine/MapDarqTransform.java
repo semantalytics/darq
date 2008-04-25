@@ -11,6 +11,7 @@ import java.util.Stack;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.semanticweb.owl.model.OWLIndividual;
 import org.semanticweb.owl.model.OWLOntology;
 
 import com.hp.hpl.jena.graph.Node;
@@ -20,9 +21,7 @@ import com.hp.hpl.jena.query.darq.config.MapConfiguration;
 import com.hp.hpl.jena.query.darq.config.ServiceRegistry;
 import com.hp.hpl.jena.query.darq.core.MapMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.MapServiceGroup;
-import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
-import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.MapFedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.MapFedPlanService;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
@@ -36,6 +35,8 @@ import com.hp.hpl.jena.query.engine1.plan.PlanGroup;
 import com.hp.hpl.jena.query.util.Context;
 
 import de.hu_berlin.informatik.wbi.darq.mapping.MapSearch;
+import de.hu_berlin.informatik.wbi.darq.mapping.Rule;
+import de.hu_berlin.informatik.wbi.darq.mapping.RulePart;
 /**
  * 
  * @author Alexander Musidlowski
@@ -62,26 +63,29 @@ public class MapDarqTransform extends DarqTransform {
 	
 	// Subject
 	private Set<URI> subjectSubClass = new HashSet<URI>();
-	private Set<URI> subjectEquClass = new HashSet<URI>();;
-	private Set<URI> subjectSubProp = new HashSet<URI>();;
-	private Set<URI> subjectEquProp = new HashSet<URI>();;
-	private Set<URI> subjectSameIndi = new HashSet<URI>();;
+	private Set<URI> subjectEquClass = new HashSet<URI>();
+	private Set<URI> subjectSubProp = new HashSet<URI>();
+	private Set<URI> subjectEquProp = new HashSet<URI>();
+	private Set<URI> subjectSameIndi = new HashSet<URI>();
+	private HashMap<URI, HashSet<Rule>> subjectRules = new HashMap<URI, HashSet<Rule>>();
 	private boolean subjectVariable = false;
 	
 	// Predicate
-	private Set<URI> predicateSubClass = new HashSet<URI>();;
-	private Set<URI> predicateEquClass = new HashSet<URI>();;
-	private Set<URI> predicateSubProp = new HashSet<URI>();;
-	private Set<URI> predicateEquProp = new HashSet<URI>();;
-	private Set<URI> predicateSameIndi = new HashSet<URI>();;
+	private Set<URI> predicateSubClass = new HashSet<URI>();
+	private Set<URI> predicateEquClass = new HashSet<URI>();
+	private Set<URI> predicateSubProp = new HashSet<URI>();
+	private Set<URI> predicateEquProp = new HashSet<URI>();
+	private Set<URI> predicateSameIndi = new HashSet<URI>();
+	private HashMap<URI, HashSet<Rule>> predicateRules = new HashMap<URI, HashSet<Rule>>();
 	private boolean predicateVariable = false;
 	
 	// Object
-	private Set<URI> objectSubClass = new HashSet<URI>();;
-	private Set<URI> objectEquClass = new HashSet<URI>();;
-	private Set<URI> objectSubProp = new HashSet<URI>();;
-	private Set<URI> objectEquProp = new HashSet<URI>();;
-	private Set<URI> objectSameIndi = new HashSet<URI>();;
+	private Set<URI> objectSubClass = new HashSet<URI>();
+	private Set<URI> objectEquClass = new HashSet<URI>();
+	private Set<URI> objectSubProp = new HashSet<URI>();
+	private Set<URI> objectEquProp = new HashSet<URI>();
+	private Set<URI> objectSameIndi = new HashSet<URI>();
+	private HashMap<URI, HashSet<Rule>> objectRules = new HashMap<URI, HashSet<Rule>>();
 	private boolean objectVariable = false;
 
 	// The return stack
@@ -153,7 +157,7 @@ public class MapDarqTransform extends DarqTransform {
 					 */
 					/* Logik
 					 * triples erhält originaltriple
-					 * simtriples = triples
+					 * simtriples = triples 
 					 * über simtriples iterieren
 					 * triples erweitern
 					 */
@@ -175,14 +179,24 @@ public class MapDarqTransform extends DarqTransform {
 								if (mapping.containsClassReference(tempURI)) {
 									subjectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
 									subjectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
+									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
+									//Aufruf stellt sicher, dass die URI in der Ontologie existiert, daher nicht ausserhalb der ifs
 								}
 								if (mapping.containsObjectPropertyReference(tempURI)){
 									subjectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-									subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );							
+									subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
+								}//FRAGE Eventuell muss DataProp noch angepasst werden, drüber nachdenken
+								if (mapping.containsDataPropertyReference(tempURI)){
+									subjectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+									subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 								}
 								if (mapping.containsIndividualReference(tempURI)){
 									subjectSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
+									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 								}
+								
 							}else{ subjectVariable = true;}
 
 							if (!similarTriple.getPredicate().isVariable()){
@@ -191,14 +205,22 @@ public class MapDarqTransform extends DarqTransform {
 //								MapSearch.AllAxiomsfromClass(URI.create(similarTriple.getPredicate().getURI()), mapping);//TEST
 								if (mapping.containsClassReference(tempURI)){
 									predicateSubClass = MapSearch.SearchSubclass(tempURI, mapping );
-									predicateEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );	
+									predicateEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
+									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 								}
 								if (mapping.containsObjectPropertyReference(tempURI)){
 									predicateSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-									predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );	
+									predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
+								}
+								if (mapping.containsDataPropertyReference(tempURI)){
+									predicateSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+									predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 								}
 								if (mapping.containsIndividualReference(tempURI)){
 									predicateSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
+									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 								}
 							}else{ predicateVariable = true;}
 
@@ -209,14 +231,22 @@ public class MapDarqTransform extends DarqTransform {
 //									MapSearch.AllAxiomsfromClass(URI.create(t.getObject().getURI()), mapping);//TEST							
 									if (mapping.containsClassReference(tempURI)){
 										objectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
-										objectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );	
+										objectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
+										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 									}
 									if (mapping.containsObjectPropertyReference(tempURI)){
 										objectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-										objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );	
+										objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
+									}
+									if (mapping.containsDataPropertyReference(tempURI)){
+										objectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+										objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 									}
 									if (mapping.containsIndividualReference(tempURI)){
 										objectSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
+										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
 									}//FRAGE Kann ein Object das alles sein, Was ist mit DataProperty?
 								}
 							}else{ objectVariable = true;}
@@ -226,10 +256,22 @@ public class MapDarqTransform extends DarqTransform {
 							 */
 							triplesSizeBefore = triples.size();
 							createSimilarTriples(similarTriple);
+							//TODO Hier müssen die Regeln ausgwertet werden und 
+							//entsprechende Anfragen generiert werden
+							//if (rule.isMultiply){//do something}
+							//eventuell createSimilarTriple(Rule rule) erzeugen
+							//(SWRL.java --> SearchRules())
+							/*
+							 * für die USG (Union SG) muss geprüft werden, ob
+							 * es similarTriples gibt. 
+							 */
+							
 						}//END FOR searching similar triples
 						runs++;
 					}while(transitivityDepth >= runs && triples.size() != triplesSizeBefore); 
-									
+						
+					
+					// TODO Create Triple für Regeln! 
 					// TODO UNION dieser Triples
 					 				
 					/*
@@ -237,16 +279,13 @@ public class MapDarqTransform extends DarqTransform {
 					 * -- looks for fitting services for each triple and puts it into -- 
 					 *    a SG or MSG 
 					 */
-					for(Triple similarTriple:triples){
-						System.out.println("[MapDarqTransform] similar triples: "+similarTriple);//TEST
-						List<RemoteService> services = selectServices(registry
-								.getMatchingServices(similarTriple));
-					/* hier wird in den SD nachgeschaut, ob die Ressourcen (capabilities) existieren
-					 */
-						similarTripleMap.put(cloneTriple(similarTriple), similar);
-					
+					if (triples.size() == 1){ 
+						/* nur Originaltriple vorhanden */
+						Triple triple = triples.iterator().next();
+						List<RemoteService> services = selectServices(registry.getMatchingServices(triple));
+						//normale SG bzw. MSG
 						if (services.size() == 1) {
-							putIntoGroupedTriples(services.get(0), similarTriple);
+							putIntoGroupedTriples(services.get(0), triple);
 						} 
 						else if (services.size() > 1) {
 							/*
@@ -255,18 +294,52 @@ public class MapDarqTransform extends DarqTransform {
 							 * because ... TODO
 							 */
 							for (int j = 0; j < services.size(); j++) {
-								putIntoQueryIndividuallyTriples(similarTriple, services.get(j)); 
+								putIntoQueryIndividuallyTriples(triple, services.get(j)); 
 							}
 						} 
 						else {
-							unmatchedTriples.addTriple(similarTriple);
-							log.warn("No service found for statement: " + similarTriple
+							unmatchedTriples.addTriple(triple);
+							log.warn("No service found for statement: " + triple
 									+ " - it will be queried locally.");
 						}//END ELSE
-					} //END FOR searching services for similar triples
-					similar++;
-				}//END FOR t (original triples)
-			} 
+
+						
+					}//End Triple.size == 1 
+					else{
+						/* similar triple vorhanden */
+						/* in USG packen */
+						for(Triple similarTriple:triples){
+							System.out.println("[MapDarqTransform] similar triples: "+similarTriple);//TEST
+							List<RemoteService> services = selectServices(registry
+									.getMatchingServices(similarTriple));
+							/* hier wird in den SD nachgeschaut, ob die Ressourcen (capabilities) existieren
+							 */
+							System.out.println("Anzahl Services: "+services.size());
+							similarTripleMap.put(cloneTriple(similarTriple), similar);
+
+							if (services.size() == 1) {
+								putIntoGroupedTriples(services.get(0), similarTriple);
+							} 
+							else if (services.size() > 1) {
+								/*
+								 * if there are more than one service, the triple has to
+								 * be passed to the services individually. This is
+								 * because ... TODO
+								 */
+								for (int j = 0; j < services.size(); j++) {
+									putIntoQueryIndividuallyTriples(similarTriple, services.get(j)); 
+								}
+							} 
+							else {
+								unmatchedTriples.addTriple(similarTriple);
+								log.warn("No service found for statement: " + similarTriple
+										+ " - it will be queried locally.");
+							}//END ELSE
+						} //END FOR searching services for similar triples
+						similar++;
+					}//END FOR t (original triples)
+				} 
+			}
 			else if (el instanceof PlanFilter) {
 				filters.add((PlanFilter) el);
 			} 
@@ -472,6 +545,30 @@ public class MapDarqTransform extends DarqTransform {
 	 * creates new triples with the given Sets of classes and properties
 	 * adds triples to a private set of the class
 	 */
+	/*
+	 * Die Zusammensetzung der Triples auch aus den Regeln muss hier geschehen. 
+	 * Was passiert bei StringConcat?
+	 * Anfrage: 
+	 * ?x name ?y
+	 * ?y partof ?z
+	 * 
+	 * ?x vorname ?u
+	 * ?x nachname ?v
+	 * y stringconcat u,v
+	 * 
+	 * 
+	 * 
+	 * 1.Austausch bei StringConcat nicht möglich
+	 * 2.muss neue Variable einführen
+	 * 3.muss sicherstellen, dass beide Tripel zusammengehören 
+	 * --> muss eigentlich neues PlanblockTripel erzeugen. 
+	 * reicht es aus, wenn ich die Tripel ?x vorname ?u und ?x nachname ?v
+	 * erzeuge?
+	 * Ich weiß vorher nicht, ob ?y noch gebraucht wird. 
+	 * Wie schaffe ich die Zuweisung? Also das y = u+v in der 
+	 * nächsten Anfrage mitgenommen wird. 
+	 * 
+	 */
 	private void createSimilarTriples(Triple triple) {
 
 		Set<URI> subjects = new HashSet<URI>();
@@ -482,7 +579,9 @@ public class MapDarqTransform extends DarqTransform {
 		Node pred = Node.NULL;
 		Node obj = Node.NULL;
 		Triple newTriple = new Triple(sub, pred, obj);
-
+		
+		HashSet<Rule> rules = new HashSet<Rule>();
+		
 		if (!subjectVariable) {
 			subjects.add(URI.create(triple.getSubject().getURI())); // original subject
 			subjects.addAll(subjectEquClass);
@@ -490,6 +589,41 @@ public class MapDarqTransform extends DarqTransform {
 			subjects.addAll(subjectEquProp);
 			subjects.addAll(subjectSubProp);
 			subjects.addAll(subjectSameIndi);
+
+			/* analog für predicate / object */
+			for (URI subjectURI : subjectRules.keySet()){
+				rules = subjectRules.get(subjectURI);
+				for (Rule rule : rules){
+					if (rule.isMultiply()){
+						subjects.add(subjectURI); 
+						//Irgendwie muss ich mir merken, dass hier noch eine Multiplikation fehlt. 
+						//Die kann jedoch erst im Resultset gemacht werden. bzw. division
+						//Damit ist die HashMap subjectRules erstmal unnötig, HashSet reicht auch. TODO
+						//für StringConcat HashMap wieder sinnvoll
+					}
+					else if (rule.isStrincConcat()){
+						if (rule.getPart(subjectURI).isHead()) {
+							// 2 neue Tripel erzeugen mit den URIs 
+							//der Teile aus dem Body und neuen Variablen
+							// t1(?x vorname ?y)
+							// t2(?x nachname ?z)
+							//im ResultSet Stringconcat (?y,?z)
+						}
+							
+						//weiter mit ResultSet suchen und Multiply umsetzen bzw.
+						//muss sich ja um eine USG handeln, d.h. dort das RS suchen beispiel MSG Union
+						
+						//Methode StringConcat
+						
+						/* Problem: 
+						 * Es müssen neue Tripel erzeugt werden, 
+						 * die nur als Concat Similar sind! Demzufolge
+						 * müßten sie eigentlich als BGP (PlanBlockTripel) 
+						 * erstellt werden. //FRAGE TODO 
+						 */
+					}	
+				}				
+			}			
 		}
 
 		if (!predicateVariable) {
@@ -600,6 +734,296 @@ public class MapDarqTransform extends DarqTransform {
 		}
 	}
 
+	
+
+	/*
+	 * Auswertung der Regeln
+	 */
+	
+////	private static void Rules(URI reference, OWLOntology ontology) {
+//	private  URI Rules(Set ruless) {	
+//		Rule rule;
+//		HashSet<URI> rulesURI;
+//		ArrayList<RulePart> partList;
+////		Multiply multiplyPart;
+//		boolean[] subCls = new boolean[2];
+//		boolean[] subDataproperty = new boolean[2];
+//		boolean[] subObjectproperty = new boolean[2];
+//		boolean[] body = new boolean[2];
+//		boolean head = false;
+//		boolean swrl = false;
+//		
+//		boolean multiply = false;
+//		boolean stringConcat = false;
+//		boolean subClass = false;
+//		boolean subDataProperty = false;
+//		boolean subObjectProperty = false;
+//		
+//		double multiplier =0;
+//		boolean divideHead = false;
+//		Set<URI> bodyClasses = new HashSet<URI>();
+//		Set<URI> headClasses = new HashSet<URI>();
+//		int i, j;
+//
+////		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+////		System.out.println("--------- Starting Rule Analyses ---------");
+//
+//		rulesURI = searchIndex.get(reference);
+////		System.out.println(rulesURI.size() + " Regeln gefunden.");
+//		if (rulesURI != null){ 
+//			/* rules found */
+//			for (URI ruleURI : rulesURI) {
+//				rule = rules.get(ruleURI);
+//				partList = rule.getRulePartList();
+//
+//				/* for subclass */
+//				subCls[0] = false;
+//				subCls[1] = false;
+//				body[0] = false;
+//				i = 0;
+//				
+//				/* for subdataproperty */
+//				subDataproperty[0] = false;
+//				subDataproperty[1] = false;
+//
+//				/* for subobjectproperty */
+//				subObjectproperty[0] = false;
+//				subObjectproperty[1] = false;
+//				
+//				
+//				/* for Multiply (additional) */
+//				multiply = false;
+//				swrl = false;
+//				divideHead = false;
+//				body[1] = false;
+//				head = false;
+//				multiplier = 0;
+//				j = 0;
+//				bodyClasses.clear();
+//				headClasses.clear();
+//				/*for stringconcat (additional)*/
+//				stringConcat = false;
+//				
+//				
+////				System.out.println("Regel in Bearbeitung: "+ruleURI);
+////				System.out.println("Größe PartList: " + partList.size());
+//				
+//				for (RulePart part : partList) {
+//					/* analyze type of rule */
+//					
+//					/* Subclass */
+//					/*
+//					 * Kriterien: 
+//					 * -die Regel darf nur aus 2 Teilen bestehen 
+//					 * -gesuchte Klasse muss im Body sein 
+//					 * -eine Klasse muss im Head stehen 
+//					 * -es muss sich um 2 Klassen handeln
+//					 * -analog für Properties
+//					 */
+//					if (partList.size() == 2) {
+//						if (part.isBody()) body[0] = part.getUri().equals(reference);
+//						if (part.isHead()) head = true;
+//						if (part.getType().equals(MapSearch.OWL_CLASS)){
+//							subCls[i] = true;
+//							subClass = true;
+//							i++;
+//						}
+//						if (part.getType().equals(MapSearch.OWL_DATAPROPERTY)){
+//							subDataproperty[i] = true;
+//							subDataProperty= true;
+//							i++;
+//						}
+//						if (part.getType().equals(MapSearch.OWL_OBJECTPROPERTY)){
+//							subObjectproperty[i] = true;
+//							subObjectProperty = true;
+//							i++;
+//						}
+//					}
+//					
+//					/* multiply */
+//					/*
+//					 * Kriterien: 
+//					 * -BodySize == 2 
+//					 * -HeadSize == 1 
+//					 * -Body: Klasse + SWRLBuiltIn(multiply) 
+//					 * -Head: Klasse 
+//					 * -gesuchte Klasse im Head: 
+//					 * 		-neue Abfrage mit Klasse aus Body 
+//					 * 		-Ergebnisse mit Multiplier multiplizieren
+//					 * -gesuchte Klasse im Body: 
+//					 * 		- neue Abfrage mit Klasse aus Head 
+//					 * 		- Ergebnis der Abfrage durch Multiplier teilen
+//					 */
+//					/*
+//					 * 1. Fall: multiply 
+//					 * 2. Fall: gesuchte Klasse steht im Body 
+//					 * 3. Fall: gesuchte Klasse steht nicht im Body
+//					 */
+//
+////					System.out.println("---------MULTIPLY---------");
+////					System.out.println("Rule URI: "+ rule.getRuleURI());
+//
+//					else if (rule.isMultiply()) {
+//						multiply = true;
+//						if (part.isBody()){
+//							if (part.getType().equals(MapSearch.SWRL_MULTIPLY)) {
+//								swrl = true;
+//								multiplier = part.getMultiplier(); 
+//								// hope this works, TEST
+////								System.out.println("multiplier: " + multiplier);
+//							} else if (part.getUri().equals(reference)) {
+//								divideHead = true;
+//							}
+////							System.out.println("PartSize: " + partList.size());
+////							System.out.println("PartURI: "+part.getUri());
+//							bodyClasses.add(part.getUri()); 
+//							body[j] = true;
+//							j++;
+//						}
+//						if (part.isHead()) {
+//							// if (part.getUri().equals(cls.getURI())){
+//							/* sucht nach der übergebenen Klasse */
+//							/* sollte überflüssig sein, da per default false */
+////							divideHead = false;
+//							// }
+//							head = true;
+//							headClasses.add(part.getUri());
+//						}
+//					}
+////					System.out.println("--------- END MULTIPLY---------");
+//					
+//
+//					/* String Concat */
+//					/*
+//					 * Kriterien:
+//					 * -mindestens 4 Komponenten 
+//					 * -Builtin im Body
+//					 * -mindestens 2 DataTypeProperties im Body
+//					 * -max. eine DataTypeProperty im Head
+//					 */
+//					/* Es kann vorkommen, dass sich auch Klassen in StringConcat befinden, 
+//					 * diese interessieren aber nicht, da der Stringconcat nur zwischen Datatype
+//					 * Properties ausgeführt werden kann. Daher ist es nicht sinnvoll, bei den 
+//					 * Klassen Stringconcat zu erkennen (auch, wenn es möglich wäre)
+//					 * Beispiel 
+//					 * Person(?x) & hasSurname(?x,?y) & hasLastName(?x,?z) & swrlb:stringConcat(?w,?x,?y) --> hasName(?x,?w)
+//					 * hasSurname(?x,?y) & hasLastName(?x,?z) & swrlb:stringConcat(?w,?x,?y) --> hasName(?x,?w)*/
+//					
+////					System.out.println("StringConcat?: "+ rule.isStrincConcat());
+//					else if (rule.isStrincConcat()) {
+//						stringConcat = true;
+//
+////						System.out.println("Size: " + partList.size());
+//						if (partList.size() >=4){
+////							System.out.println("Body? " + part.isBody());
+//							if (part.isBody()){
+////								System.out.println("Typ: " + part.getType());
+//								if (part.getType().equals(MapSearch.OWL_DATAPROPERTY)){
+//									bodyClasses.add(part.getUri());
+////									System.out.println("BodyClassSize: " + bodyClasses.size());
+//									body[i] = true;
+//									i++;
+//								}
+//								if (part.getType() == MapSearch.SWRL_STRINGCONCAT){
+//									swrl = true;
+//								}
+//							}
+////							System.out.println("Head? " + part.isHead());
+//							if (part.isHead()){
+////								System.out.println("Typ: " + part.getType());
+//								if (part.getType().equals(MapSearch.OWL_DATAPROPERTY)){
+//									head = true;
+//								}										
+//							}									
+//						}								
+//					}
+//					
+//					/* Anything else */
+//					else {
+////						System.err.println("Warning [MAPSEARCH] The rule " +  rule + " is not supported.");
+//					}
+//
+//				}// End For Part List
+//
+//				/*-----------------------------------        Auswertung              -----------------------------*/
+//				
+//				/* subclass */
+//				if (subClass && body[0] && head && subCls[0] && subCls[1]&&partList.size()==2) {
+//					System.out.println("Subclass: " + ruleURI);
+//				}
+//				
+//				/* subdataproperty */
+//				else if (subDataProperty && body[0] && head && subDataproperty[0] && subDataproperty[1]) {
+//					System.out.println("SubDataProperty: " + ruleURI);
+//				}
+//				
+//				/* subobjectproperty */
+//				else if (subObjectProperty && body[0] && head && subObjectproperty[0] && subObjectproperty[1]) {
+//					System.out.println("SubDataProperty: " + ruleURI);
+//				}
+//				
+//				/* stringconcat */
+//				else if(stringConcat && head && body[0] && body[1] && swrl ){
+//					
+////					System.out.println("Klasse: " + clsURI);
+//					System.out.println("StringConcat: " + ruleURI);
+//					/* eine der DataTypeProperties ist im Body
+//					 * , es müßte also  ein Split im Head durchgeführt werden
+//					 * 2 Möglichkeiten: Split am Leerzeichen machen, 
+//					 * sofern eins vorhanden, ansosnten Fehlermeldung, 
+//					 * sonst Split einfach verweigern
+//					 * 
+//					 */
+//					if (bodyClasses.contains(reference)){
+//						System.out.println("Warning [MAPSEARCH]: DatatypeProperty is in the body of a string concat rule. Split of the datatypeproperty in the head is not supported.");
+//					}
+//				}
+//				
+//				/* multiply */
+////				System.out.println("----- BEGIN multiply ------");
+////				System.out.println("Klasse: " + clsURI);
+////				System.out.println("Rule: " + ruleURI);
+////				System.out.println("SWRL: " + swrl);
+////				System.out.println("Head: " + head);
+////				System.out.println("Body[0]: " + body[0]);
+////				System.out.println("Body[1]: " + body[1]);
+////				System.out.println("----- END multiply ------");
+//				else if (multiply && swrl && head && body[0] && body[1]) {
+//					/* do what ever is to do */
+//					if (divideHead) { 
+//						/* divide head */
+//						System.out.println("Multiply: " + headClasses.iterator().next()+ "/" + multiplier);
+//						System.out.println("Regel: " + ruleURI);
+//
+//					} 
+//					else { 
+//						/* multiply body */
+//						System.out.println("Multiply: " + bodyClasses.iterator().next() + "*" + multiplier);
+//						System.out.println("Regel: " + ruleURI);
+//						/*-gesuchte Klasse im Head: 
+//						 * 		-neue Abfrage mit Klasse aus Body
+//						 * 		-Ergebnisse mit Multiplier multiplizieren*/
+//					}
+//				}
+//				else{
+//					System.out.println("Error [MAPSEARCH] Rule "+ruleURI+" is not supported.");//wirklich?
+//				}
+//				
+//			}//End For found rules
+//		}
+//
+//		/* Individuals */
+//		for (OWLIndividual cls : ontology.getReferencedIndividuals()) {
+//			for (URI clsURI : searchIndex.keySet()) {
+//				if (cls.getURI().equals(clsURI)) {
+//					System.out.println("Suche Erfolgreich: (individuals)" + clsURI);
+//				}
+//			}
+//		}
+//	}
+	
+	
+	
 	private Triple cloneTriple(Triple triple){
 		Triple clonedTriple = new Triple(triple.getSubject(),triple.getPredicate(),triple.getObject());
 		return clonedTriple;
