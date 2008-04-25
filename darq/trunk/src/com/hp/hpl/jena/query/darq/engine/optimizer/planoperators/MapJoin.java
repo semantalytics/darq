@@ -54,13 +54,13 @@ public abstract class MapJoin extends MapPlanOperatorBase {
 	/*
 	 * (non-Javadoc)
 	 * @see com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.MapPlanOperatorBase#getResultsize(java.util.Set)
-	 * FRAGE Wie funktioniert die Funktion?
+	 * FRAGE Wie funktioniert die Funktion? 
 	 * Funktion ruft sich immer wieder selber auf (Rekursion), klar!
 	 * Funktion soll double zurückliefern, Es gibt jedoch kein Funktion/Parameter/Methode
 	 * die aufgerufen wird, die einen double zurückgibt. 
 	 * Das letzte return müßte den initialen Wert liefern, ruft aber wiederum nur sich selbst auf
-	 * UNKLAR
-	 * Was ist 2d???
+	 * Antwort: Left bekommt Resultsize aus PlanOperatorBase und löst Rekursion auf. 
+	 * Was ist 2d??? 2 im Double Format
 	 */
 	@Override
 	public double getResultsize(Set<String> boundVariables) throws PlanUnfeasibleException {
