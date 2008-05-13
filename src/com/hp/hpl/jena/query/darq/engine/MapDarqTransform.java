@@ -1,3 +1,8 @@
+/*
+ * (c) Copyright 2005, 2006 Hewlett-Packard Development Company, LP
+ * All rights reserved.
+ * [See end of file]
+ */
 package com.hp.hpl.jena.query.darq.engine;
 
 import java.net.URI;
@@ -5,54 +10,53 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.semanticweb.owl.model.OWLIndividual;
 import org.semanticweb.owl.model.OWLOntology;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.QueryBuildException;
-import com.hp.hpl.jena.query.darq.config.MapConfiguration;
+import com.hp.hpl.jena.query.core.ElementBasicGraphPattern;
+import com.hp.hpl.jena.query.darq.config.Configuration;
 import com.hp.hpl.jena.query.darq.config.ServiceRegistry;
-import com.hp.hpl.jena.query.darq.core.MapMultipleServiceGroup;
-import com.hp.hpl.jena.query.darq.core.MapServiceGroup;
+import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
-import com.hp.hpl.jena.query.darq.engine.compiler.MapFedPlanMultipleService;
-import com.hp.hpl.jena.query.darq.engine.compiler.MapFedPlanService;
+import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanUnionService;
+import com.hp.hpl.jena.query.darq.engine.compiler.PlanGroupDarq;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
-import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.MapPlanOperatorBase;
+import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
 import com.hp.hpl.jena.query.engine.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
 import com.hp.hpl.jena.query.engine1.plan.PlanBlockTriples;
 import com.hp.hpl.jena.query.engine1.plan.PlanFilter;
 import com.hp.hpl.jena.query.engine1.plan.PlanGroup;
+import com.hp.hpl.jena.query.engine1.plan.TransformCopy;
 import com.hp.hpl.jena.query.util.Context;
 
 import de.hu_berlin.informatik.wbi.darq.mapping.MapSearch;
 import de.hu_berlin.informatik.wbi.darq.mapping.Rule;
-import de.hu_berlin.informatik.wbi.darq.mapping.RulePart;
-/**
- * 
- * @author Alexander Musidlowski
- * @version $ID$
- *
- */
-public class MapDarqTransform extends DarqTransform {
-	
+
+public class MapDarqTransform extends TransformCopy {
+
+	Log log = LogFactory.getLog(DarqTransform.class);
+
 	protected Plan plan = null;
 	private Context context = null;
 	private ServiceRegistry registry = null;
-	private MapConfiguration config = null;
+	private Configuration config = null;
 	private OWLOntology mapping = null;
-	Log log = LogFactory.getLog(MapDarqTransform.class);
-	boolean optimize = true;
-
+	
 	private Set<Triple> triples = new HashSet<Triple>();
 	//collect new generated (similar) triples
 	
@@ -60,7 +64,7 @@ public class MapDarqTransform extends DarqTransform {
 	//collects similar triples accessed by a triple, same Integer = similar Triple 
 	
 	private int transitivityDepth = 0; 
-	
+
 	// Subject
 	private Set<URI> subjectSubClass = new HashSet<URI>();
 	private Set<URI> subjectEquClass = new HashSet<URI>();
@@ -87,22 +91,66 @@ public class MapDarqTransform extends DarqTransform {
 	private Set<URI> objectSameIndi = new HashSet<URI>();
 	private HashMap<URI, HashSet<Rule>> objectRules = new HashMap<URI, HashSet<Rule>>();
 	private boolean objectVariable = false;
-
+	
 	// The return stack
 	private Stack<PlanElement> retStack = new Stack<PlanElement>();
 
-	HashMap<Triple, MapServiceGroup> oneService = new HashMap<Triple, MapServiceGroup>();
-	//Speichert ein Triple pro Service
-	HashMap<Triple, MapMultipleServiceGroup> multipleServices = new HashMap<Triple, MapMultipleServiceGroup>();
-	//Speichert ein Tripel, das an mehrere Services geschickt wird 
+	HashMap<RemoteService, ServiceGroup> groupedTriples = new HashMap<RemoteService, ServiceGroup>();
+
+	HashMap<Triple, MultipleServiceGroup> queryIndividuallyTriples = new HashMap<Triple, MultipleServiceGroup>();
+
+	HashMap<Integer, UnionServiceGroup> unionService = new HashMap<Integer, UnionServiceGroup>();
 	
-	public MapDarqTransform(Context cntxt, MapConfiguration conf, OWLOntology ontology, Integer transitivity) {
-		super(cntxt, conf);
+	List<ServiceGroup> sgsPos = new LinkedList<ServiceGroup>();
+	//FRAGE Bastian Was ist das, wozu?
+
+	Set varsMentioned = new HashSet();
+
+	boolean optimize = true;
+
+	/**
+	 * @return the optimize
+	 */
+	public boolean isOptimize() {
+		return optimize;
+	}
+
+	/**
+	 * @param optimize
+	 *            the optimize to set
+	 */
+	public void setOptimize(boolean optimize) {
+		this.optimize = optimize;
+	}
+
+	public MapDarqTransform(Context cntxt, Configuration conf, OWLOntology ontology, Integer transitivity) {
+		super();
 		context = cntxt;
 		config = conf;
 		registry = conf.getServiceRegistry();
 		mapping = ontology;
 		transitivityDepth = transitivity;
+		System.out.println("Konstruktor: MapDarqTransform");
+	}
+
+	
+	public PlanElement transform(PlanBasicGraphPattern planElt, List newElts,PlanElement parent) {
+		/*
+		 * We do this only if we have a basic graph pattern with one triple:
+		 * PlanGroups with one Triple will be converted to PlanBasicGraphPattern
+		 * by ARQ :( We need to handle that!
+		 * There are also some other cases where PlanBasicGraphPattern is not in a group... :((
+		 */
+		
+		if (parent instanceof PlanGroup) return planElt;
+	/*	 if (!( (newElts.size()==1) && (newElts.get(0) instanceof
+		 PlanBlockTriples) &&
+		 (((PlanBlockTriples)newElts.get(0)).getSubElements().size()==1) ) )
+		 return planElt;*/
+		 
+		List<PlanElement> acc = new ArrayList<PlanElement>();
+		acc.add(planElt);
+		return make(acc, planElt.getContext());
 	}
 
 	/*
@@ -111,21 +159,39 @@ public class MapDarqTransform extends DarqTransform {
 	 * @see com.hp.hpl.jena.query.engine1.plan.TransformBase#transform(com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern,
 	 *      java.util.List)
 	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public  PlanElement transform(PlanBasicGraphPattern planElt, List newElts) {
+	
+	
+	public PlanElement transform(PlanGroup planElt, List newElts) {
+		return make(newElts, planElt.getContext());
+	}
 
-		oneService.clear(); // new for each PlanBasicGraphPattern !
-		multipleServices.clear(); // 
+	
+	/*
+	 *  -- Searching for alternative Triple elements --
+	 *  Idea: First run looks for similar triples, triples contains only original triple
+	 *   adds similar triples to triples, runs again with original and similar triples and
+	 *   looks for alternatives. As triples is a hashset no triple can be twice. 
+	 *   Runs until TransitivityDepth is reached or no more similar triples added to triples
+	 */
+	
+	
+	/*FRAGE: Ist es sinnvoll stur alle Unterklassen in der Query zu ersetzen?
+	 Was ist mit Unterklassen in der selben Ontologie, diese sollten keinen
+	 Mehrwert bieten?! (Was ist, wenn eine andere Quelle die selbe Ontologie nutzt und
+	 nur diese Unterklassen bietet?)
+	 */
+	
+	private PlanElement make(List newElts, Context context) {
+		
+		System.out.println("MapDarqTransform.make");
+		groupedTriples.clear(); // new for each PlanBasicGraphPattern !
+		queryIndividuallyTriples.clear(); // "
 		Set<Triple> tempTriples = new HashSet<Triple>();
 		
-
-		PlanBlockTriples unmatchedTriples = new PlanBlockTriples(context);
+		List<Triple> unmatchedTriples = new LinkedList<Triple>();
 		//PlanBlockTriples sind Tripels, die per Klammern eingeschlossen sind
-
 		List<PlanFilter> filters = new ArrayList<PlanFilter>();
 		//Filter aus der Query
-
 		List<PlanElement> acc = new ArrayList<PlanElement>();
 		//Operatoren des Plans
 		
@@ -133,221 +199,175 @@ public class MapDarqTransform extends DarqTransform {
 		similar=0;
 		URI tempURI = null;
 		
-		//Idee: die Tripelliste mit den neu generierten Tripels vorher erzeugen
-		//Problem dabei wird sein, dass es kein Planelement gibt
 		
-		//FRAGE: Ist es sinnvoll stur alle Unterklassen in der Query zu ersetzen?
-		// Was ist mit Unterklassen in der selben Ontologie, diese sollten keinen
-		// Mehrwert bieten?! (Was ist, wenn eine andere Quelle die selbe Ontologie nutzt und
-		// nur diese Unterklassen bietet?)
-		
-		
-
 		// planning
-		for (PlanElement el : (List<PlanElement>) newElts) {
-			if (el instanceof PlanBlockTriples) {
-				for (Triple originalTriple : (List<Triple>) ((PlanBlockTriples) el).getPattern()) {
-					System.out.println("[MapDarqTransform] original triple: " + originalTriple);//TESTAUSGABE
-					/*
-					 *  -- Searching for alternative Triple elements --
-					 *  Idea: First run looks for similar triples, triples contains only original triple
-					 *   adds similar triples to triples, runs again with original and similar triples and
-					 *   looks for alternatives. As triples is a hashset no triple can be twice. 
-					 *   Runs until TransitivityDepth is reached or no more similar triples added to triples
-					 */
-					/* Logik
-					 * triples erhält originaltriple
-					 * simtriples = triples 
-					 * über simtriples iterieren
-					 * triples erweitern
-					 */
-					triples.clear(); //delete all triples from the run before
-					triples.add(originalTriple); 
-					runs = 0;
-//					triplesSizeBefore = simTriples.size();
-					do{//transitivity
-						System.out.print(runs);//TESTAUSGABE
-						tempTriples.clear(); //sollte unnötig sein, schadet aber nicht
-						tempTriples.addAll(triples); // brauche tempTriples, da triples in der Schleife erweitert wird und das ist schlecht, wenn
-						//gleichzeitig darüber iteriert wird
-						triplesSizeBefore = triples.size();
-						for(Triple similarTriple : tempTriples){
-							System.out.println(similarTriple);
-							if (!similarTriple.getSubject().isVariable()){
-								tempURI = URI.create(similarTriple.getSubject().getURI());
-								System.out.println("Subject");//TESTAUSGABE
-								if (mapping.containsClassReference(tempURI)) {
-									subjectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
-									subjectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
-									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-									//Aufruf stellt sicher, dass die URI in der Ontologie existiert, daher nicht ausserhalb der ifs
-								}
-								if (mapping.containsObjectPropertyReference(tempURI)){
-									subjectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-									subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
-									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}//FRAGE Eventuell muss DataProp noch angepasst werden, drüber nachdenken
-								if (mapping.containsDataPropertyReference(tempURI)){
-									subjectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-									subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
-									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}
-								if (mapping.containsIndividualReference(tempURI)){
-									subjectSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
-									subjectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}
-								
-							}else{ subjectVariable = true;}
+		for (PlanElement elm : (List<PlanElement>) newElts) {
 
-							if (!similarTriple.getPredicate().isVariable()){
-								System.out.println("Predicate");//TESTAUSGABE
-								tempURI = URI.create(similarTriple.getPredicate().getURI());
-//								MapSearch.AllAxiomsfromClass(URI.create(similarTriple.getPredicate().getURI()), mapping);//TEST
-								if (mapping.containsClassReference(tempURI)){
-									predicateSubClass = MapSearch.SearchSubclass(tempURI, mapping );
-									predicateEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
-									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}
-								if (mapping.containsObjectPropertyReference(tempURI)){
-									predicateSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-									predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
-									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}
-								if (mapping.containsDataPropertyReference(tempURI)){
-									predicateSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-									predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
-									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}
-								if (mapping.containsIndividualReference(tempURI)){
-									predicateSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
-									predicateRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-								}
-							}else{ predicateVariable = true;}
+			if (elm instanceof PlanBasicGraphPattern) {
 
-							if (!similarTriple.getObject().isVariable()){
-								if(!similarTriple.getObject().isLiteral()){
-									System.out.println("Object");//TESTAUSGABE
-									tempURI = URI.create(similarTriple.getObject().getURI());
-//									MapSearch.AllAxiomsfromClass(URI.create(t.getObject().getURI()), mapping);//TEST							
-									if (mapping.containsClassReference(tempURI)){
-										objectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
-										objectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
-										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-									}
-									if (mapping.containsObjectPropertyReference(tempURI)){
-										objectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-										objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
-										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-									}
-									if (mapping.containsDataPropertyReference(tempURI)){
-										objectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
-										objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
-										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-									}
-									if (mapping.containsIndividualReference(tempURI)){
-										objectSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
-										objectRules.put(tempURI, MapSearch.searchRules(tempURI, mapping));
-									}//FRAGE Kann ein Object das alles sein, Was ist mit DataProperty?
-								}
-							}else{ objectVariable = true;}
+				for (PlanElement el : (List<PlanElement>) elm.getSubElements()) {
 
-							/*
-							 *  -- Creating triples with the alternative elements --
-							 */
-							triplesSizeBefore = triples.size();
-							createSimilarTriples(similarTriple);
-							//TODO Hier müssen die Regeln ausgwertet werden und 
-							//entsprechende Anfragen generiert werden
-							//if (rule.isMultiply){//do something}
-							//eventuell createSimilarTriple(Rule rule) erzeugen
-							//(SWRL.java --> SearchRules())
-							/*
-							 * für die USG (Union SG) muss geprüft werden, ob
-							 * es similarTriples gibt. 
-							 */
+					if (el instanceof PlanBlockTriples) {
+						for (Triple originalTriple : (List<Triple>) ((PlanBlockTriples) el)
+								.getPattern()) {
+							System.out.println("[MapDarqTransform] original triple: " + originalTriple);//TESTAUSGABE
 							
-						}//END FOR searching similar triples
-						runs++;
-					}while(transitivityDepth >= runs && triples.size() != triplesSizeBefore); 
-						
-					
-					// TODO Create Triple für Regeln! 
-					// TODO UNION dieser Triples
-					 				
-					/*
-					 * 
-					 * -- looks for fitting services for each triple and puts it into -- 
-					 *    a SG or MSG 
-					 */
-					if (triples.size() == 1){ 
-						/* nur Originaltriple vorhanden */
-						Triple triple = triples.iterator().next();
-						List<RemoteService> services = selectServices(registry.getMatchingServices(triple));
-						//normale SG bzw. MSG
-						if (services.size() == 1) {
-							putIntoGroupedTriples(services.get(0), triple);
-						} 
-						else if (services.size() > 1) {
-							/*
-							 * if there are more than one service, the triple has to
-							 * be passed to the services individually. This is
-							 * because ... TODO
-							 */
-							for (int j = 0; j < services.size(); j++) {
-								putIntoQueryIndividuallyTriples(triple, services.get(j)); 
-							}
-						} 
-						else {
-							unmatchedTriples.addTriple(triple);
-							log.warn("No service found for statement: " + triple
-									+ " - it will be queried locally.");
-						}//END ELSE
+							triples.clear(); //delete all triples from the run before
+							triples.add(originalTriple); 
+							runs = 0;
+							do{//transitivity
+								System.out.print(runs);//TESTAUSGABE
+								tempTriples.clear(); //sollte unnötig sein, schadet aber nicht
+								tempTriples.addAll(triples); // brauche tempTriples, da triples in der Schleife erweitert wird und das ist schlecht, wenn
+								//gleichzeitig darüber iteriert wird
+								triplesSizeBefore = triples.size();
+								for(Triple similarTriple : tempTriples){
+									System.out.println(similarTriple);
+									if (!similarTriple.getSubject().isVariable()){
+										tempURI = URI.create(similarTriple.getSubject().getURI());
+										System.out.println("Subject");//TESTAUSGABE
+										if (mapping.containsClassReference(tempURI)) {
+											subjectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
+											subjectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
+											putFoundRules(tempURI);
+											
+											//Aufruf stellt sicher, dass die URI in der Ontologie existiert, daher nicht ausserhalb der ifs
+										}
+										if (mapping.containsObjectPropertyReference(tempURI)){
+											subjectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+											subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+											putFoundRules(tempURI);
+										}
+										if (mapping.containsDataPropertyReference(tempURI)){
+											subjectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+											subjectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+											putFoundRules(tempURI);
+										}
+										if (mapping.containsIndividualReference(tempURI)){
+											subjectSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
+											putFoundRules(tempURI);
+										}
+										
+									}else{ subjectVariable = true;}
 
-						
-					}//End Triple.size == 1 
-					else{
-						/* similar triple vorhanden */
-						/* in USG packen */
-						for(Triple similarTriple:triples){
-							System.out.println("[MapDarqTransform] similar triples: "+similarTriple);//TEST
-							List<RemoteService> services = selectServices(registry
-									.getMatchingServices(similarTriple));
-							/* hier wird in den SD nachgeschaut, ob die Ressourcen (capabilities) existieren
-							 */
-							System.out.println("Anzahl Services: "+services.size());
-							similarTripleMap.put(cloneTriple(similarTriple), similar);
+									if (!similarTriple.getPredicate().isVariable()){
+										System.out.println("Predicate");//TESTAUSGABE
+										tempURI = URI.create(similarTriple.getPredicate().getURI());
+//										MapSearch.AllAxiomsfromClass(URI.create(similarTriple.getPredicate().getURI()), mapping);//TESTAUSGABE
+										if (mapping.containsClassReference(tempURI)){
+											predicateSubClass = MapSearch.SearchSubclass(tempURI, mapping );
+											predicateEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
+											putFoundRules(tempURI);
+										}
+										if (mapping.containsObjectPropertyReference(tempURI)){
+											predicateSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+											predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+											putFoundRules(tempURI);
+										}
+										if (mapping.containsDataPropertyReference(tempURI)){
+											predicateSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+											predicateEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+											putFoundRules(tempURI);
+										}
+										if (mapping.containsIndividualReference(tempURI)){
+											predicateSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
+											putFoundRules(tempURI);
+										}
+									}else{ predicateVariable = true;}
 
-							if (services.size() == 1) {
-								putIntoGroupedTriples(services.get(0), similarTriple);
+									if (!similarTriple.getObject().isVariable()){
+										if(!similarTriple.getObject().isLiteral()){
+											System.out.println("Object");//TESTAUSGABE
+											tempURI = URI.create(similarTriple.getObject().getURI());
+//											MapSearch.AllAxiomsfromClass(URI.create(t.getObject().getURI()), mapping);//TESTAUSGABE						
+											if (mapping.containsClassReference(tempURI)){
+												objectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
+												objectEquClass = MapSearch.SearchEquivalentClass(tempURI, mapping );
+												putFoundRules(tempURI);
+											}
+											if (mapping.containsObjectPropertyReference(tempURI)){
+												objectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+												objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+												putFoundRules(tempURI);
+											}
+											if (mapping.containsDataPropertyReference(tempURI)){
+												objectSubProp = MapSearch.SearchSubProperty(tempURI, mapping );
+												objectEquProp = MapSearch.SearchEquivalentProperty(tempURI, mapping );
+												putFoundRules(tempURI);
+											}
+											if (mapping.containsIndividualReference(tempURI)){
+												objectSameIndi = MapSearch.SearchSameIndividual(tempURI, mapping);
+												putFoundRules(tempURI);
+											}//FRAGE Kann ein Object das alles sein, Was ist mit DataProperty?
+										}
+									}else{ objectVariable = true;}
+
+									
+									// Creating triples with the alternative elements
+									createSimilarTriples(similarTriple);
+									
+								}//END FOR searching similar triples
+								runs++;
+							}while(transitivityDepth >= runs && triples.size() != triplesSizeBefore); 
+														
+							if (triples.size() == 1){ 
+								/* just the original triple */
+								Triple triple = triples.iterator().next();
+								List<RemoteService> services = selectServices(registry.getMatchingServices(triple));
+								
+								if (services.size() == 1) {
+									putIntoGroupedTriples(services.get(0), triple);
+								} 
+								else if (services.size() > 1) {
+									/*
+									 * if there are more than one service, the triple has to
+									 * be passed to the services individually. This is
+									 * because ... TODO
+									 */
+									for (int j = 0; j < services.size(); j++) {
+										putIntoQueryIndividuallyTriples(triple, services.get(j)); 
+									}
+								} 
+								else {
+									unmatchedTriples.add(triple);
+									log.warn("No service found for statement: " + triple
+											+ " - it will be queried locally.");
+								}								
 							} 
-							else if (services.size() > 1) {
-								/*
-								 * if there are more than one service, the triple has to
-								 * be passed to the services individually. This is
-								 * because ... TODO
-								 */
-								for (int j = 0; j < services.size(); j++) {
-									putIntoQueryIndividuallyTriples(similarTriple, services.get(j)); 
-								}
-							} 
-							else {
-								unmatchedTriples.addTriple(similarTriple);
-								log.warn("No service found for statement: " + similarTriple
-										+ " - it will be queried locally.");
-							}//END ELSE
-						} //END FOR searching services for similar triples
-						similar++;
-					}//END FOR t (original triples)
-				} 
+							else{
+								/* more than one triple --> original triple + similar triple */
+								for(Triple similarTriple:triples){
+									System.out.println("[MapDarqTransform] similar triples: "+similarTriple);//TESTAUSGABE
+									List<RemoteService> services = selectServices(registry
+											.getMatchingServices(similarTriple));
+									/* hier wird in den SD nachgeschaut, ob die Ressourcen (capabilities) existieren*/
+									System.out.println("Anzahl Services: "+services.size()); //TESTAUSGABE
+									similarTripleMap.put(cloneTriple(similarTriple), similar);
+
+									if (services.size() >=1){
+										putIntoUnionServiceGroup(similarTriple,services,similar);
+									}
+									else {
+										unmatchedTriples.add(similarTriple);
+										log.warn("No service found for statement: " + similarTriple
+												+ " - it will be queried locally.");
+									}
+								} //END FOR searching services for similar triples
+								similar++;
+							}//END FOR t (original triples)
+						} 						
+					} else if (el instanceof PlanFilter) {
+						filters.add((PlanFilter) el);
+					} else {
+						acc.add(0, el);
+					}
+				}
+			} else if (elm instanceof PlanFilter) {
+				filters.add((PlanFilter) elm);
+			} else {
+				acc.add(0, elm);
 			}
-			else if (el instanceof PlanFilter) {
-				filters.add((PlanFilter) el);
-			} 
-			else {
-				acc.add(0, el);
-			}
-		}//END FOR Plan Elements
-		
+		}
 		/*
 		 * Was ist bis hierhin passiert? Aus den Triples wurden ähnliche Triples erzeugt. Zu allen triples wurden die Services gesucht
 		 * und in die 2 Töpfe groupedTriples und queryIndividuallyTriples gesteckt. 
@@ -388,71 +408,82 @@ public class MapDarqTransform extends DarqTransform {
 		 *   
 		 */
 		
-//		HashMap<Triple, MapServiceGroup> oneService = new HashMap<Triple, MapServiceGroup>();
-//		//Speichert ein Triple pro Service
-//		HashMap<Triple, MultipleServiceGroup> multipleServices = new HashMap<Triple, MultipleServiceGroup>();
-
-		// add filters to service groups and to plan (filters are also applied
+		
+		
+		// add filters to servcie groups and to plan (filters are also applied
 		// locally because we don't trust the remote services)
 		for (PlanFilter f : filters) {
 			acc.add(f);
 			if (optimize) { // do we optimize?
-				for (MapServiceGroup sg : oneService.values()) { //durchsucht alle SG und fügt Filter hinzu
+				for (ServiceGroup sg : groupedTriples.values()) { //durchsucht alle SG und fügt Filter hinzu
 					sg.addFilter(f.getExpr());
 				}
-				for (MapMultipleServiceGroup sg : multipleServices.values()) {
+				for (ServiceGroup sg : queryIndividuallyTriples.values()) {
 					sg.addFilter(f.getExpr());
 				}
 			}
 		}
 
-//		com.hp.hpl.jena.query.engine1.plan.PlanUnion
-		
 		// build new subplan
-		if (oneService.size() > 0 || multipleServices.size() > 0) {
+		if (groupedTriples.size() > 0 || queryIndividuallyTriples.size() > 0 || unionService.size() > 0) {
 
-			ArrayList<MapServiceGroup> al = new ArrayList<MapServiceGroup>(oneService.values());
-			al.addAll(multipleServices.values());
-			//al ist ein Liste aus SG und MSG (de facto RSs)
-					
+			/*
+			 * ArrayList<ServiceGroup> al = new ArrayList<ServiceGroup>(
+			 * groupedTriples.values());
+			 * al.addAll(queryIndividuallyTriples.values());
+			 */
+
+			ArrayList<ServiceGroup> al = new ArrayList<ServiceGroup>(sgsPos);
+
 			if (optimize) { // run optimizer
 				PlanElement optimizedPlan = null;
-				try {		
-					MapPlanOperatorBase mapPlanOperatorBase = config.getMapPlanOptimizer().getCheapestPlan(al,similarTripleMap);
-					MapFedQueryEngineFactory.logExplain(mapPlanOperatorBase);
-					optimizedPlan = mapPlanOperatorBase.toARQPlanElement(context); 					
-				} catch (PlanUnfeasibleException e) {
-					throw new QueryBuildException("No feasible plan: "
-							+ e);
-				}
-				acc.add(0,optimizedPlan);
-				log.debug("selected: \n"
-						+ optimizedPlan.toString());
-				
-			} else { // no optimization -> just add elements 
-				int pos = 0;
-				for (MapServiceGroup sg : al) {
+				try {
+					PlanOperatorBase planOperatorBase = config
+							.getPlanOptimizer().getCheapestPlan(al);
+					FedQueryEngineFactory.logExplain(planOperatorBase);
+					optimizedPlan = planOperatorBase.toARQPlanElement(context);
 
-					if (sg instanceof MapMultipleServiceGroup) {
-						acc.add(pos, MapFedPlanMultipleService.make(context,
-								(MapMultipleServiceGroup) sg, null));
+				} catch (PlanUnfeasibleException e) {
+					throw new QueryBuildException("No feasible plan: " + e);
+				}
+				acc.add(0, optimizedPlan);
+				// log.debug("selected: \n"
+				// + optimizedPlan.toString());
+
+			} else { // no optimization -> just add elements
+				int pos = 0;
+				for (ServiceGroup sg : al) {
+					if (sg instanceof UnionServiceGroup){
+						acc.add(pos, FedPlanUnionService.make(context, (UnionServiceGroup) sg, null));
+					}
+					else if (sg instanceof MultipleServiceGroup) {
+						acc.add(pos, FedPlanMultipleService.make(context,
+								(MultipleServiceGroup) sg, null));
 					} else
-						acc.add(pos, MapFedPlanService.make(context, sg, null));
+						acc.add(pos, FedPlanService.make(context, sg, null));
 					pos++;
 
 				}
 			}
 		}
 
-		// unmatched patterns are executed locally 
-		if (unmatchedTriples.getPattern().size() > 0)
-			acc.add(0, unmatchedTriples);
-		
-		PlanElement ex = PlanGroup
-				.make(planElt.getContext(), acc, false);
+		// unmatched patterns are executed locally
+		if (unmatchedTriples.size() > 0) {
+			ElementBasicGraphPattern elementBasicGraphPattern = new ElementBasicGraphPattern();
+			for (Triple t : unmatchedTriples)
+				elementBasicGraphPattern.addTriple(t);
+			acc.add(0, PlanBasicGraphPattern.make(context,
+					elementBasicGraphPattern));
+		}
+
+		PlanElement ex = PlanGroupDarq.make(context, (List) acc, false);
+
+		// FedPlanFormatter.out(new IndentedWriter(System.out), ex);
+		// System.out.println("-----");
+
 		return ex;
 	}
-	
+
 	private List<RemoteService> selectServices(List<RemoteService> services) {
 		ArrayList<RemoteService> result = new ArrayList<RemoteService>();
 		for (Iterator<RemoteService> it = services.iterator(); it.hasNext();) {
@@ -468,7 +499,7 @@ public class MapDarqTransform extends DarqTransform {
 		}
 		return result;
 	}
-
+	
 	/*
 	 * groupedTriples ist eine Hashmap(Key, Wert):
 	 * Key = RemoteService (RS)
@@ -486,31 +517,17 @@ public class MapDarqTransform extends DarqTransform {
 	 * so kommt man über den RS an die Triple
 	 * 
 	 * ein RS --> mehrere Triple
-	 */
-	//Was ist notwendig? SG muss erweitern werden MapSG
-	//MapMSG muss erzeugt werden. 
-	//Funktion muss um similar erweitert werden
-	//Variable muss um similar erweitert werden?
-	//Wieso brauche ich das in der SG?
-	//Idee: Wenn keine MapSG existiert, dann erstelle eine
-	//prüfe, ob es bereits ein similarTriple gibt
-	//nein, dann füge Triple hinzu
-	//ja, dann erstelle neue MapSG
-	//FRAGE könnten mich mehrere SG mit dem selben RS in Schwierigkeiten bringen? 
+	 */ 
 	private void putIntoGroupedTriples(RemoteService s, Triple t) {
-		
-		
-		MapServiceGroup tg = oneService.get(t); //holt RS
-		if (tg == null) { //RS vorhanden?
-			tg = new MapServiceGroup(s); //Nein, neue SG mit RS erstellen
-			oneService.put(t, tg); //fügt RS mit SG in Hashmap ein
-			tg.addB(t, similarTripleMap.get(t));//füge Triple in SG ein und Gruppe der ähnlichen Triple
+		ServiceGroup tg = groupedTriples.get(s);
+		if (tg == null) {
+			tg = new ServiceGroup(s);
+			groupedTriples.put(s, tg);
+			sgsPos.add(tg);
 		}
-		else{
-			System.err.println("Warning [MAPDARQTRANSFORM] Triple already added.");
-		}		
+		tg.addB(t);
 	}
-
+	
 	/*
 	 * queryIndividuallyTriples ist eine HashMap
 	 * Key = Triple
@@ -530,16 +547,154 @@ public class MapDarqTransform extends DarqTransform {
 	 * (diese könnten theoretisch mehrere Triple enthalten)
 	 * ein Triple --> mehrere RSs
 	 */
-	
 	private void putIntoQueryIndividuallyTriples(Triple t, RemoteService s) {
-		MapMultipleServiceGroup msg = multipleServices.get(t);
-		if (msg == null) { //Triple vorhanden?
-			msg = new MapMultipleServiceGroup();//nein, neue MSG erstellen
-			multipleServices.put(t, msg); //fügt Triple+MSG in Hashmap ein
-			msg.addB(t, similarTripleMap.get(t));//fügt Triple zu MSG hinzu
+		MultipleServiceGroup msg = queryIndividuallyTriples.get(t);
+		if (msg == null) {
+			msg = new MultipleServiceGroup();
+			queryIndividuallyTriples.put(t, msg);
+			sgsPos.add(msg); //FRAGE Kam, hinzu, wozu?
+			msg.addB(t);
 		}
-		msg.addService(s); //fügt RS zu MSG hinzu
+		msg.addService(s);
 	}
+	
+	/*
+	 * 
+	 * Logik: bekomme Triple, RS, similar
+	 * existiert USG?
+	 * 1.Fall: (similar suche)
+	 *  -suche USG mit similar (Annahme: es existiert bereits eine USG
+	 *   wegen anderer similar Tripel) 
+	 * 2.Fall (triple suche)
+	 *  -es findet sich keine USG mit similar, trotzdem ist es möglich
+	 *   dass das Tripel in einer USG ist (anderes similar), weil es 
+	 *   in einer anderen BGP auftaucht, daher suche nach Triple
+	 * 3.Fall (keine USG) 
+	 *  -es gibt keine USG (weder mit similar, noch mit triple suche)
+
+	 * 1./2. Fall USG existiert
+	 * 1.1 ServiceSize == 1 (SG)
+	 *     -hole SG aus USG mit RS (RS ist eindeutig)
+	 *     -wurde die USG über ein Triple gefunden heißt das, dass die SG (inkl. Triple+RS) bereits existiert
+	 *     -dann muss verhindert werden, dass das Triple der Liste in der SG hinzugefügt wird, ansonsten
+	 *     -füge Triple der SG hinzu (USG wurde über similar gefunden, d.h. die SG existiert noch nicht oder die SG 
+	 *      beinhaltet das Triple nicht) (Anm: HashSet wäre besser als LinkList)
+	 *     -existiert keine solche SG, erstelle eine und füge Triple hinzu (innerhalb der USG)
+	 * 1.2 ServiceSize > 1 (MSG)
+	 * 	   -hole MSG aus USG mit Triple (Triple ist eindeutig)
+	 *     -füge RS der MSG hinzu
+	 *     -existiert keine MSG, erstelle eine, füge Triple und Service hinzu (innerhalb der USG)
+	 
+	 * 3. Fall USG existiert nicht
+	 * 3.1 ServiceSize == 1 (SG)
+	 *     -erstelle SG und USG, füge SG der USG hinzu
+	 * 3.2. ServiceSize > 1 (MSG)
+	 *	   -erstelle MSG und USG, füge MSG der USG hinzu
+
+	 * Anmerkung: Im Fall 1 muss keine (M)SG in der USG existieren, da die USG durch similarTriple angelegt wurde
+	 *            Im Fall 2 muss das Triple aber existieren, da die USG darüber gefunden wird. 
+	 *            D.h. im Falle der SG, dass das Triple+RS schon eingetragen ist. 
+	 *            Bei der MSG werden die RS in einem HashSet gespeichert, daher ist Prüfung nicht notwendig. 
+	 * 
+	 * 
+	 *  FRAGE Was passiert, wenn ein Triple mehrmals vorkommt, aber
+	 *  unterschiedliche Variablen hat? ?x name ?y ?u name ?v 
+	 *  --> müßte eigentlich durch die SG abgedeckt werden bzw. Triple
+	 *  (Anm.: Logik sollte sicherstellen, dass jedes Triple nur einmal 
+	 *  vorkommt in den USGs (als auch in der Menge von SG,MSG, USG))
+	 *  Was passiert beim Join über ?x bzw. ?u ??? 
+	 *  Bastian FRAGE !!! Wie passiert es bei SG? 
+	 *  
+	 */
+	
+	
+	private void putIntoUnionServiceGroup(Triple triple, List<RemoteService> services, int similar){
+		
+		UnionServiceGroup usg = unionService.get(similar);
+		ServiceGroup sg = null;
+		MultipleServiceGroup msg = null;
+		int serviceSize = services.size();
+		
+		if (usg == null){
+			for (UnionServiceGroup helpUSG : unionService.values()){
+				if (helpUSG.containsTriple(triple)){
+					usg = helpUSG;
+				}
+			}
+		}
+		
+		/*1. USG existiert */
+		if(usg != null){ 
+			if (serviceSize == 1){ /* 1.1 SG */
+				RemoteService service=services.get(0);
+				sg = usg.getServiceGroup(service); 
+				if (sg == null){
+					sg = new ServiceGroup(service);
+					sg.addB(triple);
+				}
+				else if (!sg.containsTriple(triple)){ 
+					/* wird geprüft für den Fall, dass die SG (Triple + RS) schon existiert (TripleSuche der USG) */ 
+					sg.addB(triple);
+				} 		
+				usg.addServiceGroup(triple, sg);
+			}
+			else if (serviceSize > 1){/* 1.2 MSG */
+				for (RemoteService service:services){
+					sg = usg.getServiceGroup(triple);
+					//MSG suchen bzw. neu erstellen
+					if (sg == null){
+						msg = new MultipleServiceGroup();
+						msg.addB(triple);
+						msg.addService(service); 
+					}
+					else if (sg instanceof MultipleServiceGroup){
+						msg = (MultipleServiceGroup) sg;
+						msg.addService(service);
+					}					
+					else System.err.println("Error [MAPDARQTRANSFORM]: This error should not occur.(ServiceSize > 1 and not MultipleServiceGroup)");
+					usg.addServiceGroup(triple, msg);	
+				}
+			}			
+		}
+		
+		/* 2. USG existiert nicht */
+		else if (usg == null ){ 
+			if (serviceSize == 1){ /* 2.1 SG */
+				RemoteService service = services.get(0);
+				/* diese SG kann noch nicht existieren */
+				sg = new ServiceGroup(service);
+				sg.addB(triple);//füge Triple in SG ein
+				usg = new UnionServiceGroup(triple,sg, similar);
+				unionService.put(similar, usg);
+				sgsPos.add(usg);
+			}
+			else if (serviceSize >1 ){ /* 2.2 MSG */
+				/* diese MSG kann noch nicht existieren, erst im 2. Durchlauf der Schleife */
+				for (RemoteService service:services){
+					if (usg != null){
+						sg = usg.getServiceGroup(triple);	
+					}
+					if (sg == null){
+						msg = new MultipleServiceGroup();
+						msg.addB(triple);
+						msg.addService(service);
+						usg = new UnionServiceGroup(triple,msg, similar);
+						unionService.put(similar, usg);
+						sgsPos.add(usg);
+					}
+					else if (sg instanceof MultipleServiceGroup){
+						msg = (MultipleServiceGroup) sg;
+						msg.addService(service);
+					}					
+					else System.err.println("Error [MAPDARQTRANSFORM]: This error should not occur.(ServiceSize > 1 and not MultipleServiceGroup)");	 
+				}
+//				usg.addServiceGroup(triple, msg); //Sollte eigentlich nicht notwendig sein, da neue USG erzeugt und dadurch Tripel,MSG eingetragen
+//				wird. Ansonsten hole ich mir ja das MSG Objekt und ändere das, somit sollte addServiceGroup nicht notwendig sein.  
+			}
+		}	
+		usg.output(); // TESTAUSGABE
+	}
+	
 	
 	/**
 	 * creates new triples with the given Sets of classes and properties
@@ -733,302 +888,24 @@ public class MapDarqTransform extends DarqTransform {
 			}
 		}
 	}
-
 	
-
 	/*
-	 * Auswertung der Regeln
+	 * just for the case that there exists
+	 * no rules for this URI
 	 */
 	
-////	private static void Rules(URI reference, OWLOntology ontology) {
-//	private  URI Rules(Set ruless) {	
-//		Rule rule;
-//		HashSet<URI> rulesURI;
-//		ArrayList<RulePart> partList;
-////		Multiply multiplyPart;
-//		boolean[] subCls = new boolean[2];
-//		boolean[] subDataproperty = new boolean[2];
-//		boolean[] subObjectproperty = new boolean[2];
-//		boolean[] body = new boolean[2];
-//		boolean head = false;
-//		boolean swrl = false;
-//		
-//		boolean multiply = false;
-//		boolean stringConcat = false;
-//		boolean subClass = false;
-//		boolean subDataProperty = false;
-//		boolean subObjectProperty = false;
-//		
-//		double multiplier =0;
-//		boolean divideHead = false;
-//		Set<URI> bodyClasses = new HashSet<URI>();
-//		Set<URI> headClasses = new HashSet<URI>();
-//		int i, j;
-//
-////		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
-////		System.out.println("--------- Starting Rule Analyses ---------");
-//
-//		rulesURI = searchIndex.get(reference);
-////		System.out.println(rulesURI.size() + " Regeln gefunden.");
-//		if (rulesURI != null){ 
-//			/* rules found */
-//			for (URI ruleURI : rulesURI) {
-//				rule = rules.get(ruleURI);
-//				partList = rule.getRulePartList();
-//
-//				/* for subclass */
-//				subCls[0] = false;
-//				subCls[1] = false;
-//				body[0] = false;
-//				i = 0;
-//				
-//				/* for subdataproperty */
-//				subDataproperty[0] = false;
-//				subDataproperty[1] = false;
-//
-//				/* for subobjectproperty */
-//				subObjectproperty[0] = false;
-//				subObjectproperty[1] = false;
-//				
-//				
-//				/* for Multiply (additional) */
-//				multiply = false;
-//				swrl = false;
-//				divideHead = false;
-//				body[1] = false;
-//				head = false;
-//				multiplier = 0;
-//				j = 0;
-//				bodyClasses.clear();
-//				headClasses.clear();
-//				/*for stringconcat (additional)*/
-//				stringConcat = false;
-//				
-//				
-////				System.out.println("Regel in Bearbeitung: "+ruleURI);
-////				System.out.println("Größe PartList: " + partList.size());
-//				
-//				for (RulePart part : partList) {
-//					/* analyze type of rule */
-//					
-//					/* Subclass */
-//					/*
-//					 * Kriterien: 
-//					 * -die Regel darf nur aus 2 Teilen bestehen 
-//					 * -gesuchte Klasse muss im Body sein 
-//					 * -eine Klasse muss im Head stehen 
-//					 * -es muss sich um 2 Klassen handeln
-//					 * -analog für Properties
-//					 */
-//					if (partList.size() == 2) {
-//						if (part.isBody()) body[0] = part.getUri().equals(reference);
-//						if (part.isHead()) head = true;
-//						if (part.getType().equals(MapSearch.OWL_CLASS)){
-//							subCls[i] = true;
-//							subClass = true;
-//							i++;
-//						}
-//						if (part.getType().equals(MapSearch.OWL_DATAPROPERTY)){
-//							subDataproperty[i] = true;
-//							subDataProperty= true;
-//							i++;
-//						}
-//						if (part.getType().equals(MapSearch.OWL_OBJECTPROPERTY)){
-//							subObjectproperty[i] = true;
-//							subObjectProperty = true;
-//							i++;
-//						}
-//					}
-//					
-//					/* multiply */
-//					/*
-//					 * Kriterien: 
-//					 * -BodySize == 2 
-//					 * -HeadSize == 1 
-//					 * -Body: Klasse + SWRLBuiltIn(multiply) 
-//					 * -Head: Klasse 
-//					 * -gesuchte Klasse im Head: 
-//					 * 		-neue Abfrage mit Klasse aus Body 
-//					 * 		-Ergebnisse mit Multiplier multiplizieren
-//					 * -gesuchte Klasse im Body: 
-//					 * 		- neue Abfrage mit Klasse aus Head 
-//					 * 		- Ergebnis der Abfrage durch Multiplier teilen
-//					 */
-//					/*
-//					 * 1. Fall: multiply 
-//					 * 2. Fall: gesuchte Klasse steht im Body 
-//					 * 3. Fall: gesuchte Klasse steht nicht im Body
-//					 */
-//
-////					System.out.println("---------MULTIPLY---------");
-////					System.out.println("Rule URI: "+ rule.getRuleURI());
-//
-//					else if (rule.isMultiply()) {
-//						multiply = true;
-//						if (part.isBody()){
-//							if (part.getType().equals(MapSearch.SWRL_MULTIPLY)) {
-//								swrl = true;
-//								multiplier = part.getMultiplier(); 
-//								// hope this works, TEST
-////								System.out.println("multiplier: " + multiplier);
-//							} else if (part.getUri().equals(reference)) {
-//								divideHead = true;
-//							}
-////							System.out.println("PartSize: " + partList.size());
-////							System.out.println("PartURI: "+part.getUri());
-//							bodyClasses.add(part.getUri()); 
-//							body[j] = true;
-//							j++;
-//						}
-//						if (part.isHead()) {
-//							// if (part.getUri().equals(cls.getURI())){
-//							/* sucht nach der übergebenen Klasse */
-//							/* sollte überflüssig sein, da per default false */
-////							divideHead = false;
-//							// }
-//							head = true;
-//							headClasses.add(part.getUri());
-//						}
-//					}
-////					System.out.println("--------- END MULTIPLY---------");
-//					
-//
-//					/* String Concat */
-//					/*
-//					 * Kriterien:
-//					 * -mindestens 4 Komponenten 
-//					 * -Builtin im Body
-//					 * -mindestens 2 DataTypeProperties im Body
-//					 * -max. eine DataTypeProperty im Head
-//					 */
-//					/* Es kann vorkommen, dass sich auch Klassen in StringConcat befinden, 
-//					 * diese interessieren aber nicht, da der Stringconcat nur zwischen Datatype
-//					 * Properties ausgeführt werden kann. Daher ist es nicht sinnvoll, bei den 
-//					 * Klassen Stringconcat zu erkennen (auch, wenn es möglich wäre)
-//					 * Beispiel 
-//					 * Person(?x) & hasSurname(?x,?y) & hasLastName(?x,?z) & swrlb:stringConcat(?w,?x,?y) --> hasName(?x,?w)
-//					 * hasSurname(?x,?y) & hasLastName(?x,?z) & swrlb:stringConcat(?w,?x,?y) --> hasName(?x,?w)*/
-//					
-////					System.out.println("StringConcat?: "+ rule.isStrincConcat());
-//					else if (rule.isStrincConcat()) {
-//						stringConcat = true;
-//
-////						System.out.println("Size: " + partList.size());
-//						if (partList.size() >=4){
-////							System.out.println("Body? " + part.isBody());
-//							if (part.isBody()){
-////								System.out.println("Typ: " + part.getType());
-//								if (part.getType().equals(MapSearch.OWL_DATAPROPERTY)){
-//									bodyClasses.add(part.getUri());
-////									System.out.println("BodyClassSize: " + bodyClasses.size());
-//									body[i] = true;
-//									i++;
-//								}
-//								if (part.getType() == MapSearch.SWRL_STRINGCONCAT){
-//									swrl = true;
-//								}
-//							}
-////							System.out.println("Head? " + part.isHead());
-//							if (part.isHead()){
-////								System.out.println("Typ: " + part.getType());
-//								if (part.getType().equals(MapSearch.OWL_DATAPROPERTY)){
-//									head = true;
-//								}										
-//							}									
-//						}								
-//					}
-//					
-//					/* Anything else */
-//					else {
-////						System.err.println("Warning [MAPSEARCH] The rule " +  rule + " is not supported.");
-//					}
-//
-//				}// End For Part List
-//
-//				/*-----------------------------------        Auswertung              -----------------------------*/
-//				
-//				/* subclass */
-//				if (subClass && body[0] && head && subCls[0] && subCls[1]&&partList.size()==2) {
-//					System.out.println("Subclass: " + ruleURI);
-//				}
-//				
-//				/* subdataproperty */
-//				else if (subDataProperty && body[0] && head && subDataproperty[0] && subDataproperty[1]) {
-//					System.out.println("SubDataProperty: " + ruleURI);
-//				}
-//				
-//				/* subobjectproperty */
-//				else if (subObjectProperty && body[0] && head && subObjectproperty[0] && subObjectproperty[1]) {
-//					System.out.println("SubDataProperty: " + ruleURI);
-//				}
-//				
-//				/* stringconcat */
-//				else if(stringConcat && head && body[0] && body[1] && swrl ){
-//					
-////					System.out.println("Klasse: " + clsURI);
-//					System.out.println("StringConcat: " + ruleURI);
-//					/* eine der DataTypeProperties ist im Body
-//					 * , es müßte also  ein Split im Head durchgeführt werden
-//					 * 2 Möglichkeiten: Split am Leerzeichen machen, 
-//					 * sofern eins vorhanden, ansosnten Fehlermeldung, 
-//					 * sonst Split einfach verweigern
-//					 * 
-//					 */
-//					if (bodyClasses.contains(reference)){
-//						System.out.println("Warning [MAPSEARCH]: DatatypeProperty is in the body of a string concat rule. Split of the datatypeproperty in the head is not supported.");
-//					}
-//				}
-//				
-//				/* multiply */
-////				System.out.println("----- BEGIN multiply ------");
-////				System.out.println("Klasse: " + clsURI);
-////				System.out.println("Rule: " + ruleURI);
-////				System.out.println("SWRL: " + swrl);
-////				System.out.println("Head: " + head);
-////				System.out.println("Body[0]: " + body[0]);
-////				System.out.println("Body[1]: " + body[1]);
-////				System.out.println("----- END multiply ------");
-//				else if (multiply && swrl && head && body[0] && body[1]) {
-//					/* do what ever is to do */
-//					if (divideHead) { 
-//						/* divide head */
-//						System.out.println("Multiply: " + headClasses.iterator().next()+ "/" + multiplier);
-//						System.out.println("Regel: " + ruleURI);
-//
-//					} 
-//					else { 
-//						/* multiply body */
-//						System.out.println("Multiply: " + bodyClasses.iterator().next() + "*" + multiplier);
-//						System.out.println("Regel: " + ruleURI);
-//						/*-gesuchte Klasse im Head: 
-//						 * 		-neue Abfrage mit Klasse aus Body
-//						 * 		-Ergebnisse mit Multiplier multiplizieren*/
-//					}
-//				}
-//				else{
-//					System.out.println("Error [MAPSEARCH] Rule "+ruleURI+" is not supported.");//wirklich?
-//				}
-//				
-//			}//End For found rules
-//		}
-//
-//		/* Individuals */
-//		for (OWLIndividual cls : ontology.getReferencedIndividuals()) {
-//			for (URI clsURI : searchIndex.keySet()) {
-//				if (cls.getURI().equals(clsURI)) {
-//					System.out.println("Suche Erfolgreich: (individuals)" + clsURI);
-//				}
-//			}
-//		}
-//	}
-	
-	
+	private void putFoundRules(URI tempURI){
+		HashSet<Rule> foundRules = new HashSet<Rule>();
+		foundRules = MapSearch.searchRules(tempURI, mapping);
+		if (foundRules!=null){
+			subjectRules.put(tempURI, foundRules);	
+		}
+	}
 	
 	private Triple cloneTriple(Triple triple){
 		Triple clonedTriple = new Triple(triple.getSubject(),triple.getPredicate(),triple.getObject());
 		return clonedTriple;
 	}
-	
 	public int getTransitivityDepth() {
 		return transitivityDepth;
 	}
@@ -1046,3 +923,28 @@ public class MapDarqTransform extends DarqTransform {
 		this.similarTripleMap = similarTripleMap;
 	}
 }
+/*
+ * (c) Copyright 2005, 2006 Hewlett-Packard Development Company, LP All rights
+ * reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer. 2. Redistributions in
+ * binary form must reproduce the above copyright notice, this list of
+ * conditions and the following disclaimer in the documentation and/or other
+ * materials provided with the distribution. 3. The name of the author may not
+ * be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */

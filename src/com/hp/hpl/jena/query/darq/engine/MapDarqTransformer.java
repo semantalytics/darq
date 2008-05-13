@@ -34,31 +34,33 @@ import com.hp.hpl.jena.query.engine1.plan.PlanUnion;
 import com.hp.hpl.jena.query.engine1.plan.PlanUnsaid;
 import com.hp.hpl.jena.query.engine1.plan.Transformer;
 
-public class DarqTransformer  {
-	
+public class MapDarqTransformer {
+/* Vererbung geht wieder nicht wegen privatem Konstruktor*/ 	
 	   static boolean noDupIfSame = true ;
 	    
-	    public static PlanElement transform(DarqTransform tranform, PlanElement elt)
+	    public static PlanElement transform(MapDarqTransform tranform, PlanElement elt)
 	    {
 	        if ( elt == null )
 	        {
 	            LogFactory.getLog(Transformer.class).warn("Attempt to transform a null PlanElement - ignored") ;
 	            return elt ;
 	        }
-	        return new DarqTransformer().transformation(tranform, elt) ;
+	        return new MapDarqTransformer().transformation(tranform, elt) ;
 	    }
 	    
-	    private DarqTransformer() { }
 	    
-	    public PlanElement transformation(DarqTransform tranform, PlanElement elt)
+	    private MapDarqTransformer() { }
+	    
+	    public PlanElement transformation(MapDarqTransform tranform, PlanElement elt)
 	    {
-	        DARQTransformApplyBase v = new DARQTransformApplyBase(tranform) ;
+	        MapDARQTransformApplyBase v = new MapDARQTransformApplyBase(tranform) ;
 	        elt.visit(v) ;
 	        return v.result() ;
-	    }	   
+	    }
+	   
 }
 
-class DARQTransformApplyBase  implements FedPlanVisitor{
+class MapDARQTransformApplyBase  implements FedPlanVisitor{
 	 Stack stack = new Stack() ;
 	 Stack<PlanElement> parent = new Stack<PlanElement>();
 	 
@@ -74,16 +76,16 @@ class DARQTransformApplyBase  implements FedPlanVisitor{
 	    public PlanElement result()
 	    { 
 	        if ( stack.size() != 1 )
-	            LogFactory.getLog(DARQTransformApplyBase.class).warn("Stack is not aligned") ;
+	            LogFactory.getLog(MapDARQTransformApplyBase.class).warn("Stack is not aligned") ;
 	        return pop() ; 
 	    }
 
-	    private DarqTransform transform ;
-	    DARQTransformApplyBase(DarqTransform transform) { this.transform = transform ; }
+	    private MapDarqTransform mapTransform;
+	    MapDARQTransformApplyBase(MapDarqTransform transform) { this.mapTransform = transform; }
 	    
 	    public void visit(PlanElement0 planElt)
 	    {
-	        push(planElt.apply(transform)) ;
+	        push(planElt.apply(mapTransform)) ;
 	    }
 
 	    public void visit(PlanElement1 planElt)
@@ -91,7 +93,7 @@ class DARQTransformApplyBase  implements FedPlanVisitor{
 	    	parent.push(planElt);
 	        planElt.getSubElement().visit(this) ;
 	        PlanElement x = pop() ;
-	        push(planElt.apply(transform, x)) ;
+	        push(planElt.apply(mapTransform, x)) ;
 	        parent.pop();
 	    }
 
@@ -105,7 +107,7 @@ class DARQTransformApplyBase  implements FedPlanVisitor{
 	            planElt.getSubElement(i).visit(this) ;
 	            x.add(pop()) ;
 	        }
-	        push(planElt.apply(transform, x)) ;
+	        push(planElt.apply(mapTransform, x)) ;
 	        parent.pop();
 	    }
 
@@ -122,10 +124,11 @@ class DARQTransformApplyBase  implements FedPlanVisitor{
 			 push(planElt) ;
 			
 		}
+		
 		public void visit(FedPlanUnionService planElt){
 			push(planElt);
 		}
-		
+
 		public void visit(PlanNestedLoopJoin planNestedLoopJoin) {
 			 push(planNestedLoopJoin) ;
 			
@@ -137,7 +140,7 @@ class DARQTransformApplyBase  implements FedPlanVisitor{
 		}
 
 		public void visit(PlanBasicGraphPattern planElt) {
-			push(transform.transform(planElt,null,parent.lastElement()));
+			push(mapTransform.transform(planElt,null,parent.lastElement()));
 		}
 
 		public void visit(PlanGroup planElt) {
