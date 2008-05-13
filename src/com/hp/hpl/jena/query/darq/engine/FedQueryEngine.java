@@ -7,25 +7,27 @@ package com.hp.hpl.jena.query.darq.engine;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.semanticweb.owl.model.OWLOntology;
 
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.darq.config.Configuration;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.QueryEngine;
-import com.hp.hpl.jena.query.engine1.plan.Transformer;
 import com.hp.hpl.jena.query.util.Context;
+
 
 public class FedQueryEngine extends QueryEngine {
     
     static Log log = LogFactory.getLog(FedQueryEngine.class) ;
     
+    /* Map */ 
+    OWLOntology ontology;
+  	Integer transitivity;
+
+    
     Query query ;
     Configuration config;
-    
-    private long transformTime =0;
-    
-    
-    
+    private long transformTime =0; 
     boolean optimize = true;
 
     /**
@@ -43,17 +45,34 @@ public class FedQueryEngine extends QueryEngine {
     }
 
     public FedQueryEngine(Query q) {
-        this(q,null,null);     
+        this(q,null,null, null, 0);     
     }
     
     public FedQueryEngine(Query q, Configuration conf) {
-        this(q,null,conf);     
+        this(q,null,conf, null, 0);     
     }
     
-    public FedQueryEngine(Query q,Context p,Configuration conf) {
+    public FedQueryEngine(Query q, OWLOntology ontology) {
+        this(q,null,null, ontology, 0);     
+    }
+    public FedQueryEngine(Query q, OWLOntology ontology, Integer transitivity) {
+        this(q,null,null, ontology, transitivity);     
+    }
+    
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Integer transitivity) {
+        this(q,null,conf, ontology, transitivity);     
+    }
+    
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology) {
+        this(q,null,conf, ontology, 0);     
+    }
+    
+    public FedQueryEngine(Query q,Context p,Configuration conf, OWLOntology ontology, Integer transitivity) {
         super(q,p);
         query=q;
         config=conf;
+        this.ontology = ontology;
+        this.transitivity = transitivity;
     }
     
     public void setConfig(Configuration c) {
@@ -64,23 +83,35 @@ public class FedQueryEngine extends QueryEngine {
         return config;
     }
     
-
+ // TODO  es wird in jedem Fall MapDarqTransform aufgerufen! 
+    
     /* (non-Javadoc)
      * @see com.hp.hpl.jena.query.engine1.QueryEngine#queryPlanHook(com.hp.hpl.jena.query.util.Context, com.hp.hpl.jena.query.engine1.PlanElement)
      */
     @Override
     protected PlanElement queryPlanHook(Context context, PlanElement planElt) {
         FedQueryEngineFactory.logPlan(query,planElt);
-        DarqTransform t = new DarqTransform(context,config);
-        t.setOptimize(optimize);
-        long t2;
-        long t1=System.nanoTime();
-        PlanElement pe = DarqTransformer.transform(t,planElt);
-        t2=System.nanoTime();
-        transformTime=t2-t1;
-        
+        PlanElement pe;
+        if ( (ontology == null) && (transitivity == 0) ){
+        	DarqTransform t = new DarqTransform(context,config);
+        	t.setOptimize(optimize);
+        	long t2;
+        	long t1=System.nanoTime();
+        	pe = DarqTransformer.transform(t,planElt);
+        	t2=System.nanoTime();
+        	transformTime=t2-t1;
+        }
+        else{
+        	MapDarqTransform t = new MapDarqTransform(context,config, ontology, transitivity);
+        	t.setOptimize(optimize);
+        	long t2;
+        	long t1=System.nanoTime();
+        	pe = MapDarqTransformer.transform(t,planElt);
+        	t2=System.nanoTime();
+        	transformTime=t2-t1;
+        }
         FedQueryEngineFactory.logPlanOptimized(query,pe);
-       // log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
+        // log.debug("PLAN: \n" + OutputUtils.PlanToString(pe));
         return pe;
     }
 
@@ -90,6 +121,22 @@ public class FedQueryEngine extends QueryEngine {
     public long getTransformTime() {
         return transformTime;
     }
+
+	public OWLOntology getOntology() {
+		return ontology;
+	}
+
+	public void setOntology(OWLOntology ontology) {
+		this.ontology = ontology;
+	}
+
+	public Integer getTransitivity() {
+		return transitivity;
+	}
+
+	public void setTransitivity(Integer transitivity) {
+		this.transitivity = transitivity;
+	}
     
     
  /*   protected PlanElement makePlanForQueryPattern(Plan plan)

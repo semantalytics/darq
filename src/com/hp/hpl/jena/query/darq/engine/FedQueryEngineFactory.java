@@ -5,6 +5,8 @@
  */
 package com.hp.hpl.jena.query.darq.engine;
 
+import org.semanticweb.owl.model.OWLOntology;
+
 import com.hp.hpl.jena.query.Dataset;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
@@ -15,7 +17,6 @@ import com.hp.hpl.jena.query.darq.util.DARQLogHook;
 import com.hp.hpl.jena.query.engine.QueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
 import com.hp.hpl.jena.query.engine1.PlanElement;
-import com.hp.hpl.jena.rdf.model.Model;
 
 public class FedQueryEngineFactory implements QueryEngineFactory {
   
@@ -23,13 +24,16 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     
     private Configuration config;
     private static FedQueryEngineFactory instance = null;
-
     private static DARQLogHook loghook = null;
+
+    /* mapping */
+	private OWLOntology ontology;
+	private Integer transitivity;
     
-    public static void register(Configuration conf) {
+    public static void register(Configuration conf, OWLOntology ontology, Integer transitivity) {
         // register only once
         if (!registered) { 
-            instance = new FedQueryEngineFactory(conf);
+            instance = new FedQueryEngineFactory(conf, ontology, transitivity);
             QueryEngineRegistry.addFactory(instance);
             registered=true;
         }
@@ -51,14 +55,16 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
 
 
 
-    public static void register(String configFileName) {
+    public static void register(String configFileName, OWLOntology ontology, Integer transitivity) {
         Configuration c=new Configuration(configFileName);
-        register(c);
+        register(c, ontology, transitivity);
     }
     
     
-    private FedQueryEngineFactory(Configuration conf) {
-        config=conf;
+    protected FedQueryEngineFactory(Configuration conf, OWLOntology ontology, Integer transitivity) {
+        this.config=conf;
+        this.ontology = ontology;
+        this.transitivity = transitivity;
     }
     
     
@@ -70,7 +76,7 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     }
 
     public QueryExecution create(Query query, Dataset dataset) {
-        FedQueryEngine fqe= new FedQueryEngine(query,config);
+        FedQueryEngine fqe= new FedQueryEngine(query,config, ontology, transitivity);
         fqe.setDataset(dataset);
         return fqe;
     }
@@ -121,6 +127,22 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     public static void setLoghook(DARQLogHook lh) {
         loghook = lh;
     }
+
+	public OWLOntology getOntology() {
+		return ontology;
+	}
+
+	public void setOntology(OWLOntology ontology) {
+		this.ontology = ontology;
+	}
+
+	public Integer getTransitivity() {
+		return transitivity;
+	}
+
+	public void setTransitivity(Integer transitivity) {
+		this.transitivity = transitivity;
+	}
 
 
     
