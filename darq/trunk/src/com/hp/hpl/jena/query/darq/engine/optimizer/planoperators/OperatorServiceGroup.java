@@ -6,8 +6,10 @@ import java.util.Set;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanUnionService;
 import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedBasicOptimizer;
 import com.hp.hpl.jena.query.darq.engine.optimizer.OptimizerElement;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
@@ -22,9 +24,15 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 		this.sg = sg;
 	}
 
+	
+	/* FRAGE Verwendung von getBoundVariables_ prüfen. 
+	 * Ist die Rückgabe der Variablen bei der USG in dieser Art sinnvoll? */ 
 	@Override
 	public Set<String> getBoundVariables_() {
-
+		if (sg instanceof UnionServiceGroup) {
+			UnionServiceGroup usg = (UnionServiceGroup) sg;
+			return usg.getUsedVariables();
+		}
 		return sg.getUsedVariables();
 	}
 
@@ -44,7 +52,36 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 		else
 			bound = boundVariables;
 
-		if (sg instanceof MultipleServiceGroup) {
+		if (sg instanceof UnionServiceGroup){
+
+        	UnionServiceGroup usg = (UnionServiceGroup)sg;
+        	boolean b = true;
+        	boolean requiredBindingMSG=true;
+        	boolean requiredBindingSG=true;
+        	for (ServiceGroup serviceGroup: usg.getServiceGroups().values() ){
+
+        		if (serviceGroup instanceof MultipleServiceGroup) {
+
+        			requiredBindingMSG=true;
+        			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
+        				if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMSG=false; 
+        				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
+        				//theoretisch könnte da auc nen break rein, da einmal false = immer false
+        			}                				
+        			if (!requiredBindingMSG) throw new PlanUnfeasibleException();; //wenn requiredBinding nicht passt, nächste MSG holen
+        		} 
+        		else {
+        			requiredBindingSG=true;
+        			if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, serviceGroup.getService())) requiredBindingSG = false;
+        			if (!requiredBindingSG) throw new PlanUnfeasibleException();;
+        		}
+        	}
+        	b = requiredBindingMSG && requiredBindingSG;
+        	// es müssen alle RBs passen, dann Plan bauen
+        	if (!b) throw new PlanUnfeasibleException();
+        	rsg = CostBasedBasicOptimizer.getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
+        }
+		else if (sg instanceof MultipleServiceGroup) {
 
 			boolean b = true;
 			for (RemoteService s : ((MultipleServiceGroup) sg).getServices())
@@ -104,9 +141,13 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 
 	@Override
 	public PlanElement toARQPlanElement(Context context) {
-		if (sg instanceof MultipleServiceGroup) {
+		if (sg instanceof UnionServiceGroup) {
+			return FedPlanUnionService.make(context, (UnionServiceGroup) sg, null);
+		}
+		else if (sg instanceof MultipleServiceGroup) {
             return FedPlanMultipleService.make(context, (MultipleServiceGroup) sg, null);
-        } else {
+        } 
+		else {
             return FedPlanService.make(context, sg, null);
         }
 	
