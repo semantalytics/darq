@@ -153,7 +153,7 @@ public class DarqBench {
 			System.err.println("doing only optimized query....");
 		}
 
-		FedQueryEngineFactory.register(configfile);
+		FedQueryEngineFactory.register(configfile,null,0);
 
 		if (action.equals("explain")) {
 			explain(queryfile);
