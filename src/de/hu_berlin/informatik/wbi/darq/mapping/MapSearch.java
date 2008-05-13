@@ -361,13 +361,15 @@ public class MapSearch {
 	 * enthalten ist. 
 	 */
 	public static HashSet<Rule> searchRules(URI reference, OWLOntology ontology) {
-		HashSet<URI> rulesURI;
+		HashSet<URI> rulesURI = null;
 		HashSet<Rule> foundRules = new HashSet<Rule>();
 		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
 		rulesURI =searchIndex.get(reference); 
-		for (URI ruleURI : rulesURI) {
-			foundRules.add(rules.get(ruleURI));
-		}
+		if (rulesURI != null){
+			for (URI ruleURI : rulesURI) {
+				foundRules.add(rules.get(ruleURI));
+			}
+		}/* else: no rules exists */
 		return(foundRules);
 	}
 	
