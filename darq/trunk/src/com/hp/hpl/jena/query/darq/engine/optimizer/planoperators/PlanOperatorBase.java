@@ -3,6 +3,7 @@ package com.hp.hpl.jena.query.darq.engine.optimizer.planoperators;
 import java.util.Set;
 
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.util.Context;
@@ -19,13 +20,13 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 	 */
 	public final static double CR = 10;
 
-	private double cachedResultSize=-1;
+	 double cachedResultSize=-1;
 
-	private double cachedCosts = -1;
+	 double cachedCosts = -1;
 	
-	private Set<ServiceGroup> serviceGroups = null;
+	 Set<ServiceGroup> serviceGroups = null;
 	
-	private Set<String> boundVariables = null;
+	 Set<String> boundVariables = null;
 //	public final static double SEL = 1 / 100; // TODO FIXME : Replace with
 												// better estimation!!
 
@@ -79,11 +80,39 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 		return false;
 	}
 	
-	
+	/* FRAGE ist es möglich, dass mehrere SGs in einer POB sind? 
+	 * Habe jetzt nichts gegenteiliges gefunden! 
+	 * Bastian!
+	 * 
+	 * Logik: Es darf alles gejoint werden ausser es handelt sich um 
+	 *        zwei USGs mit dem selben similar. 
+	 * */
 	public boolean joins(PlanOperatorBase p2) {
-		for (String v:getBoundVariables()) if (p2.getBoundVariables().contains(v)) return true;
+		Set<ServiceGroup> serviceGroupsP1 = this.getServiceGroups();
+		Set<ServiceGroup> serviceGroupsP2 = p2.getServiceGroups();
+		int similarGroupP1 = -1;
+		int similarGroupP2 = -2;
+		
+		if (serviceGroupsP1.size() > 1 || serviceGroupsP2.size()>1 )
+			System.out.println("Error [PlanOperatorBase] More than one (Union-/Multiple-)Servicegroup in a OperatorServiceGroup.");
+		
+		if (serviceGroupsP1.iterator().next() instanceof UnionServiceGroup && 
+				serviceGroupsP2.iterator().next() instanceof UnionServiceGroup) {
+			UnionServiceGroup usg1 = (UnionServiceGroup) serviceGroupsP1.iterator().next();
+			similarGroupP1 = usg1.getSimilar();
+			UnionServiceGroup usg2 = (UnionServiceGroup) serviceGroupsP2.iterator().next();
+			similarGroupP2 = usg2.getSimilar();
+		}
+		
+		if (similarGroupP1 != similarGroupP2) {
+			for (String v : getBoundVariables()) {
+				if (p2.getBoundVariables().contains(v)) {
+					return true;
+				}
+			}
+		}
 		return false;
-	}
+	}	
 	
 	@Override
 	public String toString() {
