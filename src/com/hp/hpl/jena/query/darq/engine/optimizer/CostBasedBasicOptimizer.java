@@ -19,6 +19,7 @@ import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.RequiredBinding;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.expr.Expr;
 
 
@@ -60,7 +61,36 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
 
                 OptimizerElement<ServiceGroup> rsg = null;
 
-                if (sg instanceof MultipleServiceGroup) {
+                if (sg instanceof UnionServiceGroup){
+
+                	UnionServiceGroup usg = (UnionServiceGroup)sg;
+                	boolean b = true;
+                	boolean requiredBindingMSG=true;
+                	boolean requiredBindingSG=true;
+                	for (ServiceGroup serviceGroup: usg.getServiceGroups().values() ){
+
+                		if (serviceGroup instanceof MultipleServiceGroup) {
+
+                			requiredBindingMSG=true;
+                			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
+                				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMSG=false; 
+                				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
+                				//theoretisch könnte da auc nen break rein, da einmal false = immer false
+                			}                				
+                			if (!requiredBindingMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
+                		} 
+                		else {
+                			requiredBindingSG=true;
+                			if (!checkInput(serviceGroup.getTriples(), bound, serviceGroup.getService())) requiredBindingSG = false;
+                			if (!requiredBindingSG) continue;
+                		}
+                	}
+                	b = requiredBindingMSG && requiredBindingSG;
+                	// es müssen alle RBs passen, dann Plan bauen
+                	if (!b) continue;
+                	rsg = getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
+                }
+                else if (sg instanceof MultipleServiceGroup) {
                     
                     boolean b=true;
                     for (RemoteService s:((MultipleServiceGroup)sg).getServices()) 
@@ -105,7 +135,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
 
         List<ServiceGroup> result = new ArrayList<ServiceGroup>();
 
-        for (OptimizerElement<ServiceGroup> e : plan) {
+    for (OptimizerElement<ServiceGroup> e : plan) {
             result.add(e.getElement());
         }
 
@@ -121,6 +151,35 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
 
     }
 
+    public static OptimizerElement<ServiceGroup> getCheapestPlanForUnionServiceGroup(UnionServiceGroup usg, Set<String> bound) throws PlanUnfeasibleException{
+        double costs = 0;
+
+        OptimizerElement<ServiceGroup> rsg = null;
+        
+        MultipleServiceGroup msg;
+        
+        for (ServiceGroup serviceGroup: usg.getServiceGroups().values()){
+        	
+        	if (serviceGroup instanceof MultipleServiceGroup){
+        		msg = (MultipleServiceGroup)serviceGroup;
+        		for (RemoteService service : msg.getServices()) {
+                    rsg = getCheapestPlanForServiceGroup(msg.getServiceGroup(service), bound); //holt sich den günstigens Plan für Service + boundVariables
+                    costs += rsg.getRankvalue();
+                }		
+        	}
+        	else{//instanceof ServiceGroup
+        		rsg = getCheapestPlanForServiceGroup(serviceGroup, bound); //holt sich den günstigens Plan für Service + boundVariables
+        		costs += rsg.getRankvalue();
+        	}
+        }
+        
+        UnionServiceGroup resultsg = usg.clone();
+        resultsg.setTriples(rsg.getElement().getTriples());
+        OptimizerElement<ServiceGroup> result = new OptimizerElement<ServiceGroup>(resultsg, costs,usg); // TODO return optimized triples!!
+        return result;
+    } //TODO Test, ob setTriples funktioniert für USG, denn theoretisch befinden sich die Triple in den SG innerhalb der USG
+    
+    /* Idee: geht einfach alles RS für MSG durch und bastelt aus den RS+Tripel+Filter eine SG  */ 
     public static OptimizerElement<ServiceGroup> getCheapestPlanForMultipleServiceGroup(MultipleServiceGroup sg, Set<String> bound) throws PlanUnfeasibleException{
         double costs = 0;
 
@@ -130,14 +189,11 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
             rsg = getCheapestPlanForServiceGroup(sg.getServiceGroup(s), bound);
             costs += rsg.getRankvalue();
         }
-
+        //rsg ist null, 
         MultipleServiceGroup resultsg = sg.clone();
         resultsg.setTriples(rsg.getElement().getTriples());
 
-        OptimizerElement<ServiceGroup> result = new OptimizerElement<ServiceGroup>(resultsg, costs,sg); // TODO
-                                                                                                        // return
-                                                                                                        // optimized
-                                                                                                        // triples!!
+        OptimizerElement<ServiceGroup> result = new OptimizerElement<ServiceGroup>(resultsg, costs,sg); // TODO return optimized triples!!
 
         return result;
     }
@@ -152,6 +208,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
 	public static OptimizerElement<ServiceGroup> getCheapestPlanForServiceGroup(ServiceGroup sg, Set<String> bound) throws PlanUnfeasibleException{
 
         if (sg instanceof MultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
+        if (sg instanceof UnionServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
         
         List<Triple> triples = sg.getTriples();
 
@@ -379,6 +436,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
      * @param service
      * @return
      */
+    //FRAGE bound wird hier offensichtlich nicht mehr genutzt?! Es ist ein leeres HashSet
     public static boolean checkInput(List<Triple> triples, Set<String> bound, RemoteService service) {
 
         Set<String> bv = new HashSet<String>(bound);
