@@ -86,8 +86,8 @@ public class DarqJosekiProcessor extends QueryCom implements Loadable {
             }
 
             
-            
-            FedQueryEngineFactory.register(config);
+            //TODO prüfen, ob Aufruf richtig, erstmal nur Aufruf angepasst
+            FedQueryEngineFactory.register(config,null,0);
             
             QueryExecution qexec = QueryExecutionFactory.create(query, new DarqDataset());
             
