@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanUnionService;
 import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanVisitorBase;
@@ -31,6 +32,11 @@ public class PlanFilterAddVisitor extends PlanVisitorBase implements
 		planElt.getServiceGroup().addFilters(filters);
 
 	}
+	
+	public void visit(FedPlanUnionService planElt){
+		planElt.getServiceGroup().addFilters(filters);
+	}//FRAGE Eventuell nicht korrekt, da Filter aus (M)SG genommen werden müssen
+	//Filter in USG wenig sinnvoll wegen der Transformation
 
 	public void visit(PlanNestedLoopJoin planNestedLoopJoin) {
 		planNestedLoopJoin.getLeft().visit(this);

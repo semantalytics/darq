@@ -13,6 +13,7 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.shared.PrefixMapping;
@@ -56,6 +57,28 @@ public class OutputUtils {
         
         public static void outServiceGroup(ServiceGroup sg, IndentedWriter out) {
             
+        	if(sg instanceof UnionServiceGroup){
+        		UnionServiceGroup usg = (UnionServiceGroup) sg;
+        		for (ServiceGroup xsg : usg.getServiceGroups().values()){
+        			
+        			if (xsg instanceof MultipleServiceGroup) {
+                        for (RemoteService s:((MultipleServiceGroup)sg).getServices()) out.println("+"+s.getLabel() + " ("+ s.getUrl() + ")");
+                    }
+                    else {
+                        
+                    out.println(sg.getService().getLabel() + " ("+ sg.getService().getUrl() + ")");
+                    }
+                    out.incIndent();
+                    
+                    
+                    for ( Triple t: sg.getTriples()) {
+                        out.println(t.toString());
+                    }
+                    
+                    out.decIndent();
+        		}
+        	}
+        	
             if (sg instanceof MultipleServiceGroup) {
                 for (RemoteService s:((MultipleServiceGroup)sg).getServices()) out.println("+"+s.getLabel() + " ("+ s.getUrl() + ")");
             }

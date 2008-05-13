@@ -5,13 +5,15 @@
  */
 package com.hp.hpl.jena.query.darq.util;
  
-import java.io.IOException;
 import java.io.OutputStream;
 
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
+import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
+import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanUnionService;
 import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.PlanFormatterVisitor;
@@ -65,6 +67,42 @@ public class FedPlanFormatter extends PlanFormatterVisitor implements FedPlanVis
         
     }
     
+    public void visit(FedPlanUnionService planElt) {
+    	out.print("Union Service:");
+    	out.incIndent();
+    	for (ServiceGroup sg : planElt.getServiceGroup().getServiceGroups().values()){
+    		if (sg instanceof MultipleServiceGroup){
+    			MultipleServiceGroup msg = (MultipleServiceGroup) sg;
+    			out.print("Multiple Services(USG):");
+    	        out.incIndent();
+    	        for (RemoteService s: msg.getServices()) {
+    	            
+    	            out.println("* "+s.getLabel()+"("+s.getUrl()+")");
+    	        }
+    	        out.incIndent();
+    	        for (Triple t: msg.getTriples()) {
+    	            out.println(t.toString(prefixMapping));
+    	        }
+    	        for (Expr f: msg.getFilters()) {
+    	            out.println(f.toString());
+    	        }
+    	        out.decIndent();    	        
+    	        out.decIndent();
+    		}
+    		else if (sg instanceof ServiceGroup){
+    			 out.println("Service(USG):"+sg.getService().getLabel()+"("+sg.getService().getUrl()+")");
+    		        out.incIndent();
+    		        for (Triple t: sg.getTriples()) {
+    		            out.println(t.toString(prefixMapping));
+    		        }
+    		        for (Expr f: sg.getFilters()) {
+    		            out.println(f.toString());
+    		        }
+    		        out.decIndent();
+    		}
+    	}
+    	
+    }
     public void visit(PlanNestedLoopJoin planElt) {
     	 out.print("NestedLoop: ");
          out.incIndent();
