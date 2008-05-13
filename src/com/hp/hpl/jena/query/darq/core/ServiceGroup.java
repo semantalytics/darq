@@ -34,14 +34,10 @@ public class ServiceGroup {
     public ServiceGroup(RemoteService s) {
         service = s;
     }
-
-    
     
     public RemoteService getService() {
         return service;
     }
-
-
 
     public void addB(Triple t) {
         triples.add(0,t); // TODO: THIS IS BECAUSE THE EVALUATION ORDER OF THE COMPILER! SHOULD DO THIS SOMEHOW DIFFERENT! ?
@@ -74,6 +70,11 @@ public class ServiceGroup {
     
     public List<Triple> getTriples() {
         return triples;
+    }
+    
+    public boolean containsTriple(Triple t){
+    	if (triples.contains(t)) return true;
+    	return false;
     }
     
     public void setTriples(List<Triple> list) {
