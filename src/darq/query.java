@@ -6,26 +6,35 @@
 
 package darq;
 
+import org.semanticweb.owl.model.OWLOntology;
+
 import arq.cmd.CmdException;
 import arq.cmd.QueryCmdUtils;
-import arq.cmdline.*;
+import arq.cmdline.ArgDecl;
+import arq.cmdline.CmdARQ;
+import arq.cmdline.ModAssembler;
+import arq.cmdline.ModDataset;
+import arq.cmdline.ModQueryIn;
+import arq.cmdline.ModRemote;
+import arq.cmdline.ModResultsOut;
+import arq.cmdline.ModTime;
 
-import com.hp.hpl.jena.query.*;
+import com.hp.hpl.jena.query.Dataset;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryException;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.core.ARQInternalErrorException;
 import com.hp.hpl.jena.query.darq.core.DarqDataset;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
-import com.hp.hpl.jena.query.darq.engine.MapFedQueryEngineFactory;
 import com.hp.hpl.jena.query.engineHTTP.HttpQuery;
 import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
 import com.hp.hpl.jena.query.resultset.ResultSetException;
 import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.query.util.Utils;
 import com.hp.hpl.jena.shared.JenaException;
-//import de.hu_berlin.informatik.wbi.darq.mapping.Mapping;
-//import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
+
 import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
-//import edu.stanford.smi.protegex.owl.model.OWLModel;
-import org.semanticweb.owl.model.OWLOntology;
 
 public class query extends CmdARQ
 {
@@ -102,9 +111,9 @@ public class query extends CmdARQ
                 System.out.println();
             }
             
-/*
- * \Begin { MAPPING }
- */           
+
+ 			// MAPPING 
+           
 //            ModQueryin erzeugt Fehler, wenn --map mehr als ein Argument hat.
 //            bei mehr als einem --map bekommt man nur Fehler des letzten Map
             String[] mappings = modMapping.getMapping();     
@@ -112,18 +121,18 @@ public class query extends CmdARQ
             OWLOntology ontology = null;
             if ( modDarq.getConfig()!=null ){
             	if ( mappings !=null ){
-//            		ontology = MapLoadOntologies_old.loadCommandline(mappings);
-            		ontology = MapLoadOntologies.loadCommandline(mappings);	           
-            		MapFedQueryEngineFactory.register(modDarq.getConfig(), ontology, transitivity);
+            		ontology = MapLoadOntologies.loadCommandline(mappings);	      
+            		System.out.println("[Query.java] Aufruf MapFedQueryEngineFactory");
+            		FedQueryEngineFactory.register(modDarq.getConfig(), ontology, transitivity);
             	}
             	else{ 
-            		FedQueryEngineFactory.register(modDarq.getConfig());
+            		FedQueryEngineFactory.register(modDarq.getConfig(), null,0);
             	}
             } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
             	
-/*
-* \End{ MAPPING }
-*/
+
+           // MAPPING 
+
             
 //            if ( modDarq.getConfig()!=null )
 //            {
