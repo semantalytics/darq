@@ -2,7 +2,8 @@ package de.hu_berlin.informatik.wbi.darq.mapping;
 
 import java.net.URI;
 import java.util.ArrayList;
-import org.semanticweb.owl.model.SWRLRule;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Rule{
 	
@@ -79,4 +80,19 @@ public class Rule{
 		return null;
 	}
 	
+	public Set<RulePart> getHeadParts(){
+		HashSet<RulePart> headParts = new HashSet<RulePart>();
+		for(RulePart rulePart : rulePartList){
+			if(rulePart.isHead()) headParts.add(rulePart);
+		}
+		return headParts;
+	}
+	
+	public Set<RulePart> getBodyParts(){
+		HashSet<RulePart> bodyParts = new HashSet<RulePart>();
+		for(RulePart rulePart : rulePartList){
+			if(rulePart.isHead()) bodyParts.add(rulePart);
+		}
+		return bodyParts;
+	}
 }
