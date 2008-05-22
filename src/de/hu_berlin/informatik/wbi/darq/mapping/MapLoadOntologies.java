@@ -44,6 +44,7 @@ public class MapLoadOntologies {
 		 * local Folder for getting imported ontologies
 		 */
 		File ontologyFolder  = new File(System.getProperty("user.home"));
+//		System.out.println(System.getProperty("user.home"));
 		AutoURIMapper autoURIMapper = new AutoURIMapper(ontologyFolder, true);
 		owlOntologyManager.addURIMapper(autoURIMapper); //TODO TEST
 		URI physicalURI = null;

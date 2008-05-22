@@ -105,7 +105,7 @@ public class MapSearch {
 		Set<OWLClass> subClsesSet = new HashSet<OWLClass>();;
 		Set<URI> subClsesURISet= new HashSet<URI>();
 		
-		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		try {
 			OWLClass nothing = owlOntologyManager.getOWLDataFactory().getOWLNothing();
 			/* get Class from URI */
@@ -141,13 +141,13 @@ public class MapSearch {
 	 * @param resource resource of a triple from the SPARQL query
 	 * @param ontology the ontology contains the mapping where you look for subproperties
 	 */
-	public static Set<URI>  SearchSubProperty(URI resource, OWLOntology ontology)
+	public static Set<URI>  searchSubObjectProperty(URI resource, OWLOntology ontology)
 	{
 		Set<Set<OWLObjectProperty>> subPropSets = new HashSet<Set<OWLObjectProperty>>();
 		Set<OWLObjectProperty> subProps = new HashSet<OWLObjectProperty>();
 		Set<URI> subURIProps=new HashSet<URI>();
 		
-		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		try {
 			System.out.println(reasoner.getLoadedOntologies()); //TESTAUSGABE
 			OWLObjectProperty property = owlOntologyManager.getOWLDataFactory().getOWLObjectProperty(resource);
@@ -172,6 +172,37 @@ public class MapSearch {
 		return subURIProps;
 	}
 		
+	public static Set<URI>  searchSubDataProperty(URI resource, OWLOntology ontology)
+	{
+		Set<Set<OWLDataProperty>> subPropSets = new HashSet<Set<OWLDataProperty>>();
+		Set<OWLDataProperty> subProps = new HashSet<OWLDataProperty>();
+		Set<URI> subURIProps=new HashSet<URI>();
+		
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
+		try {
+			System.out.println(reasoner.getLoadedOntologies()); //TESTAUSGABE
+			OWLDataProperty property = owlOntologyManager.getOWLDataFactory().getOWLDataProperty(resource);
+			subPropSets = reasoner.getSubProperties(property); 
+						
+			/*
+			 * Returns an empty set if there is no subclass.
+			 */
+			if (!subPropSets.isEmpty()){ 
+				subProps= OWLReasonerAdapter.flattenSetOfSets(subPropSets);
+				for(OWLDataProperty prop:subProps){
+					subURIProps.add(prop.getURI());
+				}
+			}
+		}
+//		catch(UnsupportedOperationException exception) {
+//				     System.out.println("Error:[MAPSEARCH] Unsupported reasoner operation.");
+//		}
+		catch(OWLReasonerException ex) {
+				  System.out.println("Error:[MAPSEARCH] " + ex.getMessage());
+		}
+		return subURIProps;
+	}
+	
 	
 	
 	/**
@@ -180,12 +211,12 @@ public class MapSearch {
 	 * @param resource resource of a triple from the SPARQL query
 	 * @param ontology the ontology contains the mapping where you look for equivalent classes
 	 */
-	public static Set<URI> SearchEquivalentClass(URI resource, OWLOntology ontology)
+	public static Set<URI> searchEquivalentClass(URI resource, OWLOntology ontology)
 	{
 		Set<OWLClass> equClsSet = new HashSet<OWLClass>();
 		Set<URI> equClsURISet = new HashSet<URI>();
 		OWLClass cls = null;
-		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		
 		try {
 			cls = owlOntologyManager.getOWLDataFactory().getOWLClass(resource);
@@ -222,16 +253,42 @@ public class MapSearch {
 	 * @param resource resource of a triple from the SPARQL query
 	 * @param ontology the ontology contains the mapping where you look for equivalent properties
 	 */
-	public static Set<URI> SearchEquivalentProperty(URI resource, OWLOntology ontology)
+	public static Set<URI> searchEquivalentObjectProperty(URI resource, OWLOntology ontology)
 	{
 		Set<OWLObjectProperty> equPropSet = new HashSet<OWLObjectProperty>();
 		Set<URI> equPropURISet = new HashSet<URI>();
-		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		try {			
 			
 			OWLObjectProperty property = owlOntologyManager.getOWLDataFactory().getOWLObjectProperty(resource);			 							 
 			equPropSet = reasoner.getEquivalentProperties(property); //returns RuntimeException if nothing found
 			for(OWLObjectProperty prop:equPropSet){
+				equPropURISet.add(prop.getURI());
+			}
+		}
+//		catch(UnsupportedOperationException exception) {
+//				     System.err.println("Error:[REASONER] Unsupported reasoner operation.");
+//		}
+		catch(OWLReasonerException ex) {
+				  System.err.println("Error:[REASONER] " + ex.getMessage());
+		}
+		catch(RuntimeException ex){// catches the exception, when property is not found in the ontology 
+			equPropURISet.clear();//returns emtpy set as the other do
+			System.err.println("Warning: [Equivalent Property] Property " + resource + " not found");
+		}
+		return equPropURISet;	
+	}
+	
+	public static Set<URI> searchEquivalentDataProperty(URI resource, OWLOntology ontology)
+	{
+		Set<OWLDataProperty> equPropSet = new HashSet<OWLDataProperty>();
+		Set<URI> equPropURISet = new HashSet<URI>();
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
+		try {			
+			
+			OWLDataProperty property = owlOntologyManager.getOWLDataFactory().getOWLDataProperty(resource);			 							 
+			equPropSet = reasoner.getEquivalentProperties(property); //returns RuntimeException if nothing found
+			for(OWLDataProperty prop:equPropSet){
 				equPropURISet.add(prop.getURI());
 			}
 		}
@@ -253,12 +310,12 @@ public class MapSearch {
 	 * @param resource resource of a triple from the SPARQL query
 	 * @param ontology the ontology contains the mapping where you look for individuals
 	 */
-	public static Set<URI> SearchSameIndividual(URI resource, OWLOntology ontology)
+	public static Set<URI> searchSameIndividual(URI resource, OWLOntology ontology)
 	{
 		Set<OWLIndividual> sameIndiSet = new HashSet<OWLIndividual>();
 		Set<URI> sameIndiURISet = new HashSet<URI>();
 		
-		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		try {
 			
 			OWLIndividual individual = owlOntologyManager.getOWLDataFactory().getOWLIndividual(resource);
@@ -309,7 +366,7 @@ public class MapSearch {
 	 * Init is called if no ontology is available or the ontology has changed
 	 * 
 	 */
-	private static void Init(OWLOntology ontology){
+	private static void init(OWLOntology ontology){
 		
 		Set<SWRLRule> ontologyRules = ontology.getRules();
 		ontologyURI = ontology.getURI();
@@ -363,7 +420,7 @@ public class MapSearch {
 	public static HashSet<Rule> searchRules(URI reference, OWLOntology ontology) {
 		HashSet<URI> rulesURI = null;
 		HashSet<Rule> foundRules = new HashSet<Rule>();
-		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) Init(ontology);
+		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		rulesURI =searchIndex.get(reference); 
 		if (rulesURI != null){
 			for (URI ruleURI : rulesURI) {
@@ -814,11 +871,11 @@ public class MapSearch {
 	
 	
 //Test Begin
-public static void AllAxiomsfromClass(URI clsURI, OWLOntology ontology){
+public static void allAxiomsfromClass(URI clsURI, OWLOntology ontology){
 	Set<OWLAxiom> Axioms = new HashSet<OWLAxiom>();
 	Set<OWLClassAxiom> ClassAxioms = new HashSet<OWLClassAxiom>();;
 	OWLClass cls;
-	if (!init) Init(ontology);
+	if (!init) init(ontology);
 	try{
 	cls = owlOntologyManager.getOWLDataFactory().getOWLClass(clsURI);
 	
