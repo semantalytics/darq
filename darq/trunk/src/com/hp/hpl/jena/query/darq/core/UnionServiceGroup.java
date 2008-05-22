@@ -2,9 +2,13 @@ package com.hp.hpl.jena.query.darq.core;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import javax.swing.tree.DefaultTreeModel;
+
 import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.query.expr.Expr;
 
 public class UnionServiceGroup extends MultipleServiceGroup {
 	
@@ -13,8 +17,9 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 	 *- used to do the union between the resultsets
 	 */
 	
-
+	
 	private int similar;
+	private DefaultTreeModel tree;
 	
 	private HashMap<Triple,ServiceGroup> serviceGroups = new HashMap<Triple,ServiceGroup>();
     /* Vorsicht: Tricky ein Triple kann nur eine SG haben, aber einer SG können mehrere Triple zugeordnet sein! (insbesondere bei MSG) */ 
@@ -141,6 +146,33 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 	}
 	
 	@Override
+	@Deprecated
+	public boolean addFilter(Expr c) {
+
+     throw new UnsupportedOperationException("this is a UnionServiceGroup - use methods from (Multiple)ServiceGroup within the UnionServiceGroup");
+       
+   }
+
+	@Override
+	@Deprecated
+	public boolean addFilters(List<Expr> lc) {
+		throw new UnsupportedOperationException("this is a UnionServiceGroup - use methods from (Multiple)ServiceGroup within the UnionServiceGroup");
+	}
+   
+	@Override
+	@Deprecated
+	public List<Expr> getFilters() {
+		throw new UnsupportedOperationException("this is a UnionServiceGroup - use methods from (Multiple)ServiceGroup within the UnionServiceGroup");
+	}
+
+	@Override
+	@Deprecated
+	public void setFilters(List<Expr> c) {
+		throw new UnsupportedOperationException("this is a UnionServiceGroup - use methods from (Multiple)ServiceGroup within the UnionServiceGroup");
+	}
+	
+	
+	@Override
     public boolean equals(Object obj) {
         if (obj instanceof UnionServiceGroup) {
             UnionServiceGroup otherGroup = (UnionServiceGroup) obj;
@@ -182,7 +214,10 @@ public class UnionServiceGroup extends MultipleServiceGroup {
     public void output() {
     	System.out.println("USG");
     	System.out.println("  similar: " + similar);
-    	for(ServiceGroup sg : serviceGroups.values()){
+    	System.out.println("  Filter: no Filters allowed");
+		
+    	
+		for(ServiceGroup sg : serviceGroups.values()){
     		if (sg instanceof MultipleServiceGroup) {
 				MultipleServiceGroup msg = (MultipleServiceGroup) sg;
 				System.out.println("    MSG");
@@ -192,6 +227,11 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 				for(RemoteService rs : msg.getServices()){
 					System.out.println("     RemoteService: " + rs.getUrl());
 				}
+				java.util.List<Expr> filtermsg  = msg.getFilters();
+				if (filtermsg.isEmpty()) System.out.println("     No Filters.");
+				for(Expr f : msg.getFilters()){
+					System.out.println("     Filter: "+ f);
+				}
 			}
     		else{
     			System.out.println("   SG");
@@ -199,7 +239,22 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 					System.out.println("     Triple: " + triple.toString());
 				}
     			System.out.println("     RemoteService: "+ sg.getService().getUrl());
+    			
+    			java.util.List<Expr> filtersg  = sg.getFilters();
+				if (filtersg.isEmpty()) System.out.println("     No Filters.");
+				for(Expr f : sg.getFilters()){
+					System.out.println("     Filter: "+ f);
+				}
     		}
     	}
     }
+
+	public DefaultTreeModel getTree() {
+		return tree;
+	}
+
+	public void setTree(DefaultTreeModel tree) {
+		this.tree = tree;
+	}
+	
 }
