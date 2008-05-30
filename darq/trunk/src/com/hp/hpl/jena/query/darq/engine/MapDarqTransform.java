@@ -369,9 +369,16 @@ public class MapDarqTransform extends TransformCopy {
 										putIntoUnionServiceGroup(similarTriple,services,similar,tree);
 									}
 									else {
-										unmatchedTriples.add(similarTriple);
-										log.warn("No service found for statement: " + similarTriple
-												+ " - it will be queried locally.");
+//										unmatchedTriples.add(similarTriple); 
+										/*
+										 *  similarTriple einfach zu unmatchedTriples hinzufügen funktioniert nicht, 
+										 *  da diese eine weitere Verarbeitung (Union, Multiply, StringConcat) erfordern. 
+										 *  Daher werden die Tripel erstmal verworfen. Ideal wäre es, den lokalen Service
+										 *  als RemoteService zu behandeln, so dass ganz normal auf (M/U)SG zurückgegriffen 
+										 *  werden kann.
+										 */ 
+										log.warn("No service found for generated statement: " + similarTriple
+												+ " - it will be ignored.");
 									}
 								} //End For similarTriple:triples
 								similar++;
