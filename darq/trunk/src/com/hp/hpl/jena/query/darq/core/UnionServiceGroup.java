@@ -183,8 +183,8 @@ public class UnionServiceGroup extends MultipleServiceGroup {
             for (ServiceGroup serviceGroup :  otherGroup.getServiceGroups().values()){
             	/* checks RemoteServices */
             	if (!containsServiceGroup(serviceGroup)) return false;
-            	/* checks Filters */
-            	if  (getFilters().equals(serviceGroup.getFilters())) return false;
+//            	/* checks Filters - no Filters allowed in USG*/
+//            	if  (getFilters().equals(serviceGroup.getFilters())) return false;
             }
             /* checks Triples */
             if (!serviceGroups.keySet().equals(otherGroup.serviceGroups.keySet())) return false;
