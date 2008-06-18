@@ -208,7 +208,7 @@ public class QueryTest extends TestCaseARQ
     
             String configFile = n.asNode().toString();
             
-            FedQueryEngineFactory.register(new Configuration(configFile),null,0);
+            FedQueryEngineFactory.register(new Configuration(configFile),null,0,null,false);
             
             
             QueryExecution qe = null ;

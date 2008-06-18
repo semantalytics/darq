@@ -15,6 +15,8 @@ import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.QueryEngine;
 import com.hp.hpl.jena.query.util.Context;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 
 public class FedQueryEngine extends QueryEngine {
     
@@ -23,8 +25,11 @@ public class FedQueryEngine extends QueryEngine {
     /* Map */ 
     OWLOntology ontology;
   	Integer transitivity;
-
-    
+  	
+  	/* Cache */ 
+  	Caching cache;
+    Boolean cacheEnabled = false;
+  	
     Query query ;
     Configuration config;
     private long transformTime =0; 
@@ -45,34 +50,108 @@ public class FedQueryEngine extends QueryEngine {
     }
 
     public FedQueryEngine(Query q) {
-        this(q,null,null, null, 0);     
+        this(q,null,null, null, 0, null, false);     
+    }
+    public FedQueryEngine(Query q, Boolean cacheEnabled) {
+        this(q,null,null, null, 0, null, cacheEnabled);     
+    }
+    
+    public FedQueryEngine(Query q, Caching cache,Boolean cacheEnabled) {
+        this(q,null,null, null, 0, cache, cacheEnabled);     
+    }
+    
+    public FedQueryEngine(Query q, Caching cache) {
+        this(q,null,null, null, 0, cache, true);     
     }
     
     public FedQueryEngine(Query q, Configuration conf) {
-        this(q,null,conf, null, 0);     
+        this(q,null,conf, null, 0,null, false);     
+    }
+    
+    public FedQueryEngine(Query q, Configuration conf, Boolean cacheEnabled) {
+        this(q,null,conf, null, 0,null, cacheEnabled);     
+    }
+    
+    public FedQueryEngine(Query q, Configuration conf, Caching cache, Boolean cacheEnabled) {
+        this(q,null,conf, null, 0,cache, cacheEnabled);     
+    }
+
+    public FedQueryEngine(Query q, Configuration conf, Caching cache) {
+        this(q,null,conf, null, 0,cache, true);     
+    }
+    
+    public FedQueryEngine(Query q, OWLOntology ontology, Boolean cacheEnabled) {
+        this(q,null,null, ontology, 0, null, cacheEnabled);     
     }
     
     public FedQueryEngine(Query q, OWLOntology ontology) {
-        this(q,null,null, ontology, 0);     
+        this(q,null,null, ontology, 0, null, false);     
     }
+
+    
+    public FedQueryEngine(Query q, OWLOntology ontology, Caching cache) {
+        this(q,null,null, ontology, 0, cache, true);     
+    }
+    
+    public FedQueryEngine(Query q, OWLOntology ontology, Caching cache, Boolean cacheEnabled) {
+        this(q,null,null, ontology, 0, cache, cacheEnabled);     
+    }
+
     public FedQueryEngine(Query q, OWLOntology ontology, Integer transitivity) {
-        this(q,null,null, ontology, transitivity);     
+        this(q,null,null, ontology, transitivity,null, false);     
     }
-    
+
+    public FedQueryEngine(Query q, OWLOntology ontology, Integer transitivity, Boolean cacheEnabled) {
+        this(q,null,null, ontology, transitivity,null, cacheEnabled);     
+    }
+
+    public FedQueryEngine(Query q, OWLOntology ontology, Integer transitivity, Caching cache) {
+        this(q,null,null, ontology, transitivity,cache,true);     
+    }
+    public FedQueryEngine(Query q, OWLOntology ontology, Integer transitivity, Caching cache,Boolean cacheEnabled) {
+        this(q,null,null, ontology, transitivity,cache, cacheEnabled);     
+    }
+
     public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Integer transitivity) {
-        this(q,null,conf, ontology, transitivity);     
+        this(q,null,conf, ontology, transitivity,null,false);     
     }
-    
+
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Integer transitivity,Boolean cacheEnabled) {
+        this(q,null,conf, ontology, transitivity,null,cacheEnabled);     
+    }
+
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Integer transitivity, Caching cache) {
+        this(q,null,conf, ontology, transitivity,cache,true);     
+    }
+
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Integer transitivity, Caching cache,Boolean cacheEnabled) {
+        this(q,null,conf, ontology, transitivity,cache,cacheEnabled);     
+    }
+
     public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology) {
-        this(q,null,conf, ontology, 0);     
+        this(q,null,conf, ontology, 0,null,false);     
     }
     
-    public FedQueryEngine(Query q,Context p,Configuration conf, OWLOntology ontology, Integer transitivity) {
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology,Boolean cacheEnabled) {
+        this(q,null,conf, ontology, 0,null,cacheEnabled);     
+    }
+
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Caching cache) {
+        this(q,null,conf, ontology, 0,cache,true);     
+    }
+    
+    public FedQueryEngine(Query q, Configuration conf, OWLOntology ontology, Caching cache,Boolean cacheEnabled) {
+        this(q,null,conf, ontology, 0,cache,cacheEnabled);     
+    }
+
+    public FedQueryEngine(Query q,Context p,Configuration conf, OWLOntology ontology, Integer transitivity, Caching cache, Boolean cacheEnabled) {
         super(q,p);
         query=q;
         config=conf;
         this.ontology = ontology;
         this.transitivity = transitivity;
+        this.cache = cache;
+        this.cacheEnabled = cacheEnabled;
     }
     
     public void setConfig(Configuration c) {
@@ -93,7 +172,7 @@ public class FedQueryEngine extends QueryEngine {
         FedQueryEngineFactory.logPlan(query,planElt);
         PlanElement pe;
         if ( (ontology == null) && (transitivity == 0) ){
-        	DarqTransform t = new DarqTransform(context,config);
+        	DarqTransform t = new DarqTransform(context,config, cache, cacheEnabled);
         	t.setOptimize(optimize);
         	long t2;
         	long t1=System.nanoTime();
@@ -102,7 +181,7 @@ public class FedQueryEngine extends QueryEngine {
         	transformTime=t2-t1;
         }
         else{
-        	MapDarqTransform t = new MapDarqTransform(context,config, ontology, transitivity);
+        	MapDarqTransform t = new MapDarqTransform(context,config, ontology, transitivity,cache,cacheEnabled);
         	t.setOptimize(optimize);
         	long t2;
         	long t1=System.nanoTime();

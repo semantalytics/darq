@@ -17,9 +17,10 @@ import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.engine.QueryIterator;
 import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
-import com.hp.hpl.jena.query.engineHTTP.QueryEngineHTTP;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 
 /**
  * Process a remote Service
@@ -37,8 +38,8 @@ public class FedQueryIterTest extends DarqQueryIterator {
   
 
     public FedQueryIterTest(QueryIterator input, ServiceGroup sg,
-            ExecutionContext context, PlanElement subComp) {
-        super(input, sg, context,subComp);
+            ExecutionContext context, PlanElement subComp, Caching cache, Boolean cacheEnabled) {
+        super(input, sg, context,subComp,cache, cacheEnabled);
     }
     
     

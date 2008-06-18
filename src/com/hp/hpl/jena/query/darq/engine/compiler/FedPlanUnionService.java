@@ -9,7 +9,6 @@ import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 import com.hp.hpl.jena.query.darq.engine.compiler.iterators.QueryIterUnionParallel;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
 import com.hp.hpl.jena.query.darq.util.OutputUtils;
@@ -22,24 +21,29 @@ import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
 import com.hp.hpl.jena.query.engine1.plan.Transform;
 import com.hp.hpl.jena.query.util.Context;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 public class FedPlanUnionService extends PlanElement1 {
 	
 private UnionServiceGroup serviceGroup ;
-	
-    
+private Caching cache;	
+private Boolean cacheEnabled;
+
     public UnionServiceGroup getServiceGroup() {
         return serviceGroup;
     }
     
-    public static PlanElement make(Context c,  UnionServiceGroup sg, PlanElement subElt)
+    public static PlanElement make(Context c,  UnionServiceGroup sg, PlanElement subElt, Caching cache, Boolean cacheEnabled)
     {
-        return new FedPlanUnionService(c,  sg, subElt) ;
+        return new FedPlanUnionService(c,  sg, subElt, cache, cacheEnabled) ;
     }
     
-    private FedPlanUnionService(Context c, UnionServiceGroup sg, PlanElement cElt)
+    private FedPlanUnionService(Context c, UnionServiceGroup sg, PlanElement cElt, Caching cache, Boolean cacheEnabled)
     {
         super(c, cElt) ;
         serviceGroup = sg ;
+        this.cache = cache;
+        this.cacheEnabled = cacheEnabled;
     }
     
     
@@ -61,11 +65,11 @@ private UnionServiceGroup serviceGroup ;
         	if (sg instanceof MultipleServiceGroup){
         		MultipleServiceGroup msg = (MultipleServiceGroup) sg;
                 for (RemoteService s: msg.getServices()) {
-                    list.add(FedPlanService.make(this.getContext(),msg.getServiceGroup(s),this.getSubElement()) );                    
+                    list.add(FedPlanService.make(this.getContext(),msg.getServiceGroup(s),this.getSubElement(),cache,cacheEnabled) );                    
                 }        		
         	}
         	else if  (sg instanceof ServiceGroup){
-        		 list.add(FedPlanService.make(this.getContext(),sg,this.getSubElement()) );		 
+        		 list.add(FedPlanService.make(this.getContext(),sg,this.getSubElement(),cache,cacheEnabled) );		 
         	}
         }
         
@@ -115,6 +119,6 @@ private UnionServiceGroup serviceGroup ;
 
     @Override
     public PlanElement copy(PlanElement newSubElement) {
-        return make(getContext(),serviceGroup,newSubElement);
+        return make(getContext(),serviceGroup,newSubElement,cache, cacheEnabled);
     }
 }

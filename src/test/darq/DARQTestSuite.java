@@ -6,17 +6,9 @@
 package test.darq;
 
 
-import java.util.logging.Level;
-
 import junit.framework.TestSuite;
-
-import org.eclipse.hyades.logging.commons.Logger;
-
 import test.darq.optimizer.OptimizerAllTests;
 
-import com.hp.hpl.jena.query.darq.engine.DarqTransform;
-import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
-import com.hp.hpl.jena.query.darq.engine.optimizer.CostBasedBasicOptimizer;
 import com.hp.hpl.jena.query.expr.E_Function;
 import com.hp.hpl.jena.query.expr.NodeValue;
 

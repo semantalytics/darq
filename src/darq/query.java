@@ -34,6 +34,7 @@ import com.hp.hpl.jena.query.util.IndentedWriter;
 import com.hp.hpl.jena.query.util.Utils;
 import com.hp.hpl.jena.shared.JenaException;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
 
 public class query extends CmdARQ
@@ -52,11 +53,12 @@ public class query extends CmdARQ
     
     ModDarq modDarq = new ModDarq();
     ModMapping modMapping = new ModMapping();
+    ModCaching modCaching = new ModCaching();
     
     
     public static void main (String [] argv)
     {
-        new query(argv).mainAndExit() ;
+        new query(argv).main(); //mainAndExit() ;
     }
     
     protected query(String[] argv)
@@ -69,6 +71,7 @@ public class query extends CmdARQ
         super.addModule(modTime) ;
         super.addModule(modDarq);
         super.addModule(modMapping);
+        super.addModule(modCaching);
         super.add(argRepeat) ;
     }
 
@@ -101,6 +104,8 @@ public class query extends CmdARQ
     
     private void queryExecLocal()
     {
+    	Caching cache=null;
+    	Boolean cacheEnabled;
         try{
             Query query = modQuery.getQuery() ;
             if ( isVerbose() )
@@ -111,8 +116,20 @@ public class query extends CmdARQ
                 System.out.println();
             }
             
-
- 			// MAPPING 
+            /* Caching */
+            // hier Cache initialisieren
+            String cacheConfig= modCaching.getCacheConfig();
+            
+            if (cacheConfig!=null){
+            	cache = Caching.getInstance(cacheConfig);
+            	cacheEnabled=true;
+            }
+            else{
+            	cache = null;
+            	cacheEnabled=false;
+            }            
+            
+ 			/* Mapping */ 
            
 //            ModQueryin erzeugt Fehler, wenn --map mehr als ein Argument hat.
 //            bei mehr als einem --map bekommt man nur Fehler des letzten Map
@@ -123,14 +140,14 @@ public class query extends CmdARQ
             	if ( mappings !=null ){
             		ontology = MapLoadOntologies.loadCommandline(mappings);	      
             		System.out.println("[Query.java] Aufruf MapFedQueryEngineFactory");
-            		FedQueryEngineFactory.register(modDarq.getConfig(), ontology, transitivity);
+            		FedQueryEngineFactory.register(modDarq.getConfig(), ontology, transitivity, cache,cacheEnabled);
             	}
             	else{ 
-            		FedQueryEngineFactory.register(modDarq.getConfig(), null,0);
+            		FedQueryEngineFactory.register(modDarq.getConfig(), null,0,cache,cacheEnabled);
             	}
             } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
             	
-
+            
            // MAPPING 
 
             
@@ -162,6 +179,7 @@ public class query extends CmdARQ
             if ( modTime.timingEnabled() )
                 System.out.println("Time: "+modTime.timeStr(time)) ;
             qe.close() ;
+
         }
         catch (ARQInternalErrorException intEx)
         {
@@ -190,6 +208,9 @@ public class query extends CmdARQ
         {
             throw new CmdException("Exception", ex) ;
         }
+//        finally{
+//          if(cache!=null){  cache.removeCache();}
+//        }
     }    
     
     private void queryExecRemote()

@@ -22,6 +22,8 @@ import com.hp.hpl.jena.query.engineHTTP.QueryEngineHTTP;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 /**
  * Process a remote Service
  * 
@@ -38,8 +40,8 @@ public class _FedQueryIterService extends DarqQueryIterator {
   
 
     public _FedQueryIterService(QueryIterator input, ServiceGroup sg,
-            ExecutionContext context, PlanElement subComp) {
-        super(input, sg, context,subComp);
+            ExecutionContext context, PlanElement subComp, Caching cache, Boolean cacheEnabled) {
+        super(input, sg, context,subComp,cache, cacheEnabled);
     }
     
     

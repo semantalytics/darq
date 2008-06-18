@@ -18,6 +18,8 @@ import com.hp.hpl.jena.query.engine.QueryEngineFactory;
 import com.hp.hpl.jena.query.engine.QueryEngineRegistry;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 public class FedQueryEngineFactory implements QueryEngineFactory {
   
     static boolean registered = false; 
@@ -30,10 +32,14 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
 	private OWLOntology ontology;
 	private Integer transitivity;
     
-    public static void register(Configuration conf, OWLOntology ontology, Integer transitivity) {
+	/* caching */
+	private Caching cache;
+	private Boolean cacheEnabled;
+	
+    public static void register(Configuration conf, OWLOntology ontology, Integer transitivity, Caching cache, Boolean cacheEnabled) {
         // register only once
         if (!registered) { 
-            instance = new FedQueryEngineFactory(conf, ontology, transitivity);
+            instance = new FedQueryEngineFactory(conf, ontology, transitivity, cache,cacheEnabled);
             QueryEngineRegistry.addFactory(instance);
             registered=true;
         }
@@ -55,16 +61,18 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
 
 
 
-    public static void register(String configFileName, OWLOntology ontology, Integer transitivity) {
+    public static void register(String configFileName, OWLOntology ontology, Integer transitivity, Caching cache,Boolean cacheEnabled) {
         Configuration c=new Configuration(configFileName);
-        register(c, ontology, transitivity);
+        register(c, ontology, transitivity, cache,cacheEnabled);
     }
     
     
-    protected FedQueryEngineFactory(Configuration conf, OWLOntology ontology, Integer transitivity) {
+    protected FedQueryEngineFactory(Configuration conf, OWLOntology ontology, Integer transitivity, Caching cache,Boolean cacheEnabled) {
         this.config=conf;
         this.ontology = ontology;
         this.transitivity = transitivity;
+        this.cache=cache;
+        this.cacheEnabled=cacheEnabled;
     }
     
     
@@ -76,7 +84,7 @@ public class FedQueryEngineFactory implements QueryEngineFactory {
     }
 
     public QueryExecution create(Query query, Dataset dataset) {
-        FedQueryEngine fqe= new FedQueryEngine(query,config, ontology, transitivity);
+        FedQueryEngine fqe= new FedQueryEngine(query,config, ontology, transitivity,cache,cacheEnabled);
         fqe.setDataset(dataset);
         return fqe;
     }
