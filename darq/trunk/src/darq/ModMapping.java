@@ -27,7 +27,7 @@ public class ModMapping implements ArgModuleGeneral {
      * Output for help  
      */
     public void registerWith(CmdGeneral cmdLine) {
-        cmdLine.add(argDarqMap, "--map", "Mapping File") ;
+        cmdLine.add(argDarqMap, "--map(<file>)*", "Mapping File(s)") ;
         cmdLine.add(argDarqMapTrans, "--t", "depth of search for transitivity");
     }
 
