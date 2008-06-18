@@ -11,7 +11,6 @@ import org.apache.commons.logging.LogFactory;
 
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecException;
-import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
@@ -22,6 +21,8 @@ import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engineHTTP.QueryEngineHTTP;
 import com.hp.hpl.jena.query.engineHTTP.QueryExceptionHTTP;
 import com.hp.hpl.jena.query.util.IndentedLineBuffer;
+
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 
 /**
  * Process a remote Service
@@ -39,8 +40,8 @@ public class FedQueryIterService extends DarqQueryIterator {
 	
 
 	public FedQueryIterService(QueryIterator input, ServiceGroup sg,
-			ExecutionContext context, PlanElement subComp) {
-		super(input, sg, context, subComp);
+			ExecutionContext context, PlanElement subComp, Caching cache, Boolean cacheEnabled) {
+		super(input, sg, context, subComp,cache, cacheEnabled);
 	}
 
 	/**

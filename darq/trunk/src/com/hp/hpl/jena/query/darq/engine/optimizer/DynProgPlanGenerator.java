@@ -7,13 +7,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.query.core.ARQInternalErrorException;
 import com.hp.hpl.jena.query.darq.core.Capability;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
@@ -23,7 +19,8 @@ import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.Join;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.NestedLoopJoin;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.OperatorServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
-import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PrintVisitor;
+
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 
 public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 
@@ -57,14 +54,14 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 		
 	}
 
-	public PlanOperatorBase getCheapestPlan(List<ServiceGroup> sgs)
+	public PlanOperatorBase getCheapestPlan(List<ServiceGroup> sgs, Caching cache, Boolean cacheEnabled)
 			throws PlanUnfeasibleException {
 
 		finalPlanSize = sgs.size();
 		
 		
 		for (ServiceGroup sg : sgs) {
-			addCandidates(new OperatorServiceGroup(sg));
+			addCandidates(new OperatorServiceGroup(sg,cache,cacheEnabled));
 		}
 		/*
 		 * // build binary pairs List<ServiceGroup> tmp = new ArrayList<ServiceGroup>(sgs);
@@ -400,11 +397,12 @@ public class DynProgPlanGenerator implements OptimizedPlanGenerator {
 
 	public static void main(String[] args) {
 		DynProgPlanGenerator pg = new DynProgPlanGenerator();
-
+		Caching cache = Caching.getInstance("N:\\Studium\\Diplomarbeit\\Darq\\DarqCacheConfiguration.xml");
+		Boolean cacheEnabled = true;
 		try {
 			long end = 0;
 			long start = System.currentTimeMillis();
-			pg.getCheapestPlan(pg.getExpectedResult());
+			pg.getCheapestPlan(pg.getExpectedResult(),cache, cacheEnabled);
 			end = System.currentTimeMillis();
 			System.out.println("Time: "+ (end-start) +" ms");
 		} catch (PlanUnfeasibleException e) {

@@ -26,6 +26,8 @@ import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
 import com.hp.hpl.jena.query.engine1.plan.Transform;
 import com.hp.hpl.jena.query.util.Context;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 
 /**
  * 
@@ -36,30 +38,33 @@ import com.hp.hpl.jena.query.util.Context;
 public class FedPlanMultipleService extends PlanElement1
 {
 	private MultipleServiceGroup serviceGroup ;
+	private Caching cache;
+    private Boolean cacheEnabled;
 	
-    
     public MultipleServiceGroup getServiceGroup() {
         return serviceGroup;
     }
     
-    public static PlanElement make(Context c,  MultipleServiceGroup sg, PlanElement subElt)
+    public static PlanElement make(Context c,  MultipleServiceGroup sg, PlanElement subElt, Caching cache, Boolean cacheEnabled)
     {
-        return new FedPlanMultipleService(c,  sg, subElt) ;
+        return new FedPlanMultipleService(c,  sg, subElt, cache, cacheEnabled);
     }
     
     
     
-    private FedPlanMultipleService(Context c, MultipleServiceGroup sg, PlanElement cElt)
+    private FedPlanMultipleService(Context c, MultipleServiceGroup sg, PlanElement cElt, Caching cache, Boolean cacheEnabled)
     {
         super(c, cElt) ;
         serviceGroup = sg ;
+        this.cache = cache;
+        this.cacheEnabled = cacheEnabled;
     }
 
     
     
     public QueryIterator build(QueryIterator input, ExecutionContext execCxt)
-    {
-       /* QueryIterConcat concat = new QueryIterConcat(execCxt);
+    {    	
+    	/* QueryIterConcat concat = new QueryIterConcat(execCxt);
         
         for (RemoteService s: serviceGroup.getServices()) {
             concat.add(new FedQueryIterService(input,serviceGroup.getServiceGroup(s),execCxt,null));
@@ -67,8 +72,12 @@ public class FedPlanMultipleService extends PlanElement1
         return new QueryIterDistinct(concat,execCxt);*/
         
         List<PlanElement> list = new ArrayList<PlanElement>();
+        
+        /* geht die einzelnen Services der MSG durch  */
+        /* selber Aufruf von FedPlanService wie bei SG nur mit SubElement */
+        /* FRAGE Was ist das SubElement? */
         for (RemoteService s: serviceGroup.getServices()) {
-            list.add(FedPlanService.make(this.getContext(),serviceGroup.getServiceGroup(s),this.getSubElement()) );
+            list.add(FedPlanService.make(this.getContext(),serviceGroup.getServiceGroup(s),this.getSubElement(),cache, cacheEnabled));
             
         }
         
@@ -83,7 +92,7 @@ public class FedPlanMultipleService extends PlanElement1
         for (String s: (List<String>)execCxt.getQuery().getResultVars()) vars.add(Var.alloc(s));
         
         
-        
+        /* Ist das der Union? */
         QueryIterator qIter = BindingImmutableDistinctUnion.create(vars, (QueryIterator) new QueryIterUnionParallel(input,list,execCxt), execCxt) ;
         
     //    QueryIterator qIter = new QueryIterUnionParallel(input,list,execCxt) ;
@@ -122,7 +131,7 @@ public class FedPlanMultipleService extends PlanElement1
 
     @Override
     public PlanElement copy(PlanElement newSubElement) {
-        return make(getContext(),serviceGroup,newSubElement);
+        return make(getContext(),serviceGroup,newSubElement, cache, cacheEnabled);
     }
 
     

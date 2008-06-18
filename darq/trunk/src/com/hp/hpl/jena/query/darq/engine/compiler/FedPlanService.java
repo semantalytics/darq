@@ -19,6 +19,8 @@ import com.hp.hpl.jena.query.engine1.plan.PlanElement1;
 import com.hp.hpl.jena.query.engine1.plan.Transform;
 import com.hp.hpl.jena.query.util.Context;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 
 /**
  * 
@@ -29,31 +31,38 @@ import com.hp.hpl.jena.query.util.Context;
 public class FedPlanService extends PlanElement1
 {
 	private ServiceGroup serviceGroup ;
+	private Caching cache;
+	private Boolean cacheEnabled;
 	
     
     public ServiceGroup getServiceGroup() {
         return serviceGroup;
     }
     
-    public static PlanElement make(Context c,ServiceGroup sg, PlanElement subElt)
+    public static PlanElement make(Context c,ServiceGroup sg, PlanElement subElt, Caching cache, Boolean cacheEnabled)
     {
-        return new FedPlanService(c, sg, subElt) ;
+        return new FedPlanService(c, sg, subElt, cache, cacheEnabled) ;
     }
     
     
     
-    private FedPlanService(Context c,ServiceGroup sg, PlanElement cElt)
+    private FedPlanService(Context c,ServiceGroup sg, PlanElement cElt, Caching cache, Boolean cacheEnabled)
     {
         super(c, cElt) ;
         serviceGroup = sg ;
+        this.cache = cache;
+        this.cacheEnabled = cacheEnabled;
     }
 
     
     
     public QueryIterator build(QueryIterator input, ExecutionContext execCxt)
-    {
-        return FedQueryEngineFactory.getInstance().getConfig().getDarqQueryIteratorFactory().getNewInstance(input, serviceGroup, execCxt, getSubElement());
-    }
+    {  
+//    	FedQueryEngineFactory factory =  FedQueryEngineFactory.getInstance(); //TEST
+//    	Configuration conf = factory.getConfig();
+//    	IDarqQueryIteratorFactory iter =  conf.getDarqQueryIteratorFactory();
+//    	QueryIterator queryiter =  iter.getNewInstance(input, serviceGroup, execCxt, getSubElement());
+        return FedQueryEngineFactory.getInstance().getConfig().getDarqQueryIteratorFactory().getNewInstance(input, serviceGroup, execCxt, getSubElement(), cache, cacheEnabled);    }
     
     public void visit(PlanVisitor visitor) { 
         
@@ -81,7 +90,7 @@ public class FedPlanService extends PlanElement1
 
     @Override
     public PlanElement copy(PlanElement newSubElement) {
-        return make(getContext(),serviceGroup,newSubElement);
+        return make(getContext(),serviceGroup,newSubElement,cache,cacheEnabled);
     }
 
     

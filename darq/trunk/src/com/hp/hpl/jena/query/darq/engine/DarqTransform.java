@@ -28,12 +28,8 @@ import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
 import com.hp.hpl.jena.query.darq.engine.compiler.PlanGroupDarq;
-import com.hp.hpl.jena.query.darq.engine.compiler.PlanNestedLoopJoin;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.darq.engine.optimizer.planoperators.PlanOperatorBase;
-import com.hp.hpl.jena.query.darq.util.FedPlanFormatter;
-import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
-import com.hp.hpl.jena.query.darq.util.PlanFilterAddVisitor;
 import com.hp.hpl.jena.query.engine.Plan;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.plan.PlanBasicGraphPattern;
@@ -41,9 +37,9 @@ import com.hp.hpl.jena.query.engine1.plan.PlanBlockTriples;
 import com.hp.hpl.jena.query.engine1.plan.PlanFilter;
 import com.hp.hpl.jena.query.engine1.plan.PlanGroup;
 import com.hp.hpl.jena.query.engine1.plan.TransformCopy;
-import com.hp.hpl.jena.query.expr.Expr;
 import com.hp.hpl.jena.query.util.Context;
-import com.hp.hpl.jena.query.util.IndentedWriter;
+
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 
 public class DarqTransform extends TransformCopy {
 
@@ -56,6 +52,9 @@ public class DarqTransform extends TransformCopy {
 	private ServiceRegistry registry = null;
 
 	private Configuration config = null;
+	
+	private Caching cache;
+	private Boolean cacheEnabled;
 
 	// The return stack
 	private Stack<PlanElement> retStack = new Stack<PlanElement>();
@@ -85,11 +84,13 @@ public class DarqTransform extends TransformCopy {
 		this.optimize = optimize;
 	}
 
-	public DarqTransform(Context cntxt, Configuration conf) {
+	public DarqTransform(Context cntxt, Configuration conf, Caching cache, Boolean cacheEnabled) {
 		super();
 		context = cntxt;
 		config = conf;
 		registry = conf.getServiceRegistry();
+		this.cache = cache;
+		this.cacheEnabled = cacheEnabled;
 	}
 
 	
@@ -215,7 +216,7 @@ public class DarqTransform extends TransformCopy {
 				PlanElement optimizedPlan = null;
 				try {
 					PlanOperatorBase planOperatorBase = config
-							.getPlanOptimizer().getCheapestPlan(al);
+							.getPlanOptimizer().getCheapestPlan(al,cache, cacheEnabled);
 					FedQueryEngineFactory.logExplain(planOperatorBase);
 					optimizedPlan = planOperatorBase.toARQPlanElement(context);
 
@@ -232,9 +233,9 @@ public class DarqTransform extends TransformCopy {
 
 					if (sg instanceof MultipleServiceGroup) {
 						acc.add(pos, FedPlanMultipleService.make(context,
-								(MultipleServiceGroup) sg, null));
+								(MultipleServiceGroup) sg, null,cache,cacheEnabled));
 					} else
-						acc.add(pos, FedPlanService.make(context, sg, null));
+						acc.add(pos, FedPlanService.make(context, sg, null, cache,cacheEnabled));
 					pos++;
 
 				}

@@ -16,6 +16,8 @@ import com.hp.hpl.jena.query.darq.engine.FedQueryEngine;
 import com.hp.hpl.jena.query.darq.engine.FedQueryEngineFactory;
 import com.hp.hpl.jena.query.darq.util.DarqBenchExplainHook;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 public class DarqBench {
 
 	final static int SLEEPTIME = 5000;
@@ -135,7 +137,7 @@ public class DarqBench {
 		 * Logger.getLogger(FedQueryIterService.class).setLevel(Level.OFF);
 		 */
 		String action = args[0];
-
+		Caching cache = Caching.getInstance("N:\\Studium\\Diplomarbeit\\Darq\\DarqCacheConfiguration.xml");
 		String configfile = args[1];
 		String queryfile = args[2];
 		double runs = 5; // default = 5
@@ -153,7 +155,7 @@ public class DarqBench {
 			System.err.println("doing only optimized query....");
 		}
 
-		FedQueryEngineFactory.register(configfile,null,0);
+		FedQueryEngineFactory.register(configfile,null,0,cache,true);
 
 		if (action.equals("explain")) {
 			explain(queryfile);

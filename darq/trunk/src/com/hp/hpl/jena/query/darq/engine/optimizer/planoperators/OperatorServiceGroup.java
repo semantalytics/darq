@@ -16,12 +16,17 @@ import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.util.Context;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+
 public class OperatorServiceGroup extends PlanOperatorBase {
 
 	ServiceGroup sg;
-
-	public OperatorServiceGroup(ServiceGroup sg) {
+	Caching cache;
+	Boolean cacheEnabled;
+	public OperatorServiceGroup(ServiceGroup sg, Caching cache, Boolean cacheEnabled) {
 		this.sg = sg;
+		this.cache = cache;
+		this.cacheEnabled = cacheEnabled;
 	}
 
 	
@@ -142,13 +147,13 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 	@Override
 	public PlanElement toARQPlanElement(Context context) {
 		if (sg instanceof UnionServiceGroup) {
-			return FedPlanUnionService.make(context, (UnionServiceGroup) sg, null);
+			return FedPlanUnionService.make(context, (UnionServiceGroup) sg, null,cache, cacheEnabled);
 		}
 		else if (sg instanceof MultipleServiceGroup) {
-            return FedPlanMultipleService.make(context, (MultipleServiceGroup) sg, null);
+            return FedPlanMultipleService.make(context, (MultipleServiceGroup) sg, null,cache, cacheEnabled);
         } 
 		else {
-            return FedPlanService.make(context, sg, null);
+            return FedPlanService.make(context, sg, null, cache, cacheEnabled);
         }
 	
 	}

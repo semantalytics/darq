@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
-import java.util.Vector;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -51,6 +50,7 @@ import com.hp.hpl.jena.query.engine1.plan.PlanGroup;
 import com.hp.hpl.jena.query.engine1.plan.TransformCopy;
 import com.hp.hpl.jena.query.util.Context;
 
+import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 import de.hu_berlin.informatik.wbi.darq.mapping.MapSearch;
 import de.hu_berlin.informatik.wbi.darq.mapping.Rule;
 import de.hu_berlin.informatik.wbi.darq.mapping.RulePart;
@@ -65,7 +65,8 @@ public class MapDarqTransform extends TransformCopy {
 	private ServiceRegistry registry = null;
 	private Configuration config = null;
 	private OWLOntology mapping = null;
-	
+	private Caching cache;
+	private Boolean cacheEnabled;
 	private Set<Triple> triples = new HashSet<Triple>();
 	//collect new generated (similar) triples
 	
@@ -116,8 +117,9 @@ public class MapDarqTransform extends TransformCopy {
 	HashMap<Integer, UnionServiceGroup> unionService = new HashMap<Integer, UnionServiceGroup>();
 	
 	List<ServiceGroup> sgsPos = new LinkedList<ServiceGroup>();
-	//FRAGE Bastian Was ist das, wozu?
 
+	
+	
 	Set varsMentioned = new HashSet();
 
 	boolean optimize = true;
@@ -137,13 +139,15 @@ public class MapDarqTransform extends TransformCopy {
 		this.optimize = optimize;
 	}
 
-	public MapDarqTransform(Context cntxt, Configuration conf, OWLOntology ontology, Integer transitivity) {
+	public MapDarqTransform(Context cntxt, Configuration conf, OWLOntology ontology, Integer transitivity, Caching cache, Boolean cacheEnabled) {
 		super();
 		context = cntxt;
 		config = conf;
 		registry = conf.getServiceRegistry();
 		mapping = ontology;
 		transitivityDepth = transitivity;
+		this.cache = cache;
+		this.cacheEnabled = cacheEnabled;
 		System.out.println("Konstruktor: MapDarqTransform");
 	}
 
@@ -448,7 +452,7 @@ public class MapDarqTransform extends TransformCopy {
 				PlanElement optimizedPlan = null;
 				try {
 					PlanOperatorBase planOperatorBase = config
-							.getPlanOptimizer().getCheapestPlan(al);
+							.getPlanOptimizer().getCheapestPlan(al,cache,cacheEnabled);
 					FedQueryEngineFactory.logExplain(planOperatorBase);
 					optimizedPlan = planOperatorBase.toARQPlanElement(context);
 
@@ -463,13 +467,13 @@ public class MapDarqTransform extends TransformCopy {
 				int pos = 0;
 				for (ServiceGroup sg : al) {
 					if (sg instanceof UnionServiceGroup){
-						acc.add(pos, FedPlanUnionService.make(context, (UnionServiceGroup) sg, null));
+						acc.add(pos, FedPlanUnionService.make(context, (UnionServiceGroup) sg, null,cache,cacheEnabled));
 					}
 					else if (sg instanceof MultipleServiceGroup) {
 						acc.add(pos, FedPlanMultipleService.make(context,
-								(MultipleServiceGroup) sg, null));
+								(MultipleServiceGroup) sg, null,cache,cacheEnabled));
 					} else
-						acc.add(pos, FedPlanService.make(context, sg, null));
+						acc.add(pos, FedPlanService.make(context, sg, null,cache,cacheEnabled));
 					pos++;
 
 				}
@@ -574,10 +578,12 @@ public class MapDarqTransform extends TransformCopy {
 	 * 1.Fall: (similar suche)
 	 *  -suche USG mit similar (Annahme: es existiert bereits eine USG
 	 *   wegen anderer similar Tripel) 
-	 * 2.Fall (triple suche)
+	 * 2.Fall (triple suche) (entfernt)
+	 * ==== Fall wird durch den Cache bereits abgedeckt ====
 	 *  -es findet sich keine USG mit similar, trotzdem ist es möglich
 	 *   dass das Tripel in einer USG ist (anderes similar), weil es 
 	 *   in einer anderen BGP auftaucht, daher suche nach Triple
+	 * ==== Fall wird durch den Cache bereits abgedeckt ====
 	 * 3.Fall (keine USG) 
 	 *  -es gibt keine USG (weder mit similar, noch mit triple suche)
 
@@ -621,21 +627,22 @@ public class MapDarqTransform extends TransformCopy {
 	
 	
 	private void putIntoUnionServiceGroup(Triple triple, List<RemoteService> services, int similar, DefaultTreeModel tree){
-		
+		/* similar suche */
 		UnionServiceGroup usg = unionService.get(similar);
 		ServiceGroup sg = null;
 		MultipleServiceGroup msg = null;
 		int serviceSize = services.size();
 		
-		if (usg == null){
-			for (UnionServiceGroup helpUSG : unionService.values()){
-				if (helpUSG.containsTriple(triple)){
-					usg = helpUSG;
-				}
-			}
-		}
+//		/* triple suche */
+//		if (usg == null){
+//			for (UnionServiceGroup helpUSG : unionService.values()){
+//				if (helpUSG.containsTriple(triple)){
+//					usg = helpUSG;
+//				}
+//			}
+//		}
 		
-		/*1. USG existiert */
+		/* 1. USG existiert */
 		if(usg != null){ 
 			if (serviceSize == 1){ /* 1.1 SG */
 				RemoteService service=services.get(0);

@@ -56,7 +56,7 @@ public class JucDemoSingleQuery {
         waitForKey();
 
        // register new FedQueryEngineFactory and load configuration from file
-       FedQueryEngineFactory.register(configFile);
+       FedQueryEngineFactory.register(configFile,null,0,null,false);
 
        // create query
        Query query = QueryFactory.create(querystring);
