@@ -69,17 +69,18 @@ public class Caching {
 
 	public void addElement(ServiceGroup serviceGroup, List<Binding> bindings) {
 		CacheKey key;
-
-		key = getKey(serviceGroup);
-		Element el = new Element(key, bindings);
-		darqCache.put(el);
-		/*
-		 * write to disk, QuerySolution (and all Elements within) has to be
-		 * serializable
-		 */
-		// System.out.println("serializable: " + el.isSerializable());
-		// //TESTAUSGABE
-		// darqCache.flush();
+		if (serviceGroup.getFilters().isEmpty()){
+			key = getKey(serviceGroup);
+			Element el = new Element(key, bindings);
+			darqCache.put(el);
+			/*
+			 * write to disk, QuerySolution (and all Elements within) has to be
+			 * serializable
+			 */
+			// System.out.println("serializable: " + el.isSerializable());
+			// //TESTAUSGABE
+			// darqCache.flush();
+		}
 	}
 
 	/* get key for element, get value for key */
@@ -98,12 +99,12 @@ public class Caching {
 	private CacheKey getKey(ServiceGroup serviceGroup) {
 		CacheKey key;
 		Node s, p, o;
-		String subj, pred, obj, filters;
+		String subj, pred, obj;
 		subj = null;
 		pred = null;
 		obj = null;
 		List<TripleStringURI> tripleList = new ArrayList<TripleStringURI>();
-
+		System.out.println(serviceGroup.getFilters().toString());
 		List<Triple> triples = serviceGroup.getTriples();
 		for (Triple triple : triples) {
 			s = triple.getSubject();
