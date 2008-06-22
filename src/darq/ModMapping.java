@@ -19,7 +19,7 @@ public class ModMapping implements ArgModuleGeneral {
      * aufgerufen wurde).
      */     
     private String[] maps = null;
-    private int transitivity = 0;
+    private int transitivity = 1;
     
     /*
      * (non-Javadoc)
@@ -60,8 +60,11 @@ public class ModMapping implements ArgModuleGeneral {
 			if (transitivity != null) {
 				try {
 					this.transitivity = Integer.parseInt(transitivity);
+					if(this.transitivity < 1){
+						System.err.println("Warning [MODMAPPING]: The value for transitivity has be greater than zero, using default value(1).");
+					}
 				} catch (Exception ex) {
-					System.err.println("Warning [MODMAPPING]: Transitivity has to be an integer! Value ignored, using default value(0).");
+					System.err.println("Warning [MODMAPPING]: Transitivity has to be an integer! Value ignored, using default value(1).");
 				}
 			}
 		} else {//Das ist der Fall, wo es keine cmdline option map gibt. FRAGE Wo ist der Fall, dass sie leer ist?
