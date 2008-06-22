@@ -364,15 +364,11 @@
 
     <!--
     cache DarqResultSetCache
-    This cache contains a maximum in memory of 50 elements, elements will not 
+    This cache contains a maximum in memory of 2000 elements, elements will not 
 	expire.
-
-    If there are more than 50 elements it will overflow to the
-    disk cache, which in this configuration will go to wherever java.io.tmp is
-    defined on your system. On a standard Linux system this will be /tmp"
     -->
     <cache name="DarqResultSetCache"
-           maxElementsInMemory="2000"
+           maxElementsInMemory="200"
            eternal="false"
            overflowToDisk="false"
            timeToIdleSeconds="0"
