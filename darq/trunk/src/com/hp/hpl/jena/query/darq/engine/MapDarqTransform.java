@@ -76,7 +76,7 @@ public class MapDarqTransform extends TransformCopy {
 	private HashMap<Triple, Integer> similarTripleMap = new HashMap<Triple, Integer>();
 	//collects similar triples accessed by a triple, same Integer = similar Triple 
 	
-	private int transitivityDepth = 0; 
+	private int transitivityDepth = 1; 
 
 	// Subject
 	private Set<URI> subjectSubClass = new HashSet<URI>();
@@ -333,7 +333,7 @@ public class MapDarqTransform extends TransformCopy {
 									
 								}//END FOR searching similar triples
 								runs++;
-							}while(transitivityDepth >= runs && triples.size() != triplesSizeBefore); 
+							}while(transitivityDepth > runs && triples.size() != triplesSizeBefore); 
 							
 							if (triples.size() == 1){ 
 								/* just the original triple */
