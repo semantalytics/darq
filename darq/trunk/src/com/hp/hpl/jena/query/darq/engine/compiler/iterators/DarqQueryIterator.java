@@ -1,12 +1,15 @@
 package com.hp.hpl.jena.query.darq.engine.compiler.iterators;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
@@ -21,7 +24,6 @@ import com.hp.hpl.jena.query.engine1.iterator.QueryIterPlainWrapper;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterRepeatApply;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 
-import de.hu_berlin.informatik.wbi.darq.cache.CacheKey;
 import de.hu_berlin.informatik.wbi.darq.cache.Caching;
 
 /**
@@ -81,14 +83,53 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 			ResultSet remoteResults = null;
 			if (cache != null) {
 
-				 cache.output(); // TESTAUSGABE
+				cache.output(); // TESTAUSGABE
 				/* ask cache */
 				cacheResult = cache.getElement(serviceGroup);
 
 				if (!cacheResult.isEmpty()) {
 					System.out.println("Cache Hit"); // TESTAUSGABE
 					/* found in Cache */
-					newBindings.addAll(cacheResult);
+					/*
+					 * Idee: gehe durch jedes Binding durch und ersetze die
+					 * Variable im Binding mit der Variablen aus der Anfrage.
+					 * Reihenfolge?
+					 */
+//
+//					Set<String> newVariables = serviceGroup.getUsedVariables();
+//					/*Idee: prüfen, ob Variablen übereinstimmen, dann bindings.addall*/
+//					Set<String> bindingVariables= new HashSet<String>();
+//					String var;
+//					for(Iterator iteratorVars = cacheResult.get(0).vars();iteratorVars.hasNext();){
+//						var = iteratorVars.next().toString();
+//						bindingVariables.add(var.substring(1,var.length()));
+//					}
+//					if(!newVariables.equals(bindingVariables)){
+//						System.err.println("Warn [CACHING] This result may not be truth, especially filtered results. Use same variables as in cached result");
+//						Var cacheVarName;
+//						BindingMap bm = new BindingMap(binding);
+//						for (Binding cacheBinding : cacheResult) { 
+//							Iterator newVariablesIter = newVariables.iterator();
+//							for (Iterator iter = cacheBinding.vars(); iter.hasNext();) {
+//								// Wo bekomme ich die aktuellen Variablen in der
+//								// richtigen Reihenfolge her?
+//								// Idee: Aus dem Binding Variable und Wert auslesen,
+//								// Variable mit der aus der ServiceGroup austauschen (hoffentlich
+//								// richtige Reihenfolge, eventuell als Liste
+//								// implementieren) und mit Wert in neues Binding
+//								// einfügen. --> Reihenfolge falsch!!!
+//								cacheVarName = (Var) iter.next(); // nächste Variable
+//								Node obj = (Node) cacheBinding.get(cacheVarName); // Wert zur Variable
+//								String newCacheVarName = (String) newVariablesIter.next();
+//								if (obj != null)
+//									bm.add(Var.alloc(newCacheVarName), obj); // hier muss neue Variable eingesetzt werden
+//							}
+//							newBindings.add(bm);
+//						}
+//					}else{
+//						/* in case variables are equal */
+						newBindings.addAll(cacheResult); 
+//					}
 				} else {
 					/* element not found in cache */
 					remoteResults = ExecRemoteQuery(query);
@@ -105,7 +146,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 					// noResults++;
 					BindingMap bm = new BindingMap(binding);
 					QuerySolution sol = remoteResults.nextSolution();
-				
+
 					for (Iterator solVars = sol.varNames(); solVars.hasNext();) {
 						String varName = (String) solVars.next();
 
@@ -117,7 +158,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 					newBindings.add(bm);
 				}
 			}
-			
+
 			/* adding bindings to cache */
 			if (cache != null && cacheResult.isEmpty())
 				cache.addElement(serviceGroup, newBindings);
