@@ -66,4 +66,7 @@ public class TripleStringURI implements Serializable {
 		return hc;
 	}
 
+	public void output(){
+		System.out.println("Subj: " + subject + " Pred: " + predicate + " Obj: " + object);
+	}
 }
