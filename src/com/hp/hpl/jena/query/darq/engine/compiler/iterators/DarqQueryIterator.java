@@ -1,19 +1,24 @@
 package com.hp.hpl.jena.query.darq.engine.compiler.iterators;
 
+import static de.hu_berlin.informatik.wbi.darq.mapping.MapSearch.SWRL_MULTIPLY;
+
+import java.math.BigDecimal;
+import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.hp.hpl.jena.graph.Node;
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.core.Var;
+import com.hp.hpl.jena.query.darq.core.MultiplyServiceGroup;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.engine.Binding;
 import com.hp.hpl.jena.query.engine.BindingMap;
@@ -22,9 +27,13 @@ import com.hp.hpl.jena.query.engine1.ExecutionContext;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterPlainWrapper;
 import com.hp.hpl.jena.query.engine1.iterator.QueryIterRepeatApply;
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 
 import de.hu_berlin.informatik.wbi.darq.cache.Caching;
+import de.hu_berlin.informatik.wbi.darq.mapping.Rule;
 
 /**
  * Abstract Class DarqQueryIterator
@@ -78,71 +87,74 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 		Query query = remoteQuery.getNextQuery();
 		List<Binding> newBindings = new ArrayList<Binding>();
 		List<Binding> cacheResult = new ArrayList<Binding>();
+		
+		HashMap<String ,Double> multiplier = new HashMap<String ,Double>();
+		
+	
 
 		try {
 			ResultSet remoteResults = null;
 			if (cache != null) {
 
-				cache.output(); // TESTAUSGABE
+				// cache.output(); // TESTAUSGABE
+
 				/* ask cache */
 				cacheResult = cache.getElement(serviceGroup);
-
 				if (!cacheResult.isEmpty()) {
-					System.out.println("Cache Hit"); // TESTAUSGABE
 					/* found in Cache */
-					/*
-					 * Idee: gehe durch jedes Binding durch und ersetze die
-					 * Variable im Binding mit der Variablen aus der Anfrage.
-					 * Reihenfolge?
-					 */
-//
-//					Set<String> newVariables = serviceGroup.getUsedVariables();
-//					/*Idee: prüfen, ob Variablen übereinstimmen, dann bindings.addall*/
-//					Set<String> bindingVariables= new HashSet<String>();
-//					String var;
-//					for(Iterator iteratorVars = cacheResult.get(0).vars();iteratorVars.hasNext();){
-//						var = iteratorVars.next().toString();
-//						bindingVariables.add(var.substring(1,var.length()));
-//					}
-//					if(!newVariables.equals(bindingVariables)){
-//						System.err.println("Warn [CACHING] This result may not be truth, especially filtered results. Use same variables as in cached result");
-//						Var cacheVarName;
-//						BindingMap bm = new BindingMap(binding);
-//						for (Binding cacheBinding : cacheResult) { 
-//							Iterator newVariablesIter = newVariables.iterator();
-//							for (Iterator iter = cacheBinding.vars(); iter.hasNext();) {
-//								// Wo bekomme ich die aktuellen Variablen in der
-//								// richtigen Reihenfolge her?
-//								// Idee: Aus dem Binding Variable und Wert auslesen,
-//								// Variable mit der aus der ServiceGroup austauschen (hoffentlich
-//								// richtige Reihenfolge, eventuell als Liste
-//								// implementieren) und mit Wert in neues Binding
-//								// einfügen. --> Reihenfolge falsch!!!
-//								cacheVarName = (Var) iter.next(); // nächste Variable
-//								Node obj = (Node) cacheBinding.get(cacheVarName); // Wert zur Variable
-//								String newCacheVarName = (String) newVariablesIter.next();
-//								if (obj != null)
-//									bm.add(Var.alloc(newCacheVarName), obj); // hier muss neue Variable eingesetzt werden
-//							}
-//							newBindings.add(bm);
-//						}
-//					}else{
-//						/* in case variables are equal */
-						newBindings.addAll(cacheResult); 
-//					}
+					
+					/* transformation multiply */
+					/* Logik: das Ergebnis aus dem Cache wird durchlaufen, wenn
+					 * Multiply notwendig, wird das Binding ausgetauscht. */
+					multiplier = getMultiplier();
+					int index = 0;
+					
+					/* go through bindings */
+					for (Iterator<Binding> bindingIter = cacheResult.iterator(); bindingIter.hasNext();) {
+						Binding bindingTemp = bindingIter.next();
+						/* get index of current binding, required for delete */
+						index = cacheResult.indexOf(bindingTemp);
+						BindingMap bm = new BindingMap(binding);
+
+						/* go through variables of binding */
+						for (Iterator variableIter = bindingTemp.vars(); variableIter.hasNext();) {
+							Var var = (Var) variableIter.next();
+							String varName = var.getName();
+							Node obj = bindingTemp.get(Var.alloc(varName));
+
+							if (multiplier.containsKey(varName)) {
+								Literal objLiteral = (Literal) obj;
+								double objvalue = objLiteral.getFloat();
+								// System.out.println(objLiteral.getValue());//TESTAUSGABE
+								// System.out.println(objLiteral.getDatatype());//TESTAUSGABE
+								objvalue = objvalue * multiplier.get(varName);
+								// BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
+								Model model = ModelFactory.createDefaultModel();
+								Literal objNode = model.createTypedLiteral(objvalue);
+								bm.add(Var.alloc(varName), objNode.asNode());
+								cacheResult.remove(index);
+								cacheResult.add(bm);
+							}
+						}
+						
+					}
+//					System.out.println("Cache Hit"); // TESTAUSGABE					
+					newBindings.addAll(cacheResult);
 				} else {
 					/* element not found in cache */
 					remoteResults = ExecRemoteQuery(query);
 				}
 			} else {
-				/* without cache aks remoteservice immediately */
+				/* without cache, ask remoteservice immediately */
 				remoteResults = ExecRemoteQuery(query);
 			}
 
 			/* ask remoteservice */
 			if (cacheResult.isEmpty()) {
 				while (remoteResults.hasNext()) {
-
+						
+					multiplier = getMultiplier();
+					
 					// noResults++;
 					BindingMap bm = new BindingMap(binding);
 					QuerySolution sol = remoteResults.nextSolution();
@@ -151,9 +163,24 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 						String varName = (String) solVars.next();
 
 						// XXX CHECK if VARIABLE EXISTS IN BINDING !??
+						
 						RDFNode obj = sol.get(varName);
-						if (obj != null)
+						
+						/* transform multipy */
+						if(multiplier.containsKey(varName)){
+							Literal objLiteral = (Literal) obj;
+							double objvalue = objLiteral.getFloat();
+//							System.out.println(objLiteral.getValue()); //TESTAUSGABE
+//							System.out.println(objLiteral.getDatatype());//TESTAUSGABE
+							objvalue = objvalue *  multiplier.get(varName);
+//							BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
+							Model model = ModelFactory.createDefaultModel();
+							Literal objNode = model.createTypedLiteral(objvalue);						
+							bm.add(Var.alloc(varName), objNode.asNode());
+						}
+						else if (obj != null){
 							bm.add(Var.alloc(varName), obj.asNode());
+						}
 					}
 					newBindings.add(bm);
 				}
@@ -179,4 +206,44 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 		return new QueryIterPlainWrapper(newBindings.iterator(), null);
 		// new QueryIterDistinct(concatIterator,getExecContext());
 	}
+	
+	private HashMap<String,Double> getMultiplier() {
+		HashMap<String,Double> multiplier = new HashMap<String,Double>();
+		/* preparation for multiply transform */
+		
+		if (serviceGroup instanceof MultiplyServiceGroup) {
+			MultiplyServiceGroup muSG = (MultiplyServiceGroup) serviceGroup;
+
+			for(Triple tripleMuSG : muSG.getTriples()){
+				Node predicate = tripleMuSG.getPredicate();
+				URI predicateURI = URI.create(predicate.getURI());
+				Node oriPredicate = muSG.getOriginalTriple(tripleMuSG).getPredicate();
+				URI  oriPredicateURI = URI.create(oriPredicate.getURI());
+				double  value = 1;
+				String variable = null; 
+
+				/* get connection between variable from query and rule, get multiplier */
+				for(Rule rule : muSG.getPredicateRules()){
+					/* find the rule */
+					if (rule.isMultiply() && rule.containsPart(predicateURI) && rule.containsPart(oriPredicateURI)) {
+						Node object = tripleMuSG.getObject();
+						value = rule.getPart( URI.create(SWRL_MULTIPLY)).getMultiplier();
+						if(object.isVariable()){
+							variable = object.toString(); 
+							variable = variable.substring(1, variable.length()); 
+						}
+						if(rule.getPart(predicateURI).isBody()){
+							multiplier.put(variable, value);
+						}
+						else{
+							multiplier.put(variable, 1/value);
+						}
+					}
+				}
+			}
+		}
+		
+		return multiplier; 
+	}
+	
 }

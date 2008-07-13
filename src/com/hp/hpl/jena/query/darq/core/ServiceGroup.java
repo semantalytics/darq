@@ -21,13 +21,13 @@ import com.hp.hpl.jena.query.expr.Expr;
 public class ServiceGroup {
 
     
-    private List<Triple> triples = new ArrayList<Triple>();
+    protected List<Triple> triples = new ArrayList<Triple>();
     
-    private List<Expr> filters = new ArrayList<Expr>();
+    protected List<Expr> filters = new ArrayList<Expr>();
 
-    private RemoteService service;
+    protected RemoteService service;
 
-    private Set<String> usedVariables = new HashSet<String>();
+    protected Set<String> usedVariables = new HashSet<String>();
     
     //private Set<String> predicatesWithBoundObjects = new HashSet<String>();
 
