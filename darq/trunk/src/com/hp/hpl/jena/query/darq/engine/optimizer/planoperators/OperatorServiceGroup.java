@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
+import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
+import com.hp.hpl.jena.query.darq.core.MultiplyServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
@@ -65,7 +67,7 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         	boolean requiredBindingSG=true;
         	for (ServiceGroup serviceGroup: usg.getServiceGroups().values() ){
 
-        		if (serviceGroup instanceof MultipleServiceGroup) {
+        		if (serviceGroup instanceof MultipleServiceGroup || serviceGroup instanceof MultiplyMultipleServiceGroup) {
 
         			requiredBindingMSG=true;
         			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
@@ -75,6 +77,12 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         			}                				
         			if (!requiredBindingMSG) throw new PlanUnfeasibleException();; //wenn requiredBinding nicht passt, nächste MSG holen
         		} 
+//        		if(serviceGroup instanceof MultiplyMultipleServiceGroup){
+//        			TODO was auch immer 
+//        		}
+//        		if (serviceGroup instanceof MultiplyServiceGroup){
+//        			
+//        		}
         		else {
         			requiredBindingSG=true;
         			if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, serviceGroup.getService())) requiredBindingSG = false;
