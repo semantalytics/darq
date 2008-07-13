@@ -91,7 +91,7 @@ public class Rule{
 	public Set<RulePart> getBodyParts(){
 		HashSet<RulePart> bodyParts = new HashSet<RulePart>();
 		for(RulePart rulePart : rulePartList){
-			if(rulePart.isHead()) bodyParts.add(rulePart);
+			if(rulePart.isBody()) bodyParts.add(rulePart);
 		}
 		return bodyParts;
 	}
