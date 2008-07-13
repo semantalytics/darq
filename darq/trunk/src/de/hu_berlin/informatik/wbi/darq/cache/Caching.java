@@ -73,20 +73,18 @@ public class Caching {
 		return instance;
 	}
 
+	/* add element to cache */
 	public void addElement(ServiceGroup serviceGroup, List<Binding> bindings) {
 		CacheKey key;
-		// if (serviceGroup.getFilters().isEmpty()){
 		key = getKey(serviceGroup);
 		Element el = new Element(key, bindings);
 		darqCache.put(el);
 		/*
-		 * write to disk, QuerySolution (and all Elements within) has to be
+		 * write to disk, bindings (and all Elements within) has to be
 		 * serializable
 		 */
-		// System.out.println("serializable: " + el.isSerializable());
-		// //TESTAUSGABE
+		// System.out.println("serializable: " + el.isSerializable());//TESTAUSGABE
 		// darqCache.flush();
-		// }
 	}
 
 	/* get key for element, get value for key */
@@ -117,6 +115,7 @@ public class Caching {
 		return newBindings;
 	}
 
+	/* change variables in cache bindings to query variables*/
 	private List<Binding> changeVariables(List<Binding> cacheBindings, ServiceGroup serviceGroup, Element element) {
 
 		Map<Node, Node> mappingVariables = new HashMap<Node,Node>();
@@ -163,6 +162,7 @@ public class Caching {
 		return newBindings;
 	}
 
+	/* generates a the key for adding/getting elements to/from cache */
 	private CacheKey getKey(ServiceGroup serviceGroup) {
 		CacheKey key;
 		Node s, p, o;
@@ -171,7 +171,6 @@ public class Caching {
 		pred = null;
 		obj = null;
 		List<TripleStringURI> tripleList = new ArrayList<TripleStringURI>();
-		System.out.println(serviceGroup.getFilters().toString());
 		List<Triple> triples = serviceGroup.getTriples();
 		for (Triple triple : triples) {
 			s = triple.getSubject();
@@ -190,6 +189,7 @@ public class Caching {
 		return key;
 	}
 
+	/* looks if triples are equal, if true return variable mapping */
 	private Map<Node, Node> equalTriple(Triple newTriple, Triple cacheTriple) {
 		HashMap<Node, Node> mappingVariables = new HashMap<Node, Node>();
 		Boolean subj, pred, obj;
@@ -241,7 +241,7 @@ public class Caching {
 			Element element = darqCache.get(cacheKey);
 			List<Binding> werte = (List<Binding>) element.getValue();
 			for (Binding sol : werte) {
-				System.out.println("   Wert" + sol.toString());
+				System.out.println("   Value" + sol.toString());
 			}
 		}
 	}
