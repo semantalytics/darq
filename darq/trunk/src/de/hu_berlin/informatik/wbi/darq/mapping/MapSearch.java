@@ -51,7 +51,7 @@ public class MapSearch {
 	public static final String OWL_OBJECTPROPERTY = "owl_objectproperty";
 	public static final String OWL_DATAPROPERTY = "owl_dataproperty";
 	public static final String OWL_INDIVIDUAL = "owl_individual";
-	public static final String SWRL_MULTIPLY = "swrl_multiply";
+	public static final String SWRL_MULTIPLY = "http://www.w3.org/2003/11/swrlb#multiply";
 	public static final String SWRL_STRINGCONCAT = "swrl_stringconcat";
 	
 	private static HashMap<URI, HashSet<URI>> searchIndex = new HashMap<URI, HashSet<URI>>();
