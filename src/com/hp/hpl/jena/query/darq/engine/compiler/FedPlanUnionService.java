@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
+import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
@@ -68,7 +69,13 @@ private Boolean cacheEnabled;
                     list.add(FedPlanService.make(this.getContext(),msg.getServiceGroup(s),this.getSubElement(),cache,cacheEnabled) );                    
                 }        		
         	}
-        	else if  (sg instanceof ServiceGroup){
+        	else if (sg instanceof MultiplyMultipleServiceGroup) {
+				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) sg;
+				for (RemoteService s: muMSG.getServices()) {
+                    list.add(FedPlanService.make(this.getContext(),muMSG.getServiceGroup(s),this.getSubElement(),cache,cacheEnabled) );                    
+                }
+			}
+        	else if  (sg instanceof ServiceGroup){ /* and MultiplyServiceGroup */
         		 list.add(FedPlanService.make(this.getContext(),sg,this.getSubElement(),cache,cacheEnabled) );		 
         	}
         }

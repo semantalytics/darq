@@ -874,9 +874,8 @@ public class MapDarqTransform extends TransformCopy {
 						/* multiply */
 						if (ruleType.equals(SWRL_MULTIPLY)&& !triple.equals(originalTriple)){
 //							Triple originalTriple = (Triple) tree.getRoot();
-							muMSG = new MultiplyMultipleServiceGroup(null, subjectRules,predicateRules,objectRules);
+							muMSG = new MultiplyMultipleServiceGroup(service, subjectRules,predicateRules,objectRules);
 							muMSG.addB(triple);
-							muMSG.addService(service);	
 							muMSG.addOrignalTriple(triple, originalTriple);
 						}
 						
