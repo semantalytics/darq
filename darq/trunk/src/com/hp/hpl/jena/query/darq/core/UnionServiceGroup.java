@@ -156,15 +156,18 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 					MultipleServiceGroup msg = (MultipleServiceGroup)serviceGroup;
 				if (msg.equals(otherMSG)) return true;
 			}
-			if (serviceGroup instanceof MultiplyServiceGroup){
-				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
-				if(muSG.equals(otherMuSG)) return true;
-			}
-			if (serviceGroup instanceof MultiplyMultipleServiceGroup) {
+			
+			else if (serviceGroup instanceof MultiplyMultipleServiceGroup) {
 				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) serviceGroup;
 				if(muMSG.equals(otherMuMSG)) return true;
 			}
-			else{				
+			
+			else if (serviceGroup instanceof MultiplyServiceGroup){
+				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
+				if(muSG.equals(otherMuSG)) return true;
+			}
+			
+			else{/* instance of ServiceGroup*/				
 				if (serviceGroup.equals(sg)) return true;
 			}
 		}
@@ -280,7 +283,24 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 					System.out.println("     Filter: "+ f);
 				}
 			}
-    		
+			
+			else if (sg instanceof MultiplyMultipleServiceGroup) {
+				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) sg;
+				System.out.println("    muMSG");
+				for (Triple triple : muMSG.getTriples()){
+					System.out.println("     Triple: " + triple.toString());
+				}
+				System.out.println("USG: muMSG Size " + muMSG.getServices().size()); //TESTAUSGABE
+				for(RemoteService rs : muMSG.getServices()){
+					System.out.println("     RemoteService: " + rs.getUrl()); //TODO NPE 
+				}
+				java.util.List<Expr> filtermsg  = muMSG.getFilters();
+				if (filtermsg.isEmpty()) System.out.println("     No Filters.");
+				for(Expr f : muMSG.getFilters()){
+					System.out.println("     Filter: "+ f);
+				}
+			}
+			
 			else if (sg instanceof MultiplyServiceGroup) {
 				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
 				System.out.println("   muSG");
@@ -295,22 +315,6 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 					System.out.println("     Filter: "+ f);
 				}
     		}
-    		
-			else if (sg instanceof MultiplyMultipleServiceGroup) {
-				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) sg;
-				System.out.println("    MSG");
-				for (Triple triple : muMSG.getTriples()){
-					System.out.println("     Triple: " + triple.toString());
-				}
-				for(RemoteService rs : muMSG.getServices()){
-					System.out.println("     RemoteService: " + rs.getUrl());
-				}
-				java.util.List<Expr> filtermsg  = muMSG.getFilters();
-				if (filtermsg.isEmpty()) System.out.println("     No Filters.");
-				for(Expr f : muMSG.getFilters()){
-					System.out.println("     Filter: "+ f);
-				}
-			}
     		
 			else { /* have to be a SG */ 
     			System.out.println("   SG");

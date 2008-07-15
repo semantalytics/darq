@@ -16,6 +16,7 @@ import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
+import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.RequiredBinding;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
@@ -167,7 +168,16 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
                     costs += rsg.getRankvalue();
                 }		
         	}
-        	else{//instanceof ServiceGroup
+        	
+        	else if (serviceGroup instanceof MultiplyMultipleServiceGroup) {
+				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) serviceGroup;
+				for (RemoteService service : muMSG.getServices()) {
+                    rsg = getCheapestPlanForServiceGroup(muMSG.getServiceGroup(service), bound); //holt sich den günstigens Plan für Service + boundVariables
+                    costs += rsg.getRankvalue();
+                }
+			}
+        
+        	else{//instanceof ServiceGroup or MultiplyServiceGroup
         		rsg = getCheapestPlanForServiceGroup(serviceGroup, bound); //holt sich den günstigens Plan für Service + boundVariables
         		costs += rsg.getRankvalue();
         	}
@@ -209,6 +219,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
 
         if (sg instanceof MultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
         if (sg instanceof UnionServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
+        if (sg instanceof MultiplyMultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
         
         List<Triple> triples = sg.getTriples();
 

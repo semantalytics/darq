@@ -58,16 +58,18 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 			bound = new HashSet<String>();
 		else
 			bound = boundVariables;
-
+		/* sg can be instance of USG, MSG, SG 
+		 * an instance of USG can also be a MSG, SG, muSG or muMSG */
 		if (sg instanceof UnionServiceGroup){
 
         	UnionServiceGroup usg = (UnionServiceGroup)sg;
         	boolean b = true;
         	boolean requiredBindingMSG=true;
+        	boolean requiredBindingmuMSG=true;
         	boolean requiredBindingSG=true;
         	for (ServiceGroup serviceGroup: usg.getServiceGroups().values() ){
 
-        		if (serviceGroup instanceof MultipleServiceGroup || serviceGroup instanceof MultiplyMultipleServiceGroup) {
+        		if (serviceGroup instanceof MultipleServiceGroup) {
 
         			requiredBindingMSG=true;
         			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
@@ -75,25 +77,28 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
         				//theoretisch könnte da auc nen break rein, da einmal false = immer false
         			}                				
-        			if (!requiredBindingMSG) throw new PlanUnfeasibleException();; //wenn requiredBinding nicht passt, nächste MSG holen
+        			if (!requiredBindingMSG) throw new PlanUnfeasibleException(); //wenn requiredBinding nicht passt, nächste MSG holen
         		} 
-//        		if(serviceGroup instanceof MultiplyMultipleServiceGroup){
-//        			TODO was auch immer 
-//        		}
-//        		if (serviceGroup instanceof MultiplyServiceGroup){
-//        			
-//        		}
+
+        		else if(serviceGroup instanceof MultiplyMultipleServiceGroup){
+        			requiredBindingmuMSG=true;
+        			for (RemoteService s:((MultiplyMultipleServiceGroup)serviceGroup).getServices()){
+        				if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingmuMSG=false; 
+        			}                				
+        			if (!requiredBindingMSG) throw new PlanUnfeasibleException(); 
+        		}
+        		/* instance of ServiceGroup or MultiplyServiceGroup */
         		else {
         			requiredBindingSG=true;
         			if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, serviceGroup.getService())) requiredBindingSG = false;
         			if (!requiredBindingSG) throw new PlanUnfeasibleException();;
         		}
         	}
-        	b = requiredBindingMSG && requiredBindingSG;
+        	b = requiredBindingMSG && requiredBindingSG && requiredBindingmuMSG;
         	// es müssen alle RBs passen, dann Plan bauen
         	if (!b) throw new PlanUnfeasibleException();
         	rsg = CostBasedBasicOptimizer.getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
-        }
+		}
 		else if (sg instanceof MultipleServiceGroup) {
 
 			boolean b = true;
@@ -104,9 +109,7 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 			if (!b)
 				throw new PlanUnfeasibleException();
 
-			rsg = CostBasedBasicOptimizer
-					.getCheapestPlanForMultipleServiceGroup(
-							(MultipleServiceGroup) sg, bound);
+			rsg = CostBasedBasicOptimizer.getCheapestPlanForMultipleServiceGroup((MultipleServiceGroup) sg, bound);
 
 		} else {
 
