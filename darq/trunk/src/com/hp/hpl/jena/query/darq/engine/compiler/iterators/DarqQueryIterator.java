@@ -1,8 +1,8 @@
 package com.hp.hpl.jena.query.darq.engine.compiler.iterators;
 
 import static de.hu_berlin.informatik.wbi.darq.mapping.MapSearch.SWRL_MULTIPLY;
+import static de.hu_berlin.informatik.wbi.darq.mapping.MapSearch.SWRL_STRINGCONCAT;
 
-import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,12 +86,12 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 
 		Query query = remoteQuery.getNextQuery();
 		List<Binding> newBindings = new ArrayList<Binding>();
+		List<Binding> BindingsOriginal = new ArrayList<Binding>();
 		List<Binding> cacheResult = new ArrayList<Binding>();
-		
+		List<Binding> cacheResultTransformed  = new ArrayList<Binding>();
 		HashMap<String ,Double> multiplier = new HashMap<String ,Double>();
+		Boolean transform = false;
 		
-	
-
 		try {
 			ResultSet remoteResults = null;
 			if (cache != null) {
@@ -102,44 +102,70 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 				cacheResult = cache.getElement(serviceGroup);
 				if (!cacheResult.isEmpty()) {
 					/* found in Cache */
-					
+
 					/* transformation multiply */
-					/* Logik: das Ergebnis aus dem Cache wird durchlaufen, wenn
-					 * Multiply notwendig, wird das Binding ausgetauscht. */
-					multiplier = getMultiplier();
-					int index = 0;
-					
-					/* go through bindings */
-					for (Iterator<Binding> bindingIter = cacheResult.iterator(); bindingIter.hasNext();) {
-						Binding bindingTemp = bindingIter.next();
-						/* get index of current binding, required for delete */
-						index = cacheResult.indexOf(bindingTemp);
-						BindingMap bm = new BindingMap(binding);
+					if (serviceGroup instanceof MultiplyServiceGroup) {
+						multiplier = getMultiplier();
+						int index = 0;
 
-						/* go through variables of binding */
-						for (Iterator variableIter = bindingTemp.vars(); variableIter.hasNext();) {
-							Var var = (Var) variableIter.next();
-							String varName = var.getName();
-							Node obj = bindingTemp.get(Var.alloc(varName));
+//						if (!multiplier.isEmpty()){
+						cacheResultTransformed.addAll(cacheResult);//notwendig?
 
-							if (multiplier.containsKey(varName)) {
-								Literal objLiteral = (Literal) obj;
-								double objvalue = objLiteral.getFloat();
-								// System.out.println(objLiteral.getValue());//TESTAUSGABE
-								// System.out.println(objLiteral.getDatatype());//TESTAUSGABE
-								objvalue = objvalue * multiplier.get(varName);
-								// BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
-								Model model = ModelFactory.createDefaultModel();
-								Literal objNode = model.createTypedLiteral(objvalue);
-								bm.add(Var.alloc(varName), objNode.asNode());
-								cacheResult.remove(index);
-								cacheResult.add(bm);
-							}
-						}
-						
+
+						/* go through bindings */
+						for (Binding cacheBinding : cacheResult) {
+							/* get index of current binding, required for delete */
+							index = cacheResult.indexOf(cacheBinding);
+							BindingMap bm = new BindingMap(binding);
+
+							/* go through variables of binding */
+							for (Iterator variableIter = cacheBinding.vars(); variableIter.hasNext();) {
+								Var var = (Var) variableIter.next();
+								String varName = var.getName();
+								Node obj = cacheBinding.get(Var.alloc(varName));
+
+								if (multiplier.containsKey(varName)) {
+									/* this should work but does not */
+//									Literal objLiteral = (Literal) obj;
+//									double objvalue = objLiteral.getFloat();
+
+									Node objLiteral = (Node) obj;
+//									System.out.println("Wert Cache: " + objLiteral.getLiteralValue()); TESTAUSGABE
+									String objValueStr = objLiteral.getLiteralValue().toString();
+//									System.out.println("String: "+ objValueStr); //TESTAUSGABE
+									Double objValueDouble =  Double.parseDouble(objValueStr);
+									System.out.println("Double: "+ objValueDouble); //TESTAUSGABE
+									objValueDouble = objValueDouble * multiplier.get(varName);
+									// BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
+									Model model = ModelFactory.createDefaultModel();
+									Literal objNode = model.createTypedLiteral(objValueDouble);
+									bm.add(Var.alloc(varName), objNode.asNode()); /* change binding */
+								}	
+								else{ /* no multiplier, so keep this binding */
+									bm.add(var, obj); 
+								}
+							}// end Vars 
+							cacheResultTransformed.remove(index);
+							cacheResultTransformed.add(index, bm);
+						}//End Bindings 
+
+						//TESTAUSGABE
+//						for(Iterator<Binding> bnditer = cacheResultTransformed.iterator();bnditer.hasNext();){
+//							Binding bnd =  bnditer.next();
+//							System.out.print("Transformed Binding from Cache: ");
+//							for(Iterator variableIter = bnd.vars();variableIter.hasNext();){
+//								Var variable = (Var) variableIter.next();
+//								System.out.print(variable+": " + bnd.get(variable));
+//							}
+//							System.out.println();
+//						}
+
+						newBindings.addAll(cacheResultTransformed);
 					}
-//					System.out.println("Cache Hit"); // TESTAUSGABE					
-					newBindings.addAll(cacheResult);
+					else{
+						/* no transformation */
+						newBindings.addAll(cacheResult);
+					}
 				} else {
 					/* element not found in cache */
 					remoteResults = ExecRemoteQuery(query);
@@ -157,6 +183,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 					
 					// noResults++;
 					BindingMap bm = new BindingMap(binding);
+					BindingMap bmOriginal = new BindingMap(binding);
 					QuerySolution sol = remoteResults.nextSolution();
 
 					for (Iterator solVars = sol.varNames(); solVars.hasNext();) {
@@ -168,10 +195,10 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 						
 						/* transform multipy */
 						if(multiplier.containsKey(varName)){
+							bmOriginal.add(Var.alloc(varName), obj.asNode());
+							transform = true;
 							Literal objLiteral = (Literal) obj;
 							double objvalue = objLiteral.getFloat();
-//							System.out.println(objLiteral.getValue()); //TESTAUSGABE
-//							System.out.println(objLiteral.getDatatype());//TESTAUSGABE
 							objvalue = objvalue *  multiplier.get(varName);
 //							BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
 							Model model = ModelFactory.createDefaultModel();
@@ -180,15 +207,24 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 						}
 						else if (obj != null){
 							bm.add(Var.alloc(varName), obj.asNode());
+							bmOriginal.add(Var.alloc(varName), obj.asNode());
 						}
 					}
 					newBindings.add(bm);
+					BindingsOriginal.add(bmOriginal);
 				}
 			}
 
-			/* adding bindings to cache */
-			if (cache != null && cacheResult.isEmpty())
-				cache.addElement(serviceGroup, newBindings);
+			/* adding bindings to cache, without any transformation */
+			if (cache != null && cacheResult.isEmpty()){
+				if (!transform){
+					cache.addElement(serviceGroup, newBindings);	
+				}
+				else{
+					cache.addElement(serviceGroup, BindingsOriginal);
+				}
+			}
+				
 			// cache.output(); //TESTAUSGABE
 
 			/*
