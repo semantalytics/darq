@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,6 +21,7 @@ import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.core.MultiplyServiceGroup;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.StringConcatServiceGroup;
 import com.hp.hpl.jena.query.engine.Binding;
 import com.hp.hpl.jena.query.engine.BindingMap;
 import com.hp.hpl.jena.query.engine.QueryIterator;
@@ -102,7 +104,9 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 				cacheResult = cache.getElement(serviceGroup);
 				if (!cacheResult.isEmpty()) {
 					/* found in Cache */
-
+					
+					System.out.println("[DarqQueryIterator] Cache Hit");
+					
 					/* transformation multiply */
 					if (serviceGroup instanceof MultiplyServiceGroup) {
 						multiplier = getMultiplier();
@@ -134,7 +138,6 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 									String objValueStr = objLiteral.getLiteralValue().toString();
 //									System.out.println("String: "+ objValueStr); //TESTAUSGABE
 									Double objValueDouble =  Double.parseDouble(objValueStr);
-									System.out.println("Double: "+ objValueDouble); //TESTAUSGABE
 									objValueDouble = objValueDouble * multiplier.get(varName);
 									// BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
 									Model model = ModelFactory.createDefaultModel();
@@ -178,9 +181,13 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 			/* ask remoteservice */
 			if (cacheResult.isEmpty()) {
 				while (remoteResults.hasNext()) {
-						
+
 					multiplier = getMultiplier();
-					
+
+					/* StringConcat*/
+					Integer countVariables=0;
+					String scObjValue="";
+
 					// noResults++;
 					BindingMap bm = new BindingMap(binding);
 					BindingMap bmOriginal = new BindingMap(binding);
@@ -190,9 +197,9 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 						String varName = (String) solVars.next();
 
 						// XXX CHECK if VARIABLE EXISTS IN BINDING !??
-						
+
 						RDFNode obj = sol.get(varName);
-						
+
 						/* transform multipy */
 						if(multiplier.containsKey(varName)){
 							bmOriginal.add(Var.alloc(varName), obj.asNode());
@@ -202,10 +209,99 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 							objvalue = objvalue *  multiplier.get(varName);
 //							BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
 							Model model = ModelFactory.createDefaultModel();
-							Literal objNode = model.createTypedLiteral(objvalue);						
+							Literal objNode = model.createTypedLiteral(objvalue);
 							bm.add(Var.alloc(varName), objNode.asNode());
 						}
-						else if (obj != null){
+
+						/* transform StringConcat */
+						else if (serviceGroup instanceof StringConcatServiceGroup) {
+							StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
+							String originalVariable;
+
+							if (scSG.isConcat() && !scSG.getTripleInHead()) {
+								/* concat */
+								HashMap<String, List<String>> concatVariables = getStringConcatVariables();
+								List<String> conVariables = concatVariables.get("concat");
+								if (!conVariables.isEmpty()) {
+									if (conVariables.contains(varName)) {
+										bmOriginal.add(Var.alloc(varName), obj.asNode());
+										transform = true;
+										Literal objLiteral = (Literal) obj;
+
+										if (scObjValue.equals("")) {
+											scObjValue = objLiteral.getString();
+										} else {
+											scObjValue = scObjValue + " " + objLiteral.getString();
+										}
+										countVariables++;
+									}
+									if (countVariables == conVariables.size()) {
+
+										originalVariable = concatVariables.get("original").iterator().next();
+										System.out.println("[DarqQueryIterator] new Binding: " + originalVariable + " = " + scObjValue);
+										Model model = ModelFactory.createDefaultModel();
+										Literal objNode = model.createTypedLiteral(scObjValue);
+										bm.add(Var.alloc(originalVariable), objNode.asNode());
+									}
+								}
+							}
+							else if (!scSG.isConcat() && scSG.getTripleInHead()){
+								
+								HashMap<String, List<String>> splitVariables = getStringSplitVariables();
+								List<String> spVariables = splitVariables.get("split");
+//								List<String> originalVariables = splitVariables.get("original");
+								Integer index=0;
+								
+								if (!spVariables.isEmpty()) {
+									System.out.println("[DarqQueryIterator]: split to implement");
+									if (spVariables.contains(varName)) { 
+										bmOriginal.add(Var.alloc(varName), obj.asNode());
+										transform = true;
+										Literal objLiteral = (Literal) obj;
+										scObjValue = objLiteral.getString();
+										Pattern p = Pattern.compile(" ");
+										
+										String[] scObjValues = p.split(scObjValue);
+										Model model = ModelFactory.createDefaultModel();
+										Literal objNode;
+										index= 0;
+										/* rückwärts durch variablen laufen, verkehrt herum eingelesen
+										 * (hoffe nicht zufall) FRAGE hängt es von Reihenfolge in Query ab?*/
+										
+										HashMap<Integer, String>originalVariables = scSG.getSplitVariables();
+										
+											
+										for (String newValue : scObjValues) {
+											objNode = model.createTypedLiteral(newValue);
+											originalVariable = originalVariables.get(index);
+											System.out.println("bm.add "+ originalVariable + " "+ objNode.toString()+", index "+index);
+											bm.add(Var.alloc(originalVariable), objNode.asNode());
+											/*
+											 * klappt das? Reihenfolge?, Inhalt von splitvariables ?
+											 */
+											index++;
+										}
+//										countVariables++;
+									}
+									else if (obj != null) { /* scSG only with head triple (concat) and scSG with body triples (split) */
+										bm.add(Var.alloc(varName), obj.asNode());
+										bmOriginal.add(Var.alloc(varName), obj.asNode());
+									}
+//									if (index == originalVariables.size()) {
+//										originalVariable = splitVariables.get("original").get(index);
+//										System.out.println("[DarqQueryIterator] new Binding: " + originalVariable + " = " + scObjValue);
+//										Model model = ModelFactory.createDefaultModel();
+//										Literal objNode = model.createTypedLiteral(scObjValue);
+//										bm.add(Var.alloc(originalVariable), objNode.asNode());
+//									}
+								}
+							}
+							else if (obj != null) { /* scSG only with head triple (concat) and scSG with body triples (split) */
+								bm.add(Var.alloc(varName), obj.asNode());
+								bmOriginal.add(Var.alloc(varName), obj.asNode());
+							}
+						} 
+						else if (obj != null) {
 							bm.add(Var.alloc(varName), obj.asNode());
 							bmOriginal.add(Var.alloc(varName), obj.asNode());
 						}
@@ -242,6 +338,70 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 		return new QueryIterPlainWrapper(newBindings.iterator(), null);
 		// new QueryIterDistinct(concatIterator,getExecContext());
 	}
+	
+	private HashMap<String,List<String>> getStringConcatVariables() {
+		List<String> scVariables = new ArrayList<String>();
+		List<String> originalVariables = new ArrayList<String>();
+		HashMap<String, List<String>> concatVariables = new HashMap<String, List<String>>();
+		String concat = null;
+		if (serviceGroup instanceof StringConcatServiceGroup) {
+			StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;			
+			Triple originalTriple = scSG.getOriginalTriple(scSG.getTriples().iterator().next());
+			Node object = originalTriple.getObject();
+			if (object.isVariable()){
+				String variable = object.toString(); 
+				variable = variable.substring(1, variable.length());
+				originalVariables.add( variable);
+				concatVariables.put("original", originalVariables);
+			}
+//			URI originalPredicateUri = URI.create(originalTriple.getPredicate().getURI());
+			for (Rule rule : scSG.getPredicateRules()) {
+				if (rule.isStrincConcat()) {
+//					 rule.getPart(originalPredicateUri).isHead()
+					if (scSG.isConcat()) {
+						/* concat */
+						concat = "concat";
+						for(Triple triple : scSG.getTriples()){
+							Node tripleObject = triple.getObject();
+							if (tripleObject.isVariable()){
+								String variable = tripleObject.toString(); 
+								variable = variable.substring(1, variable.length()); 
+								scVariables.add(variable);	
+							}							
+						}	
+					} 
+				} 
+			}
+		}
+		concatVariables.put(concat, scVariables);
+		return concatVariables;
+	}
+	
+	private HashMap<String, List<String>> getStringSplitVariables(){
+//		HashMap<Integer,String> originalVariables = new HashMap<Integer,String>();
+		List<String> spVariables = new ArrayList<String>();
+		HashMap<String, List<String>> splitVariables = new HashMap<String, List<String>>();
+		if (serviceGroup instanceof StringConcatServiceGroup) {
+			StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
+//			if(!scSG.isConcat()){
+//				originalVariables = scSG.getSplitVariables();
+//			}
+			/* es kann nur eins sein */
+			Triple triple  = scSG.getTriples().iterator().next();
+			if(triple.getObject().isVariable()){
+				String variable = triple.getObject().getName();
+				spVariables.add(variable);
+			}
+			
+		}
+//		splitVariables.put("original", originalVariables);
+		splitVariables.put("split", spVariables);
+		return splitVariables;
+	}
+	//TODO am besten in 2 Funktionen aufteilen!
+	/*Idee: scSG mit TripleInHead=false holen und Variablen "auslesen"?
+	 * vielleicht aus Query in eigener scSG? Was gibt es da*/
+//	wie komme ich an die variablen ran? TODO  passt das?
 	
 	private HashMap<String,Double> getMultiplier() {
 		HashMap<String,Double> multiplier = new HashMap<String,Double>();
