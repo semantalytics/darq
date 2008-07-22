@@ -9,6 +9,7 @@ import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.StringConcatMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.iterators.QueryIterUnionParallel;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
@@ -56,7 +57,7 @@ private Boolean cacheEnabled;
             concat.add(new FedQueryIterService(input,serviceGroup.getServiceGroup(s),execCxt,null));
         }
         return new QueryIterDistinct(concat,execCxt);*/
-    	System.out.println("FedPlanUnionService.build");
+    	System.out.println(" [FedPlanUnionService.build]");
         List<PlanElement> list = new ArrayList<PlanElement>();
         
         /* geht die einzelnen Services der MSG durch  */
@@ -75,7 +76,16 @@ private Boolean cacheEnabled;
                     list.add(FedPlanService.make(this.getContext(),muMSG.getServiceGroup(s),this.getSubElement(),cache,cacheEnabled) );                    
                 }
 			}
-        	else if  (sg instanceof ServiceGroup){ /* and MultiplyServiceGroup */
+        	else if  (sg instanceof ServiceGroup){ /* and MultiplyServiceGroup,StrnigConcatServiceGroup */
+        		 list.add(FedPlanService.make(this.getContext(),sg,this.getSubElement(),cache,cacheEnabled) );		 
+        	}
+        	else if (sg instanceof StringConcatMultipleServiceGroup) {
+        		StringConcatMultipleServiceGroup scMSG = (StringConcatMultipleServiceGroup) sg;
+				for (RemoteService s: scMSG.getServices()) {
+                    list.add(FedPlanService.make(this.getContext(),scMSG.getServiceGroup(s),this.getSubElement(),cache,cacheEnabled) );                    
+                }
+			}
+        	else if  (sg instanceof ServiceGroup){ /* and MultiplyServiceGroup,StrnigConcatServiceGroup */
         		 list.add(FedPlanService.make(this.getContext(),sg,this.getSubElement(),cache,cacheEnabled) );		 
         	}
         }

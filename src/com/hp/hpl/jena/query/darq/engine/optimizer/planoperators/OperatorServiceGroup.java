@@ -5,9 +5,9 @@ import java.util.Set;
 
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
-import com.hp.hpl.jena.query.darq.core.MultiplyServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.StringConcatMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanMultipleService;
 import com.hp.hpl.jena.query.darq.engine.compiler.FedPlanService;
@@ -65,7 +65,8 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         	UnionServiceGroup usg = (UnionServiceGroup)sg;
         	boolean b = true;
         	boolean requiredBindingMSG=true;
-        	boolean requiredBindingmuMSG=true;
+        	boolean requiredBindingMuMSG=true;
+        	boolean requiredBindingScMSG=true;
         	boolean requiredBindingSG=true;
         	for (ServiceGroup serviceGroup: usg.getServiceGroups().values() ){
 
@@ -81,20 +82,28 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         		} 
 
         		else if(serviceGroup instanceof MultiplyMultipleServiceGroup){
-        			requiredBindingmuMSG=true;
+        			requiredBindingMuMSG=true;
         			for (RemoteService s:((MultiplyMultipleServiceGroup)serviceGroup).getServices()){
-        				if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingmuMSG=false; 
+        				if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMuMSG=false; 
         			}                				
-        			if (!requiredBindingMSG) throw new PlanUnfeasibleException(); 
+        			if (!requiredBindingMuMSG) throw new PlanUnfeasibleException(); 
         		}
-        		/* instance of ServiceGroup or MultiplyServiceGroup */
+        		
+        		else if(serviceGroup instanceof StringConcatMultipleServiceGroup){
+        			requiredBindingScMSG=true;
+        			for (RemoteService s:((StringConcatMultipleServiceGroup)serviceGroup).getServices()){
+        				if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingScMSG=false; 
+        			}                				
+        			if (!requiredBindingScMSG) throw new PlanUnfeasibleException(); 
+        		}
+        		/* instance of ServiceGroup or MultiplyServiceGroup, StringConcatServiceGroup */
         		else {
         			requiredBindingSG=true;
         			if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, serviceGroup.getService())) requiredBindingSG = false;
         			if (!requiredBindingSG) throw new PlanUnfeasibleException();;
         		}
         	}
-        	b = requiredBindingMSG && requiredBindingSG && requiredBindingmuMSG;
+        	b = requiredBindingMSG && requiredBindingSG && requiredBindingMuMSG && requiredBindingScMSG;
         	// es müssen alle RBs passen, dann Plan bauen
         	if (!b) throw new PlanUnfeasibleException();
         	rsg = CostBasedBasicOptimizer.getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
