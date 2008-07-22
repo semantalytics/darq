@@ -1,6 +1,5 @@
 package com.hp.hpl.jena.query.darq.core;
 
-import java.awt.font.MultipleMaster;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +47,15 @@ public class UnionServiceGroup extends MultipleServiceGroup {
         serviceGroups.put(triple, servicegroup);  
         this.similar = similar;
 	}
+	public UnionServiceGroup(Triple triple, StringConcatServiceGroup servicegroup, int similar) {
+        serviceGroups.put(triple, servicegroup);  
+        this.similar = similar;
+	}
 	
+	public UnionServiceGroup(Triple triple, StringConcatMultipleServiceGroup servicegroup, int similar) {
+        serviceGroups.put(triple, servicegroup);  
+        this.similar = similar;
+	}
 	private UnionServiceGroup(HashMap<Triple, ServiceGroup> serviceGroups, int similar){
 		this.serviceGroups = serviceGroups;
 		this.similar = similar;
@@ -70,6 +77,13 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 		serviceGroups.put(triple, servicegroup);
 	}
 	
+	public void addServiceGroup(Triple triple, StringConcatServiceGroup servicegroup){
+		serviceGroups.put(triple, servicegroup);
+	}
+	
+	public void addServiceGroup(Triple triple, StringConcatMultipleServiceGroup servicegroup){
+		serviceGroups.put(triple, servicegroup);
+	}
 	 
 	/* As there are only constructors with SGs, there always is a SG, otherwise this 
 	   object would not exist.*/
@@ -117,7 +131,7 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 	 */ 
 	public ServiceGroup getServiceGroup(RemoteService s){
 		for( ServiceGroup sg :  serviceGroups.values()){
-			if (sg instanceof MultipleServiceGroup || sg instanceof MultiplyMultipleServiceGroup){}
+			if (sg instanceof MultipleServiceGroup || sg instanceof MultiplyMultipleServiceGroup || sg instanceof StringConcatMultipleServiceGroup){}
 			else{
 				if (sg.getService().equals(s)) return sg;
 			}
@@ -137,19 +151,35 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 	 * equal method of (M)SG for every (M)SG of the USG 
 	 */
 	public boolean containsServiceGroup(ServiceGroup sg){
+		
 		MultipleServiceGroup otherMSG=null;
+		
 		MultiplyServiceGroup otherMuSG=null;
-		MultiplyMultipleServiceGroup otherMuMSG=null; 
+		MultiplyMultipleServiceGroup otherMuMSG=null;
+		
+		StringConcatServiceGroup otherScSG=null;
+		StringConcatMultipleServiceGroup otherScMSG=null;
 		
 		if (sg instanceof MultipleServiceGroup) {
 			otherMSG = (MultipleServiceGroup) sg;
 		}
-		if (sg instanceof MultiplyServiceGroup) {
-			otherMuSG = (MultiplyServiceGroup) sg;
-		}
+		
+		/* multiply */
 		if (sg instanceof MultiplyMultipleServiceGroup) {
 			otherMuMSG = (MultiplyMultipleServiceGroup) sg;
 		}
+		if (sg instanceof MultiplyServiceGroup) {
+			otherMuSG = (MultiplyServiceGroup) sg;
+		}
+		
+		/* StringConcat*/
+		if (sg instanceof StringConcatMultipleServiceGroup) {
+			otherScMSG = (StringConcatMultipleServiceGroup) sg;
+		}
+		if (sg instanceof StringConcatServiceGroup) {
+			otherScSG = (StringConcatServiceGroup) sg;
+		}
+
 		
 		for(ServiceGroup serviceGroup : serviceGroups.values()){
 			if (serviceGroup instanceof MultipleServiceGroup){
@@ -157,6 +187,7 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 				if (msg.equals(otherMSG)) return true;
 			}
 			
+			/* multiply */
 			else if (serviceGroup instanceof MultiplyMultipleServiceGroup) {
 				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) serviceGroup;
 				if(muMSG.equals(otherMuMSG)) return true;
@@ -165,6 +196,16 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 			else if (serviceGroup instanceof MultiplyServiceGroup){
 				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
 				if(muSG.equals(otherMuSG)) return true;
+			}
+			
+			/* StringConcat */
+			else if (serviceGroup instanceof StringConcatMultipleServiceGroup) {
+				StringConcatMultipleServiceGroup scMSG = (StringConcatMultipleServiceGroup) serviceGroup;
+				if(scMSG.equals(otherScMSG)) return true;
+			}
+			else if (serviceGroup instanceof StringConcatServiceGroup) {
+				StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
+				if(scSG.equals(otherScSG)) return true;
 			}
 			
 			else{/* instance of ServiceGroup*/				
@@ -245,14 +286,27 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 				MultipleServiceGroup msg = (MultipleServiceGroup) sg;
 				hc = hc ^ msg.getTriples().hashCode() ^ msg.getFilters().hashCode();
 			}
-    		if (sg instanceof MultiplyServiceGroup) {
-				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
-				hc = hc ^ muSG.hashCode(); 
-			}
-    		if (sg instanceof MultiplyMultipleServiceGroup) {
+    		
+    		/* multiply */
+    		else if (sg instanceof MultiplyMultipleServiceGroup) {
 				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) sg;
 				hc = hc ^ muMSG.hashCode();
 			}
+    		else if (sg instanceof MultiplyServiceGroup) {
+				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
+				hc = hc ^ muSG.hashCode(); 
+			}
+
+    		/* StringConcat */
+    		else if (sg instanceof StringConcatMultipleServiceGroup) {
+				StringConcatMultipleServiceGroup scMSG = (StringConcatMultipleServiceGroup) sg;
+				hc = hc ^ scMSG.hashCode();
+			}
+    		else if (sg instanceof StringConcatServiceGroup) {
+				StringConcatServiceGroup scSG = (StringConcatServiceGroup) sg;
+				hc = hc ^ scSG.hashCode();
+			}
+    		
     		else{
     			hc = hc ^ sg.getTriples().hashCode() ^ sg.getFilters().hashCode();
     		}
@@ -271,67 +325,81 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 			if (sg instanceof MultipleServiceGroup) {
 				MultipleServiceGroup msg = (MultipleServiceGroup) sg;
 				System.out.println("    MSG");
-				for (Triple triple : msg.getTriples()){
-					System.out.println("     Triple: " + triple.toString());
-				}
-				for(RemoteService rs : msg.getServices()){
-					System.out.println("     RemoteService: " + rs.getUrl());
-				}
-				java.util.List<Expr> filtermsg  = msg.getFilters();
-				if (filtermsg.isEmpty()) System.out.println("     No Filters.");
-				for(Expr f : msg.getFilters()){
-					System.out.println("     Filter: "+ f);
-				}
+				outputTriples(msg.getTriples());
+				outputRemoteService(msg.getServices());
+				outputFilters(msg.getFilters());
 			}
 			
+			/* multiply */
 			else if (sg instanceof MultiplyMultipleServiceGroup) {
 				MultiplyMultipleServiceGroup muMSG = (MultiplyMultipleServiceGroup) sg;
 				System.out.println("    muMSG");
-				for (Triple triple : muMSG.getTriples()){
-					System.out.println("     Triple: " + triple.toString());
-				}
-				System.out.println("USG: muMSG Size " + muMSG.getServices().size()); //TESTAUSGABE
-				for(RemoteService rs : muMSG.getServices()){
-					System.out.println("     RemoteService: " + rs.getUrl()); //TODO NPE 
-				}
-				java.util.List<Expr> filtermsg  = muMSG.getFilters();
-				if (filtermsg.isEmpty()) System.out.println("     No Filters.");
-				for(Expr f : muMSG.getFilters()){
-					System.out.println("     Filter: "+ f);
-				}
+				outputTriples(muMSG.getTriples());
+				outputRemoteService(muMSG.getServices());
+				outputFilters(muMSG.getFilters());
 			}
 			
 			else if (sg instanceof MultiplyServiceGroup) {
 				MultiplyServiceGroup muSG = (MultiplyServiceGroup) sg;
 				System.out.println("   muSG");
-    			for (Triple triple : muSG.getTriples()){
-					System.out.println("     Triple: " + triple.toString());
-				}
-    			System.out.println("     RemoteService: "+ muSG.getService().getUrl());
-    			
-    			java.util.List<Expr> filtersg  = muSG.getFilters();
-				if (filtersg.isEmpty()) System.out.println("     No Filters.");
-				for(Expr f : muSG.getFilters()){
-					System.out.println("     Filter: "+ f);
-				}
+				outputTriples(muSG.getTriples());
+				System.out.println("     RemoteService: "+ muSG.getService().getUrl());
+				outputFilters(muSG.getFilters());
     		}
-    		
+			
+			/* StringConcat */
+			else if (sg instanceof StringConcatMultipleServiceGroup) {
+				StringConcatMultipleServiceGroup scMSG = (StringConcatMultipleServiceGroup) sg;
+				System.out.println("    scMSG");
+				outputTriples(scMSG.getTriples());
+				outputRemoteService(scMSG.getServices());
+				outputFilters(scMSG.getFilters());	
+				for(Triple triple : scMSG.getTriples()){
+					System.out.println("    Original Triples: " + scMSG.getOriginalTriple(triple));
+				}
+				System.out.println("     Triple in head?: "+ scMSG.getTripleInHead());
+				System.out.println("     Concatination?: " + scMSG.isConcat());
+			}
+			else if (sg instanceof StringConcatServiceGroup) {
+				StringConcatServiceGroup scSG = (StringConcatServiceGroup) sg;
+				System.out.println("   scSG");
+				outputTriples(scSG.getTriples());
+				System.out.println("     RemoteService: "+ scSG.getService().getUrl());
+				outputFilters(scSG.getFilters());
+				for(Triple triple : scSG.getTriples()){
+					System.out.println("     Original Triples: " + scSG.getOriginalTriple(triple));
+				}
+				System.out.println("     Triple in head?: "+ scSG.getTripleInHead());
+				System.out.println("     Concatination?: " + scSG.isConcat());
+			}
+			
 			else { /* have to be a SG */ 
     			System.out.println("   SG");
-    			for (Triple triple : sg.getTriples()){
-					System.out.println("     Triple: " + triple.toString());
-				}
-    			System.out.println("     RemoteService: "+ sg.getService().getUrl());
-    			
-    			java.util.List<Expr> filtersg  = sg.getFilters();
-				if (filtersg.isEmpty()) System.out.println("     No Filters.");
-				for(Expr f : sg.getFilters()){
-					System.out.println("     Filter: "+ f);
-				}
+				outputTriples(sg.getTriples());
+				System.out.println("     RemoteService: "+ sg.getService().getUrl());
+				outputFilters(sg.getFilters());
     		}
     	}
     }
 
+    private void outputRemoteService(Set<RemoteService> services){
+    	for(RemoteService rs : services){
+			System.out.println("     RemoteService: " + rs.getUrl());  
+		}
+    }
+    
+    private void outputTriples(List<Triple> triples){
+    	for (Triple triple : triples){
+			System.out.println("     Triple: " + triple.toString());
+		}
+    }
+    private void outputFilters(java.util.List<Expr> filters){
+    	if (filters.isEmpty()) System.out.println("     No Filters.");
+    	for(Expr f : filters){
+			System.out.println("     Filter: "+ f);
+		}
+    }
+    
 	public DefaultTreeModel getTree() {
 		return tree;
 	}
