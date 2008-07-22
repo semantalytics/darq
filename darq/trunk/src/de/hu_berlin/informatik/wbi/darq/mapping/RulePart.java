@@ -35,7 +35,9 @@ public class RulePart {
 			return true;
 		}else return false;
 	}
-
+	/**
+	 *  URI of the rule part 
+	 * */
 	public URI getUri() {
 		return uri;
 	}
@@ -54,6 +56,10 @@ public class RulePart {
 		else return false;
 	}
 
+	/**
+	 * Make the rule part to body or head of the rule
+	 * @param part
+	 */
 	public void setPart(String part) {
 		if ((part == "h") || (part == "b")){
 			this.part = part;
@@ -70,18 +76,30 @@ public class RulePart {
 	public void setBoundVariables(ArrayList<String> boundVariables) {
 		this.boundVariables = boundVariables;
 	}
-
+ /**
+  * 
+  * @return Type of the part, e.g. Class, OWLDataProperty etc. see OWL Reference at W3C
+  */
 	public String getType() {
 		return type;
 	}
-
+	 
+	/**
+	  * 
+	  * @return set Type of the part, e.g. Class, OWLDataProperty etc. see OWL Reference at W3C
+	  */
 	public void setType(String type) {
 		this.type = type;
 	}
 
+	/**
+	 * 
+	 * @return the URI of the rule this part belongs to
+	 */
 	public URI getRuleURI() {
 		return ruleURI;
 	}	
+	
 	public RulePart clone(){
 		URI uri,ruleURI;
 		String part, type;
@@ -100,10 +118,18 @@ public class RulePart {
 		return rulePart;
 	}
 
+	/**
+	 * 
+	 * @return Multiplier for swrlb:multiply rules
+	 */
 	public double getMultiplier() {
 		return multiplier;
 	}
 
+	/**
+	 * 
+	 * @param set multiplier for swrlb:multiply rules
+	 */
 	public void setMultiplier(double multiplier) {
 		this.multiplier = multiplier;
 	}

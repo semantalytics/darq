@@ -20,6 +20,7 @@ import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.RequiredBinding;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
+import com.hp.hpl.jena.query.darq.core.StringConcatMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
 import com.hp.hpl.jena.query.expr.Expr;
 
@@ -67,11 +68,12 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
                 	UnionServiceGroup usg = (UnionServiceGroup)sg;
                 	boolean b = true;
                 	boolean requiredBindingMSG=true;
+                	boolean requiredBindingMuMSG = true;
+                	boolean requiredBindingScMSG = true;
                 	boolean requiredBindingSG=true;
                 	for (ServiceGroup serviceGroup: usg.getServiceGroups().values() ){
 
                 		if (serviceGroup instanceof MultipleServiceGroup) {
-
                 			requiredBindingMSG=true;
                 			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
                 				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMSG=false; 
@@ -79,14 +81,35 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
                 				//theoretisch könnte da auc nen break rein, da einmal false = immer false
                 			}                				
                 			if (!requiredBindingMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
-                		} 
-                		else {
+                		}
+                		
+                		else if (serviceGroup instanceof MultiplyMultipleServiceGroup) {
+                			requiredBindingMuMSG=true;
+                			for (RemoteService s:((MultiplyMultipleServiceGroup)serviceGroup).getServices()){
+                				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMuMSG=false; 
+                				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
+                				//theoretisch könnte da auc nen break rein, da einmal false = immer false
+                			}                				
+                			if (!requiredBindingMuMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
+                		}
+                		
+                		else if (serviceGroup instanceof StringConcatMultipleServiceGroup) {
+                			requiredBindingScMSG=true;
+                			for (RemoteService s:((StringConcatMultipleServiceGroup)serviceGroup).getServices()){
+                				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingScMSG=false; 
+                				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
+                				//theoretisch könnte da auc nen break rein, da einmal false = immer false
+                			}                				
+                			if (!requiredBindingMuMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
+                		}
+                		
+                		else {/* SG, MuSG, ScSG */
                 			requiredBindingSG=true;
                 			if (!checkInput(serviceGroup.getTriples(), bound, serviceGroup.getService())) requiredBindingSG = false;
                 			if (!requiredBindingSG) continue;
                 		}
                 	}
-                	b = requiredBindingMSG && requiredBindingSG;
+                	b = requiredBindingMSG && requiredBindingSG && requiredBindingMuMSG && requiredBindingScMSG;
                 	// es müssen alle RBs passen, dann Plan bauen
                 	if (!b) continue;
                 	rsg = getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
@@ -176,6 +199,14 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
                     costs += rsg.getRankvalue();
                 }
 			}
+        	
+        	else if (serviceGroup instanceof StringConcatMultipleServiceGroup) {
+        		StringConcatMultipleServiceGroup scMSG = (StringConcatMultipleServiceGroup) serviceGroup;
+				for (RemoteService service : scMSG.getServices()) {
+                    rsg = getCheapestPlanForServiceGroup(scMSG.getServiceGroup(service), bound); //holt sich den günstigens Plan für Service + boundVariables
+                    costs += rsg.getRankvalue();
+                }
+			}
         
         	else{//instanceof ServiceGroup or MultiplyServiceGroup
         		rsg = getCheapestPlanForServiceGroup(serviceGroup, bound); //holt sich den günstigens Plan für Service + boundVariables
@@ -220,7 +251,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
         if (sg instanceof MultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
         if (sg instanceof UnionServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
         if (sg instanceof MultiplyMultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!");
-        
+        if (sg instanceof StringConcatMultipleServiceGroup) throw new PlanUnfeasibleException("wrong parameter for ServiceGroup!"); 
         List<Triple> triples = sg.getTriples();
 
         Map<String, ArrayList<Triple>> tripleGroups = new HashMap<String, ArrayList<Triple>>();
