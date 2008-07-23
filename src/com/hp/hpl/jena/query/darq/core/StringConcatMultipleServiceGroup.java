@@ -46,7 +46,10 @@ public class StringConcatMultipleServiceGroup extends StringConcatServiceGroup{
 	        scSG.setFilters(this.getFilters());
 	        scSG.scTriples = new HashMap<Triple, Triple>(scTriples);
 	        scSG.concat = this.concat;
-
+	        scSG.tripleInHead =this.tripleInHead;
+	        scSG.concat = this.concat;
+	        scSG.usedVariables = this.usedVariables;
+	        scSG.variablesOrderedByRule = this.variablesOrderedByRule;
 	        return scSG;
 	    }
 
@@ -60,6 +63,9 @@ public class StringConcatMultipleServiceGroup extends StringConcatServiceGroup{
 	        scMSG.setFilters(new ArrayList<Expr>(this.getFilters()));
 	        scMSG.services= new HashSet<RemoteService>(this.services);
 	        scMSG.scTriples = new HashMap<Triple, Triple>(scTriples);
+	        scMSG.concat = this.concat;
+	        scMSG.variablesOrderedByRule = new HashMap<Integer, String>(variablesOrderedByRule);
+	        scMSG.tripleInHead = this.tripleInHead;
 	        return scMSG;
 	    }
 
@@ -76,7 +82,10 @@ public class StringConcatMultipleServiceGroup extends StringConcatServiceGroup{
 	            	subjectRules.equals(otherGroup.subjectRules)&&
 	            	predicateRules.equals(otherGroup.predicateRules)&&
 	            	objectRules.equals(otherGroup.objectRules)&&
-	            	scTriples.equals(otherGroup.scTriples))
+	            	scTriples.equals(otherGroup.scTriples)&&
+	            	concat.equals(otherGroup.concat)&&
+	            	tripleInHead.equals(otherGroup.tripleInHead) &&
+	            	variablesOrderedByRule.equals(otherGroup.variablesOrderedByRule))
 	            	return true;
 	        } 
 	        return false;
@@ -88,7 +97,7 @@ public class StringConcatMultipleServiceGroup extends StringConcatServiceGroup{
 	    @Override
 	    public int hashCode() {
 	        return services.hashCode() ^ getTriples().hashCode() ^ getFilters().hashCode() ^  scTriples.hashCode()^subjectRules.hashCode()
-                     ^ predicateRules.hashCode()^objectRules.hashCode() ^concat.hashCode();
+                     ^ predicateRules.hashCode()^objectRules.hashCode() ^concat.hashCode()^concat.hashCode() ^ tripleInHead.hashCode() ^variablesOrderedByRule.hashCode();
 	   
 	    }
 }

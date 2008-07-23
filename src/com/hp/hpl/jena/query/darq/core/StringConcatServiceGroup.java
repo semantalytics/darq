@@ -86,6 +86,9 @@ public class StringConcatServiceGroup extends ServiceGroup {
         sg.subjectRules = new HashSet<Rule>(subjectRules);
         sg.predicateRules =  new HashSet<Rule>(predicateRules);
         sg.objectRules =  new HashSet<Rule>(objectRules);
+        sg.concat = this.concat;
+        sg.tripleInHead = this.tripleInHead;
+        sg.variablesOrderedByRule = this.variablesOrderedByRule;
         return sg;
     }
 
@@ -102,7 +105,11 @@ public class StringConcatServiceGroup extends ServiceGroup {
             	subjectRules.equals(otherGroup.subjectRules)&&
             	predicateRules.equals(otherGroup.predicateRules) &&
             	objectRules.equals(otherGroup.objectRules)&&
-            	scTriples.equals(otherGroup.scTriples)) return true;
+            	scTriples.equals(otherGroup.scTriples)&&
+            	concat.equals(otherGroup.concat)&&
+            	tripleInHead.equals(otherGroup.tripleInHead) &&
+            	variablesOrderedByRule.equals(otherGroup.variablesOrderedByRule)) 
+            	return true;
         } 
         return false;
       
@@ -114,7 +121,7 @@ public class StringConcatServiceGroup extends ServiceGroup {
     @Override
     public int hashCode() {
     	int hc = service.getUrl().hashCode() ^ triples.hashCode() ^ filters.hashCode() ^ scTriples.hashCode() ^subjectRules.hashCode() 
-    	        ^predicateRules.hashCode() ^objectRules.hashCode()^concat.hashCode();
+    	        ^predicateRules.hashCode() ^objectRules.hashCode()^concat.hashCode() ^ tripleInHead.hashCode() ^variablesOrderedByRule.hashCode();
     	if (service.getGraph()!=null){
     		hc= hc ^ service.getGraph().hashCode() ;
     	}
