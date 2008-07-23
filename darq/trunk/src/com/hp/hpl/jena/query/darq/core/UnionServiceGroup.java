@@ -371,6 +371,9 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 				}
 				System.out.println("     Triple in head?: "+ scSG.getTripleInHead());
 				System.out.println("     Concatination?: " + scSG.isConcat());
+				for(Integer index : scSG.variablesOrderedByRule.keySet()){
+					System.out.println("     Index: " + index + " Variable "+ scSG.variablesOrderedByRule.get(index));
+				}
 			}
 			
 			else { /* have to be a SG */ 
