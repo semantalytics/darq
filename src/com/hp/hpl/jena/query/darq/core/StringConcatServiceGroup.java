@@ -18,7 +18,7 @@ public class StringConcatServiceGroup extends ServiceGroup {
 	HashMap<Triple,Triple> scTriples = new HashMap<Triple,Triple>();
 	Boolean concat = false;
 	Boolean tripleInHead = false;
-	HashMap<Integer,String> splitVariables = new HashMap<Integer, String>();
+	HashMap<Integer,String> variablesOrderedByRule = new HashMap<Integer, String>();
 	
 	public StringConcatServiceGroup(RemoteService s, Set<Rule> subjectRules, Set<Rule> predicateRules, Set<Rule> objectRules) {
 		super(s);
@@ -137,19 +137,22 @@ public class StringConcatServiceGroup extends ServiceGroup {
 		this.tripleInHead = tripleInHead;
 	}
 
-	public HashMap<Integer,String> getSplitVariables() {
-		return splitVariables;
+	/**
+	 * @return the variables of the binding in order of the StringConcat Rule
+	 * */
+	public HashMap<Integer,String> getVariablesOrderedByRule() {
+		return variablesOrderedByRule;
 	}
 
-	public void setSplitVariables(HashMap<Integer,String> splitVariables) {
-		this.splitVariables = splitVariables;
+	public void setVariablesOrderedByRule(HashMap<Integer,String> splitVariables) {
+		this.variablesOrderedByRule = splitVariables;
 	}
 	
-	public void addSplitVariable(Integer index,String splitVariable) {
-		splitVariables.put(index, splitVariable);
+	public void addVariableOrderedByRule(Integer index,String splitVariable) {
+		variablesOrderedByRule.put(index, splitVariable);
 	}
-	public void removeSplitVariable(String splitVariable) {
-		splitVariables.remove(splitVariable);
+	public void removeVariableOrderedByRule(String splitVariable) {
+		variablesOrderedByRule.remove(splitVariable);
 	}
 	
 }
