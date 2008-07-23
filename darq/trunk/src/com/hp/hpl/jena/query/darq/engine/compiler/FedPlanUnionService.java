@@ -76,9 +76,6 @@ private Boolean cacheEnabled;
                     list.add(FedPlanService.make(this.getContext(),muMSG.getServiceGroup(s),this.getSubElement(),cache,cacheEnabled) );                    
                 }
 			}
-        	else if  (sg instanceof ServiceGroup){ /* and MultiplyServiceGroup,StrnigConcatServiceGroup */
-        		 list.add(FedPlanService.make(this.getContext(),sg,this.getSubElement(),cache,cacheEnabled) );		 
-        	}
         	else if (sg instanceof StringConcatMultipleServiceGroup) {
         		StringConcatMultipleServiceGroup scMSG = (StringConcatMultipleServiceGroup) sg;
 				for (RemoteService s: scMSG.getServices()) {
