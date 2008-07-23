@@ -1502,7 +1502,7 @@ public class MapDarqTransform extends TransformCopy {
 			for (ServiceGroup serviceGroup : usg.getServiceGroups().values()) {
 				if (serviceGroup instanceof StringConcatMultipleServiceGroup || serviceGroup instanceof StringConcatServiceGroup ) {
 					StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
-					if (!scSG.isConcat() && !scSG.getTripleInHead()){
+					if ( !scSG.getTripleInHead()){ //!scSG.isConcat() &&
 						for (Triple triple : scSG.getTriples()){
 							for(Rule rule : scSG.getPredicateRules()){
 								if (rule.isStrincConcat()){
@@ -1527,9 +1527,9 @@ public class MapDarqTransform extends TransformCopy {
 			for (ServiceGroup serviceGroup : usg.getServiceGroups().values()) {
 				if (serviceGroup instanceof StringConcatMultipleServiceGroup || serviceGroup instanceof StringConcatServiceGroup ) {
 					StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
-					if (!scSG.isConcat() && scSG.getTripleInHead()){
-						scSG.setSplitVariables(splitVariables);
-					}
+//					if (!scSG.isConcat() && scSG.getTripleInHead()){
+						scSG.setVariablesOrderedByRule(splitVariables);
+//					}
 				}
 			}
 		}
