@@ -132,6 +132,9 @@ public class MapDarqTransform extends TransformCopy {
 	HashMap<Rule, ServiceGroup> scServiceGroup = new HashMap<Rule, ServiceGroup>();
 	Triple scTripleInHead=null;
 	
+	HashMap<Integer, String> splitVariables = new HashMap<Integer,String>();
+	Integer numberOfRuleParts;
+	
 	Set varsMentioned = new HashSet();
 
 	boolean optimize = true;
@@ -160,7 +163,7 @@ public class MapDarqTransform extends TransformCopy {
 		transitivityDepth = transitivity;
 		this.cache = cache;
 		this.cacheEnabled = cacheEnabled;
-		System.out.println("Konstruktor: MapDarqTransform");
+		log.debug("Konstruktor: MapDarqTransform");//TESTAUSGABE
 	}
 
 	
@@ -203,28 +206,17 @@ public class MapDarqTransform extends TransformCopy {
 	 *   looks for alternatives. As triples is a hashset no triple can be twice. 
 	 *   Runs until TransitivityDepth is reached or no more similar triples added to triples
 	 */
-	
-	
-	/*FRAGE: Ist es sinnvoll stur alle Unterklassen in der Query zu ersetzen?
-	 Was ist mit Unterklassen in der selben Ontologie, diese sollten keinen
-	 Mehrwert bieten?! (Was ist, wenn eine andere Quelle die selbe Ontologie nutzt und
-	 nur diese Unterklassen bietet?)
-	 */
-	
-	private PlanElement make(List newElts, Context context) {
+		private PlanElement make(List newElts, Context context) {
 		
-		System.out.println("MapDarqTransform.make");//TESTAUSGABE
+		log.debug("MapDarqTransform.make");//TESTAUSGABE
 		groupedTriples.clear(); // new for each PlanBasicGraphPattern !
 		queryIndividuallyTriples.clear(); // "
 		unionService.clear();
 		Set<Triple> tempTriples = new HashSet<Triple>();
 		
 		List<Triple> unmatchedTriples = new LinkedList<Triple>();
-		//PlanBlockTriples sind Tripels, die per Klammern eingeschlossen sind
 		List<PlanFilter> filters = new ArrayList<PlanFilter>();
-		//Filter aus der Query
 		List<PlanElement> acc = new ArrayList<PlanElement>();
-		//Operatoren des Plans
 		
 		int runs, triplesSizeBefore, similar;
 		similar=0;
@@ -239,12 +231,11 @@ public class MapDarqTransform extends TransformCopy {
 				for (PlanElement el : (List<PlanElement>) elm.getSubElements()) {
 
 					if (el instanceof PlanBlockTriples) {
+						splitVariables.clear();
 						for (Triple originalTriple : (List<Triple>) ((PlanBlockTriples) el)
 								.getPattern()) {
-							System.out.println("[MapDarqTransform] original triple: " + originalTriple);//TESTAUSGABE							
+							log.debug("[MapDarqTransform] original triple: " + originalTriple);//TESTAUSGABE							
 							
-							// TODO TEST !!!! 
-							/* delete all similars from run before */
 							/* Subject */
 							subjectSubClass.clear();
 							subjectEquClass.clear(); 
@@ -279,23 +270,22 @@ public class MapDarqTransform extends TransformCopy {
 							tree = new DefaultTreeModel(root);
 							runs = 1;
 							do{//transitivity
-								System.out.println("Durchlauf: " + runs);//TESTAUSGABE
-								tempTriples.clear(); //sollte unnötig sein, schadet aber nicht
-								tempTriples.addAll(triples); // brauche tempTriples, da triples in der Schleife erweitert wird und das ist schlecht, wenn
-								//gleichzeitig darüber iteriert wird
+								log.debug("Durchlauf: " + runs);//TESTAUSGABE
+								tempTriples.clear(); 
+								tempTriples.addAll(triples); 
 								triplesSizeBefore = triples.size();
 								
 								for(Triple similarTriple : tempTriples){
-									System.out.println(similarTriple);
+									log.debug(similarTriple);//TESTAUSGABE
 									if (!similarTriple.getSubject().isVariable()){
 										tempURI = URI.create(similarTriple.getSubject().getURI());
-										System.out.println("Subject");//TESTAUSGABE
+										log.debug("Subject");//TESTAUSGABE
 										if (mapping.containsClassReference(tempURI)) {
 											subjectSubClass = MapSearch.SearchSubclass(tempURI, mapping );
 											subjectEquClass = MapSearch.searchEquivalentClass(tempURI, mapping );
 											searchRulesForURI(tempURI, "subject");
 											
-											//Aufruf stellt sicher, dass die URI in der Ontologie existiert, daher nicht ausserhalb der ifs
+											//call within the if makes sure the URI exists in the ontology 
 										}
 										if (mapping.containsObjectPropertyReference(tempURI)){
 											subjectSubProp = MapSearch.searchSubObjectProperty(tempURI, mapping );
@@ -315,7 +305,7 @@ public class MapDarqTransform extends TransformCopy {
 									}else{ subjectVariable = true;}
 
 									if (!similarTriple.getPredicate().isVariable()){
-										System.out.println("Predicate");//TESTAUSGABE
+										log.debug("Predicate");//TESTAUSGABE
 										tempURI = URI.create(similarTriple.getPredicate().getURI());
 //										MapSearch.AllAxiomsfromClass(URI.create(similarTriple.getPredicate().getURI()), mapping);//TESTAUSGABE
 										if (mapping.containsClassReference(tempURI)){
@@ -341,7 +331,7 @@ public class MapDarqTransform extends TransformCopy {
 
 									if (!similarTriple.getObject().isVariable()){
 										if(!similarTriple.getObject().isLiteral()){
-											System.out.println("Object");//TESTAUSGABE
+											log.debug("Object");//TESTAUSGABE
 											tempURI = URI.create(similarTriple.getObject().getURI());
 //											MapSearch.AllAxiomsfromClass(URI.create(t.getObject().getURI()), mapping);//TESTAUSGABE						
 											if (mapping.containsClassReference(tempURI)){
@@ -362,24 +352,19 @@ public class MapDarqTransform extends TransformCopy {
 											if (mapping.containsIndividualReference(tempURI)){
 												objectSameIndi = MapSearch.searchSameIndividual(tempURI, mapping);
 												searchRulesForURI(tempURI, "object");
-											}//FRAGE Kann ein Object das alles sein, Was ist mit DataProperty?
+											}
 										}
 									}else{ objectVariable = true;}
+			
+									addConcatVariablesToScSGI(originalTriple);
 
-									
 									// Creating triples with the alternative elements
-									//brauche Node zum Tripel
-									
-									
 									createSimilarTriples(similarTriple);
 									
 								}//END FOR searching similar triples
 								runs++;
 							}while(transitivityDepth > runs && triples.size() != triplesSizeBefore); 
-							
-							/* NOTWENDIG ? 
-							 * um die Tripel in eine SG zu packen, brauche ich die Regeln, aber
-							 * da ist noch foundRulesForXXXX bekannt. */
+
 							//save rules for all triple parts
 							allFoundRulesForSubject.putAll(foundRulesForSubject);
 							allFoundRulesForPredicate.putAll(foundRulesForPredicate);
@@ -413,25 +398,18 @@ public class MapDarqTransform extends TransformCopy {
 							else{
 								/* more than one triple --> original triple + similar triple */
 								for(Triple similarTriple:triples){
-									System.out.println("[MapDarqTransform] similar triples: "+similarTriple);//TESTAUSGABE
+									log.debug("[MapDarqTransform] similar triples: "+similarTriple);//TESTAUSGABE
 									List<RemoteService> services = selectServices(registry
 											.getMatchingServices(similarTriple));
-									/* hier wird in den SD nachgeschaut, ob die Ressourcen (capabilities) existieren*/
-									System.out.println("Anzahl Services: "+services.size()); //TESTAUSGABE
+									/* looks into SD if resources exist (capabilities)*/
+									log.debug("[MapDarqTransform] Number of services: "+services.size()); //TESTAUSGABE
 									similarTripleMap.put(cloneTriple(similarTriple), similar);
 
 									if (services.size() >=1){
 										putIntoUnionServiceGroup(similarTriple,services,similar);
 									}
 									else {
-//										unmatchedTriples.add(similarTriple); 
-										/*
-										 *  similarTriple einfach zu unmatchedTriples hinzufügen funktioniert nicht, 
-										 *  da diese eine weitere Verarbeitung (Union, Multiply, StringConcat) erfordern. 
-										 *  Daher werden die Tripel erstmal verworfen. Ideal wäre es, den lokalen Service
-										 *  als RemoteService zu behandeln, so dass ganz normal auf (M/U)SG zurückgegriffen 
-										 *  werden kann.
-										 */ 
+										/* if no service found for similar triple skip this */
 										log.warn("No service found for generated statement: " + similarTriple
 												+ " - it will be ignored.");
 									}
@@ -439,7 +417,7 @@ public class MapDarqTransform extends TransformCopy {
 								similar++;
 							}//End Else (zu if (triples.size == 1))
 						}//End For originalTriple:PlanBlockTriple 	
-						outputTree();			
+//						outputTree(); //TESTAUSGABE			
 					} else if (el instanceof PlanFilter) {
 						filters.add((PlanFilter) el);
 					} else {
@@ -453,26 +431,20 @@ public class MapDarqTransform extends TransformCopy {
 			}
 		}		
 		
-		addSplitVariablesToScSG();
+		addConcatVariablesToScSGII(); 
 		
 		// add filters to service groups and to plan (filters are also applied
 		// locally because we don't trust the remote services)
 		for (PlanFilter f : filters) {
 			acc.add(f); //local filter
 			if (optimize) { // do we optimize?
-				for (ServiceGroup sg : groupedTriples.values()) { //durchsucht alle SG und fügt Filter hinzu
+				for (ServiceGroup sg : groupedTriples.values()) { 
 					sg.addFilter(f.getExpr());
 				}
 				for (ServiceGroup sg : queryIndividuallyTriples.values()) {
 					sg.addFilter(f.getExpr());
 				}
 				for (UnionServiceGroup usg : unionService.values()) {
-					//TODO in der USG kann Multiply vorkommen, wenn Filter einen 
-					//entsprechenden Wert aufweist, muss dieser umgerechnet werden
-					//also muss erkannt werden, dass Filter zur MultiplyRegel gehört
-					//und ggf. umgerechnet werden muss.
-					//nicht notwendig, filter erfolgt auf resultset (sollte so funktionieren,
-					//da alles uf SG beruht TODO TEST
 					for (ServiceGroup serviceGroup : usg.getServiceGroups().values()) {
 						if (serviceGroup instanceof MultipleServiceGroup) {
 							MultipleServiceGroup msg = (MultipleServiceGroup) serviceGroup;
@@ -485,10 +457,11 @@ public class MapDarqTransform extends TransformCopy {
 				}
 			}
 		}
+
 		// TESTAUSGABE
-		for(UnionServiceGroup usg : unionService.values()){
-			usg.output();
-		}
+//		for(UnionServiceGroup usg : unionService.values()){
+//			usg.output();
+//		}
 		
 		
 		// build new subplan
@@ -567,24 +540,13 @@ public class MapDarqTransform extends TransformCopy {
 		return result;
 	}
 	
-	/*
-	 * groupedTriples ist eine Hashmap(Key, Wert):
-	 * Key = RemoteService (RS)
-	 * Wert = ServiceGroups (SG)
-	 * (hier werden Triples zum RS gespeichert)
-	 * 
-	 * ServiceGroup:
-	 * -Triples
-	 * -Filters
-	 * -RS
-	 * -usedVariables
-	 * 
-	 * Fazit: erzeugt SG mit RS und Triple, trägt diesen
-	 * mit dem Schlüssel RS in groupedTriples ein
-	 * so kommt man über den RS an die Triple
-	 * 
-	 * ein RS --> mehrere Triple
-	 */ 
+	/**
+	 *  Puts triple into a ServiceGroup with its 
+	 *  remote service, one or more triple, just one 
+	 *  remote service possible
+	 * @param s RemoteService
+	 * @param t triple
+	 */
 	private void putIntoGroupedTriples(RemoteService s, Triple t) {
 		ServiceGroup tg = groupedTriples.get(s);
 		if (tg == null) {
@@ -595,24 +557,13 @@ public class MapDarqTransform extends TransformCopy {
 		tg.addB(t);
 	}
 	
-	/*
-	 * queryIndividuallyTriples ist eine HashMap
-	 * Key = Triple
-	 * Wert = MSG 
-	 * (hier werden SG(==RS) zum Triple gespeichert)
+	/**
+	 * Puts triple into a MultipleServiceGroup with its 
+	 *  remote service, just one  but one or more 
+	 *  remote services possible
 	 * 
-	 * MultipleServiceGroup (Erweiterung von SG für mehrere RS)
-	 * -Triples
-	 * -RSs
-	 * -Filters
-	 * -RS
-	 * -usedVariables
-	 * 
-	 * Fazit: stellt nicht wirklich sicher, dass nur zu einem Triple
-	 * mehrere RS hinzugefügt werden können. 
-	 * Hashmap stellt nur sicher, dass ein Triple nicht mehrere MSG hat
-	 * (diese könnten theoretisch mehrere Triple enthalten)
-	 * ein Triple --> mehrere RSs
+	 * @param t triple
+	 * @param s remote service
 	 */
 	private void putIntoQueryIndividuallyTriples(Triple t, RemoteService s) {
 		MultipleServiceGroup msg = queryIndividuallyTriples.get(t);
@@ -625,63 +576,18 @@ public class MapDarqTransform extends TransformCopy {
 		msg.addService(s);
 	}
 	
-	/*
+	
+	/**
+	 * A USG make a union of the SG within the USG.
+	 * Can contain any possible ServiceGroup. It is
+	 * used to answer queries with mappings. 
 	 * 
-	 * Logik: bekomme Triple, RS, similar
-	 * existiert USG?
-	 * 1.Fall: (similar suche)
-	 *  -suche USG mit similar (Annahme: es existiert bereits eine USG
-	 *   wegen anderer similar Tripel) 
-	 * 2.Fall (triple suche) (entfernt)
-	 * ==== Fall wird durch den Cache bereits abgedeckt ====
-	 *  -es findet sich keine USG mit similar, trotzdem ist es möglich
-	 *   dass das Tripel in einer USG ist (anderes similar), weil es 
-	 *   in einer anderen BGP auftaucht, daher suche nach Triple
-	 * ==== Fall wird durch den Cache bereits abgedeckt ====
-	 * 3.Fall (keine USG) 
-	 *  -es gibt keine USG (weder mit similar, noch mit triple suche)
-
-	 * 1.+2. Fall USG existiert
-	 * 1.1 ServiceSize == 1 (SG)
-	 *     -hole SG aus USG mit RS (RS ist eindeutig)
-	 *     -wurde die USG über ein Triple gefunden heißt das, dass die SG (inkl. Triple+RS) bereits existiert
-	 *     -dann muss verhindert werden, dass das Triple der Liste in der SG hinzugefügt wird, ansonsten
-	 *     -füge Triple der SG hinzu (USG wurde über similar gefunden, d.h. die SG existiert noch nicht oder die SG 
-	 *      beinhaltet das Triple nicht) (Anm: HashSet wäre besser als LinkList)
-	 *     -existiert keine solche SG, erstelle eine und füge Triple hinzu (innerhalb der USG)
-	 * 1.2 ServiceSize > 1 (MSG)
-	 * 	   -hole MSG aus USG mit Triple (Triple ist eindeutig)
-	 *     -füge RS der MSG hinzu
-	 *     -existiert keine MSG, erstelle eine, füge Triple und Service hinzu (innerhalb der USG)
-	 
-	 * 3. Fall USG existiert nicht
-	 * 3.1 ServiceSize == 1 (SG)
-	 *     -erstelle SG und USG, füge SG der USG hinzu
-	 * 3.2. ServiceSize > 1 (MSG)
-	 *	   -erstelle MSG und USG, füge MSG der USG hinzu
-
-	 * Anmerkung: Im Fall 1 muss keine (M)SG in der USG existieren, da die USG durch similarTriple angelegt wurde
-	 *            Im Fall 2 muss das Triple aber existieren, da die USG darüber gefunden wird. 
-	 *            D.h. im Falle der SG, dass das Triple+RS schon eingetragen ist. 
-	 *            Bei der MSG werden die RS in einem HashSet gespeichert, daher ist Prüfung nicht notwendig. 
-	 * 
-	 * 
-	 *  FRAGE Was passiert, wenn ein Triple mehrmals vorkommt, aber
-	 *  unterschiedliche Variablen hat? ?x name ?y ?u name ?v 
-	 *  --> müßte eigentlich durch die SG abgedeckt werden bzw. Triple
-	 *  (Anm.: Logik sollte sicherstellen, dass jedes Triple nur einmal 
-	 *  vorkommt in den USGs (als auch in der Menge von SG,MSG, USG))
-	 *  Was passiert beim Join über ?x bzw. ?u ??? 
-	 *  Bastian FRAGE !!! Wie passiert es bei SG? 
-	 *  
-	 *  Da die Tripel suche auf dem Tripel inklusive Variablen passiert, sollten Tripel mit 
-	 *  unterschiedlichen Variablen auch unterschiedliche (U/M)SGs ergeben.
-	 *  (Optimierung? --> Cache!) 
+	 * @param triple Triple
+	 * @param services List of remote services 
+	 * @param similar just an integer value
 	 */
-	
-	
 	private void putIntoUnionServiceGroup(Triple triple, List<RemoteService> services, int similar){
-		/* search for USG with similar number */
+		
 		
 		UnionServiceGroup newUSG = null;
 		
@@ -695,15 +601,6 @@ public class MapDarqTransform extends TransformCopy {
 		StringConcatMultipleServiceGroup scMSG = null;
 		
 		int serviceSize = services.size();
-		
-//		/* search for USG by triple --> already done by cache */
-//		if (usg == null){
-//			for (UnionServiceGroup helpUSG : unionService.values()){
-//				if (helpUSG.containsTriple(triple)){
-//					usg = helpUSG;
-//				}
-//			}
-//		}
 		
 		Node subject, predicate, object;
 		Set<Rule> subjectRules = new HashSet<Rule>();
@@ -738,13 +635,9 @@ public class MapDarqTransform extends TransformCopy {
 			}
 				
 		}
-		
-		//FRAGE eventuell weitere Bedingung?
-		/*Idee: scSG erstellt alle Triple aus dem vorhandenen Triple bei createTriple
-		 * da createTriple aber für jedes originalTriple durchlaufen wird, kann es passieren,
-		 * dass ein Triple künstlich erstellt wurde, obwohl es existiert. Da USG nur über similar gesucht
-		 * wurde, existierte noch keine beim 2. originalTripel, daher wurden 2 USGs erstellt. 
-		 * Mit der Schleife soll die richtige USG gefunden werden. */
+		/* search for an existing USG 
+		 * if it is a scSG search for similarTriple within (could be a generated triple
+		 * which will be replaced by the original) */
 		UnionServiceGroup usg = unionService.get(similar);		
 		if (usg == null) {
 			for (UnionServiceGroup tempUSG : unionService.values()) {
@@ -763,15 +656,13 @@ public class MapDarqTransform extends TransformCopy {
 		/* get type of the rule*/
 		String ruleType = getRuleType(subjectRules, predicateRules, objectRules);
 		Triple originalTriple = (Triple) ((DefaultMutableTreeNode) tree.getRoot()).getUserObject();
-		//FRAGE Gibt es das originalTriple immer? ja, für jeden Durchlauf! d.h. es ist kein globaler Tree!
 		
 		/* 1. USG existiert */
 		if(usg != null){ 
 			if (serviceSize == 1){ /* 1.1 SG */
 				RemoteService service=services.get(0);
 				sg = usg.getServiceGroup(service);
-				/*get sc ServiceGroup */
-				/*scSG soll nur gefunden werden, wenn es nicht das Triple aus dem Regelkopf ist!*/
+				/* get sc ServiceGroup, only if triple not in head */
 				if (sg == null && scTripleInHead == null){
 					if (!foundRulesForPredicate.isEmpty()){
 						for(Rule rule : foundRulesForPredicate.get(URI.create(triple.getPredicate().getURI()))){
@@ -790,16 +681,18 @@ public class MapDarqTransform extends TransformCopy {
 						muSG.addOrignalTriple(triple, originalTriple);
 					}
 					
-					/* string concat */ //&& scTripleInHead == null
+					/* string concat */
 					else if (ruleType.equals(SWRL_STRINGCONCAT) ){ 
 						scSG = new StringConcatServiceGroup(service, subjectRules, predicateRules,objectRules);
 						scSG.addB(triple);
 						scSG.addOrignalTriple(triple, originalTriple);
 						
-						/*Idee 1: über concat festlegen, ob split oder concat 
-						 * Idee 2: über scServiceGroup scSG wiederfinden, für SC notwendig, da
-						 * mehr als ein Tripel existieren kann zur Regel  und dadurch eine 2.
-						 * USG aufgemacht wird TODO NEU */
+
+							scSG.setVariablesOrderedByRule(splitVariables);
+						
+						/* concat tells if it is a split or a concat for the ServiceGroup
+						 * scServiceGroup is necessary to find the USG and add triple to 
+						 * the scSG (in case there are 2 original triple for scSG
 						/* original Triple (from query) in Head --> concat results */
 						URI originalPredicateURI=URI.create(originalTriple.getPredicate().getURI());
 						for(Rule rule : foundRulesForPredicate.get(originalPredicateURI)){
@@ -838,13 +731,6 @@ public class MapDarqTransform extends TransformCopy {
 				/* ServiceGroup exists */
 				else if (!sg.containsTriple(triple)){  
 					
-					// Wieso hier nicht auf OriginalTriple geprüft? 
-					/* muSG existiert ohne OriginalTriple(s.o.), originalTriple kann
-					 * nicht zum selben Service gehören, sonst wäre Transformation nicht
-					 * notnwendig. Daher überprüfung nicht notwendig. (Nur der unwahrscheinlich
-					 * Fall, dass die selbe Quelle beides enthält (Original+SimilarTriple), ist 
-					 * aus meiner Sicht, aber falsche Modellierung
-					 **/
 					if (sg instanceof MultiplyServiceGroup) {
 						muSG = (MultiplyServiceGroup) sg;
 						muSG.addallRules(subjectRules, predicateRules, objectRules);
@@ -855,8 +741,7 @@ public class MapDarqTransform extends TransformCopy {
 						scSG.addallRules(subjectRules, predicateRules, objectRules);
 						scSG.addOrignalTriple(triple, originalTriple);
 						
-						/* müßte hier reichen, ist der einzige Fall wo scSG existiert
-						 * bei scMSG werden nur Services Hinzugefügt, trotzdem Triple prüfen TODO*/
+						/* replace generated triple in scSG with the original triple from query */
 						Triple replaceTriple=null;
 						Boolean tripleAlreadyAdded = false;
 						for(Triple tempTriple : scSG.getTriples()){
@@ -885,6 +770,9 @@ public class MapDarqTransform extends TransformCopy {
 						if (!foundRulesForPredicate.isEmpty()){
 							for(Rule rule : foundRulesForPredicate.get(URI.create(triple.getPredicate().getURI()))){
 								sg = scServiceGroup.get(rule);	
+								if (!(sg instanceof StringConcatMultipleServiceGroup) && !(sg instanceof MultiplyMultipleServiceGroup) && !(sg instanceof MultipleServiceGroup)) {
+									sg = null; /*sg has to be a (sc/mu)multipleServiceGroup*/
+								}
 							}
 						}
 					}
@@ -901,6 +789,7 @@ public class MapDarqTransform extends TransformCopy {
 							scMSG = new StringConcatMultipleServiceGroup(service,subjectRules,predicateRules,objectRules);
 							scMSG.addB(triple);
 							scMSG.addOrignalTriple(triple, originalTriple);
+							scMSG.setVariablesOrderedByRule(splitVariables);
 							
 							URI predicateURI=URI.create(originalTriple.getPredicate().getURI());
 							for(Rule rule : foundRulesForPredicate.get(predicateURI)){
@@ -925,12 +814,12 @@ public class MapDarqTransform extends TransformCopy {
 							msg.addService(service);
 						}
 						
-						/* add muMSG or MSG to USG */
+						/* add muMSG,scMSG, MSG to USG */
 						if(muMSG != null){
 							usg.addServiceGroup(triple, muMSG);	
 						}
-						else if(scSG != null ){
-							usg.addServiceGroup(triple, scSG);
+						else if(scMSG != null ){
+							usg.addServiceGroup(triple, scMSG);
 						}
 						else{
 							usg.addServiceGroup(triple, msg);
@@ -950,7 +839,9 @@ public class MapDarqTransform extends TransformCopy {
 						scMSG = (StringConcatMultipleServiceGroup) sg;
 						scMSG.addService(service);
 					}
-					else System.err.println("Error [MAPDARQTRANSFORM]: This error should not occur.(ServiceSize > 1 and not (Multiply)MultipleServiceGroup)");
+					else {
+						log.warn("This error should not occur.(ServiceSize > 1 and not (Multiply-/StringConcat-)MultipleServiceGroup)");
+					}
 				}
 			}			
 		}
@@ -963,7 +854,6 @@ public class MapDarqTransform extends TransformCopy {
 				/* if rules exists create specialized ServiceGroup */
 				/* multiply */
 				if (ruleType.equals(SWRL_MULTIPLY) && !triple.equals(originalTriple)) {
-//					Triple originalTriple = (Triple) ((DefaultMutableTreeNode) tree.getRoot()).getUserObject();  //FRAGE Ist Root korrekt?
 					muSG = new MultiplyServiceGroup(service, subjectRules,predicateRules,objectRules);
 					muSG.addB(triple);	
 					muSG.addOrignalTriple(triple, originalTriple);
@@ -974,7 +864,7 @@ public class MapDarqTransform extends TransformCopy {
 					scSG = new StringConcatServiceGroup(service,subjectRules,predicateRules,objectRules);
 					scSG.addB(triple);
 					scSG.addOrignalTriple(triple, originalTriple);
-					
+					scSG.setVariablesOrderedByRule(splitVariables);
 					URI predicateURI=URI.create(originalTriple.getPredicate().getURI());
 					for(Rule rule : foundRulesForPredicate.get(predicateURI)){
 						if (rule.getPart(predicateURI).isHead()) {
@@ -1010,7 +900,7 @@ public class MapDarqTransform extends TransformCopy {
 				sgsPos.add(newUSG);
 			}
 			else if (serviceSize > 1 ){ /* 2.2 MSG */
-				/* at the first run USG does not exist, but in the first run a USG ist created
+				/* at the first run USG does not exist, but in the first run a USG is created
 				 * therefore a USG has to exist in the second run */
 				for (RemoteService service:services){
 					if (newUSG != null){
@@ -1027,18 +917,17 @@ public class MapDarqTransform extends TransformCopy {
 						
 						/* multiply */
 						if (ruleType.equals(SWRL_MULTIPLY)&& !triple.equals(originalTriple)){
-//							Triple originalTriple = (Triple) tree.getRoot();
 							muMSG = new MultiplyMultipleServiceGroup(service, subjectRules,predicateRules,objectRules);
 							muMSG.addB(triple);
 							muMSG.addOrignalTriple(triple, originalTriple);
 						}
 						
 						/* string concat */
-						else if (ruleType.equals(SWRL_STRINGCONCAT) ){//TODO TEST originalTriple notwendig, s.o.?
+						else if (ruleType.equals(SWRL_STRINGCONCAT) ){
 							scMSG = new StringConcatMultipleServiceGroup(service,subjectRules,predicateRules,objectRules);
 							scMSG.addB(triple);
-							scMSG.addOrignalTriple(triple, originalTriple);
-							
+							scMSG.addOrignalTriple(triple, originalTriple);							
+							scMSG.setVariablesOrderedByRule(splitVariables);						
 							URI predicateURI=URI.create(originalTriple.getPredicate().getURI());
 							for(Rule rule : foundRulesForPredicate.get(predicateURI)){
 								if (rule.getPart(predicateURI).isHead()) {
@@ -1053,7 +942,6 @@ public class MapDarqTransform extends TransformCopy {
 									scSG.setTripleInHead(true);
 								}
 							}
-//														if(triple.equals(originalTriple)) scMSG.setConcat(true);
 						}
 						
 						/* no rules */
@@ -1089,7 +977,10 @@ public class MapDarqTransform extends TransformCopy {
 						scMSG = (StringConcatMultipleServiceGroup) sg;
 						scMSG.addService(service);
 					}
-					else System.err.println("Error [MAPDARQTRANSFORM]: This error should not occur.(ServiceSize > 1 and not (Multiply)MultipleServiceGroup)");	 
+					else{
+						log.warn("This error should not occur.(ServiceSize > 1 and not (Multiply)MultipleServiceGroup)");				
+					}
+			 
 				}
 			}
 		}			
@@ -1098,33 +989,11 @@ public class MapDarqTransform extends TransformCopy {
 	
 	
 	/**
-	 * creates new triples with the given Sets of classes and properties
+	 * creates new triples with the given Sets of classes, properties and rules
 	 * adds triples to a private set of the class
+	 * @param Triple
 	 */
-	/*
-	 * Die Zusammensetzung der Triples auch aus den Regeln muss hier geschehen. 
-	 * Was passiert bei StringConcat?
-	 * Anfrage: 
-	 * ?x name ?y
-	 * ?y partof ?z
-	 * 
-	 * ?x vorname ?u
-	 * ?x nachname ?v
-	 * y stringconcat u,v
-	 * 
-	 * FRAGE
-	 * 
-	 * 1.Austausch bei StringConcat nicht möglich
-	 * 2.muss neue Variable einführen
-	 * 3.muss sicherstellen, dass beide Tripel zusammengehören 
-	 * --> muss eigentlich neues PlanblockTripel erzeugen. 
-	 * reicht es aus, wenn ich die Tripel ?x vorname ?u und ?x nachname ?v
-	 * erzeuge?
-	 * Ich weiß vorher nicht, ob ?y noch gebraucht wird. 
-	 * Wie schaffe ich die Zuweisung? Also das y = u+v in der 
-	 * nächsten Anfrage mitgenommen wird. 
-	 * 
-	 */
+	
 	private void createSimilarTriples(Triple triple) {
 
 		Set<URI> subjects = new HashSet<URI>();
@@ -1170,7 +1039,7 @@ public class MapDarqTransform extends TransformCopy {
 					
 					/*  multiply */
 					if (rule.isMultiply()){
-						System.out.println("[MapDarqTransform] Counterpart multiply: " + getMultiplyCounterpart(predicateURI, rule));
+						log.debug("[MapDarqTransform] Counterpart multiply: " + getMultiplyCounterpart(predicateURI, rule)); //TESTAUSGABE
 						counterPartURI = getMultiplyCounterpart(predicateURI, rule);
 						predicates.add(counterPartURI);
 						/* if there are rules for counterPartURI, get them, add current rule and 
@@ -1190,12 +1059,12 @@ public class MapDarqTransform extends TransformCopy {
 							scTripleInHead = triple;
 							int i = 1;
 							for (RulePart rulepart : rule.getBodyParts()) {
-								URI scPredicateURI = rulepart.getUri();						//&& !triple.equals(originalTriple)	
+								URI scPredicateURI = rulepart.getUri();						
 								if (!(scPredicateURI.toString()).equals(SWRL_STRINGCONCAT)) {
 									
 									newTriple = Triple.create(triple.getSubject(), Node.create(scPredicateURI.toString()), Var.alloc("StringConcat"+i));
 									i++;
-									System.out.println("[StringConcat] " + newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
+									log.debug("[StringConcat] " + newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
 									triples.add(newTriple);
 									
 									/* add new predicate and current rule to foundRules */
@@ -1221,7 +1090,7 @@ public class MapDarqTransform extends TransformCopy {
 								
 								if (!(scPredicateURI.toString()).equals(SWRL_STRINGCONCAT) && !scPredicateURI.equals(predicateURI)) {
 									newTriple = Triple.create(triple.getSubject(), Node.create(scPredicateURI.toString()), Var.alloc("StringConcatPart"));
-									System.out.println("[StringConcat] " + newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
+									log.debug("[StringConcat] " + newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
 									triples.add(newTriple);
 									
 									/* add new predicate and current rule to foundRules */
@@ -1241,7 +1110,7 @@ public class MapDarqTransform extends TransformCopy {
 							for (RulePart rulepart : rule.getHeadParts()) {
 								URI scPredicateURI = rulepart.getUri();
 								newTriple = Triple.create(triple.getSubject(), Node.create(scPredicateURI.toString()),Var.alloc("StringConcat"));
-								System.out.println("[StringConcat] " + newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
+								log.debug("[StringConcat] " + newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
 								triples.add(newTriple);
 								scTripleInHead = newTriple;
 								
@@ -1284,7 +1153,7 @@ public class MapDarqTransform extends TransformCopy {
 							for (URI predicate : predicates) {
 								for (URI object : objects) {
 									newTriple = Triple.create(Node.create(subject.toString()), Node.create(predicate.toString()), Node.create(object.toString()));
-									System.out.println("[SPO] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TEST
+									log.debug("[SPO] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());// TESTAUSGABE
 									triples.add(newTriple);
 									if(getTreeNode(newTriple)==null){
 										DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1300,7 +1169,7 @@ public class MapDarqTransform extends TransformCopy {
 						for (URI subject : subjects) {
 							for (URI predicate : predicates) {
 								newTriple = Triple.create(Node.create(subject.toString()), Node.create(predicate.toString()), triple.getObject());
-								System.out.println("[SP] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TEST
+								log.debug("[SP] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TESTAUSGABE
 								triples.add(newTriple);
 								if(getTreeNode(newTriple)==null){
 									DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1314,12 +1183,12 @@ public class MapDarqTransform extends TransformCopy {
 					if (!objectVariable) {//Subject is bound, Predicate is Variable, Object is bound
 
 						// ---> 3.Case SO <---
-						System.err.println("Warning [MAPPING]: Predicate not bound in query");
+						log.warn("Predicate not bound in query");
 						for (URI subject : subjects) {
 
 							for (URI object : objects) {
 								newTriple = Triple.create(Node.create(subject.toString()), triple.getPredicate(), Node.create(object.toString()));
-								System.out.println("[SO] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TEST
+								log.debug("[SO] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TESTAUSGABE
 								triples.add(newTriple);
 								if(getTreeNode(newTriple)==null){
 									DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1331,10 +1200,10 @@ public class MapDarqTransform extends TransformCopy {
 					else {//Subject is bound, Predicate is Variable, Object is Variable
 
 						//  ---> 4.Case S <---
-						System.err.println("Warning [MAPPING]: Predicate not bound in query");
+						log.warn("Predicate not bound in query");
 						for (URI subject : subjects) {
 							newTriple = Triple.create(Node.create(subject.toString()), triple.getPredicate(), triple.getObject());
-							System.out.println("[S] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TEST
+							log.debug("[S] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TESTAUSGABE
 							triples.add(newTriple);
 							if(getTreeNode(newTriple)==null){
 								DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1352,7 +1221,7 @@ public class MapDarqTransform extends TransformCopy {
 						for (URI predicate : predicates) {
 							for (URI object : objects) {
 								newTriple = Triple.create(triple.getSubject(), Node.create(predicate.toString()), Node.create(object.toString()));
-								System.out.println("[PO] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TEST
+								log.debug("[PO] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TESTAUSGABE
 								triples.add(newTriple);
 								if(getTreeNode(newTriple)==null){
 									DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1366,7 +1235,7 @@ public class MapDarqTransform extends TransformCopy {
 						//  ---> 6.Case P <---
 						for (URI predicate : predicates) {
 							newTriple = Triple.create(triple.getSubject(), Node.create(predicate.toString()), triple.getObject());
-							System.out.println("[P] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TEST
+							log.debug("[P] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TESTAUSGABE
 							triples.add(newTriple);
 							if(getTreeNode(newTriple)==null){
 								DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1379,10 +1248,10 @@ public class MapDarqTransform extends TransformCopy {
 					if (!objectVariable) {//Subject is Variable, Predicate is Variable, Object is bound
 
 						//  ---> 7.Case O <---
-						System.err.println("Warning [MAPPING]: Predicate not bound in query");
+						log.warn("Predicate not bound in query");
 						for (URI object : objects) {
 							newTriple = Triple.create(triple.getSubject(), triple.getPredicate(), Node.create(object.toString()));
-							System.out.println("[O] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TEST
+							log.debug("[O] "+newTriple.getSubject() + " " + newTriple.getPredicate() + " " + newTriple.getObject());//TESTAUSGABE
 							triples.add(newTriple);
 							if(getTreeNode(newTriple)==null){
 								DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1393,7 +1262,7 @@ public class MapDarqTransform extends TransformCopy {
 					else {//Subject is Variable, Predicate is Variable, Object is Variable
 
 						//  ---> 8.Case Nothing	 <---
-						System.err.println("Warning: [MAPPING] Predicate not bound in query");
+						log.warn("Predicate not bound in query");
 						triples.add(triple);
 						if(getTreeNode(newTriple)==null){
 							DefaultMutableTreeNode child = new DefaultMutableTreeNode(newTriple);
@@ -1405,11 +1274,10 @@ public class MapDarqTransform extends TransformCopy {
 		}
 	}
 	
-	/*
-	 * just for the case that there exists
-	 * no rules for this URI
-	 */
-	
+	/**
+	 *  find rules for a part of a triple given by URI
+	 *  @param URI Part of triple, given by URI 
+	 *  @param TriplePart defines the part of the triple (subject, predicate or object) */
 	private void searchRulesForURI(URI tempURI, String triplePart){
 		HashSet<Rule> rulesForURI = new HashSet<Rule>();
 		rulesForURI = MapSearch.searchRules(tempURI, mapping);
@@ -1425,7 +1293,15 @@ public class MapDarqTransform extends TransformCopy {
 			}	
 		}
 	}
-	
+	 
+	/**
+	 * Assuming only one rule per triplePart !!!
+	 * 
+	 * @param subjectRules
+	 * @param predicateRules
+	 * @param objectRules
+	 * @return Type of the rule, StringConcat or Multiply (at the moment)
+	 */
 	private String getRuleType(Set<Rule> subjectRules, Set<Rule> predicateRules, Set<Rule> objectRules) {
 		boolean subjectMultiply = false;
 		boolean predicateMultiply = false;
@@ -1469,15 +1345,16 @@ public class MapDarqTransform extends TransformCopy {
 		}
 		if (subjectStringConcat || predicateStringConcat || objectStringConcat) {
 				return SWRL_STRINGCONCAT;
-		}
-//		System.err.println("Error [MAPDARQTRANSFORM]: Unknown rule."); // should not happen
-		
+		}		
 		return "";
 	}
 	
-	/* Idee: bekomme URI vom Original Triple Part, bekomme
-	 * ebenfalls die multiply Regel, suche die Alternative aus
-	 * der Regel und gebe sie zurück*/
+/**
+ * 
+ * @param uri URI of the triple part
+ * @param rule Multiply rule
+ * @return Counterpart of the triple part in head or body of the rule
+ */
 	private URI getMultiplyCounterpart(URI uri , Rule rule){
 		RulePart original = rule.getPart(uri);
 		if (original.isBody()){
@@ -1494,15 +1371,52 @@ public class MapDarqTransform extends TransformCopy {
 	}
 	
 	
-	private void addSplitVariablesToScSG() {
-		/* Variablen für Split (StringConcat Rule) innerhalb einer usg suchen */
+	/**
+	 * collects variables for concat or split to know what to split or to concat
+	 * Part I
+	 */
+	private void addConcatVariablesToScSGI(Triple originalTriple){
+		Integer tripleIndex = 0;
+		numberOfRuleParts =0;
+		if (!foundRulesForPredicate.isEmpty()){
+			HashSet<Rule> temp  = foundRulesForPredicate.get(URI.create (originalTriple.asTriple().getPredicate().getURI()));
+			if(temp != null){
+			for(Rule rule : temp){
+				if (rule.isStrincConcat()){
+					int index =0;
+					tripleIndex =0;
+					for(RulePart rp: rule.getRulePartList()){
+						if(rp.getUri().equals(URI.create(originalTriple.getPredicate().getURI()))){
+							if(rp.isBody()){
+								tripleIndex =index;
+							}
+							else{
+								tripleIndex = null;
+							}
+						}
+						numberOfRuleParts = index++;
+					}
+				}
+			}
+			if( originalTriple.getObject().isVariable()&& tripleIndex != null){
+				splitVariables.put(tripleIndex, originalTriple.getObject().getName());
+			}
+		}
+		}
+	}
+	
+	/**
+	 * collects variables for concat or split to know what to split or to concat
+	 * Part II 
+	 */
+	private void addConcatVariablesToScSGII() {
 		int tripleIndex =0;
+		int numberOfRuleParts = 0;
 		for (UnionServiceGroup usg : unionService.values()) {
-			HashMap<Integer, String> splitVariables = new HashMap<Integer,String>();
 			for (ServiceGroup serviceGroup : usg.getServiceGroups().values()) {
 				if (serviceGroup instanceof StringConcatMultipleServiceGroup || serviceGroup instanceof StringConcatServiceGroup ) {
 					StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
-					if ( !scSG.getTripleInHead()){ //!scSG.isConcat() &&
+					if ( !scSG.getTripleInHead()){ 
 						for (Triple triple : scSG.getTriples()){
 							for(Rule rule : scSG.getPredicateRules()){
 								if (rule.isStrincConcat()){
@@ -1512,7 +1426,7 @@ public class MapDarqTransform extends TransformCopy {
 										if(rp.getUri().equals(URI.create(triple.getPredicate().getURI()))){
 											tripleIndex =index;
 										}
-										index++;
+										numberOfRuleParts = index++;
 									}
 								}
 							}
@@ -1523,17 +1437,26 @@ public class MapDarqTransform extends TransformCopy {
 					}
 
 				} 
-			} /* gefundene Variablen in entsprechender scsg eintragen */
+			} 
 			for (ServiceGroup serviceGroup : usg.getServiceGroups().values()) {
 				if (serviceGroup instanceof StringConcatMultipleServiceGroup || serviceGroup instanceof StringConcatServiceGroup ) {
 					StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;
-//					if (!scSG.isConcat() && scSG.getTripleInHead()){
+					/* minus one because of swrlb:stringConcat Part */
+					if((numberOfRuleParts-1) == splitVariables.size()){
 						scSG.setVariablesOrderedByRule(splitVariables);
-//					}
+					}
+					else{
+						log.warn("Stringconcatination is not possible because of missing parts, see other warning");
+						scSG.setVariablesOrderedByRule(splitVariables); 
+					}
+						
 				}
 			}
 		}
 	}
+	
+	
+	
 	/* Deep First Search */	
 	private DefaultMutableTreeNode getTreeNode(Triple triple){
 		DefaultMutableTreeNode node;
@@ -1580,7 +1503,7 @@ public class MapDarqTransform extends TransformCopy {
 	private void outputTree(){
 		DefaultMutableTreeNode node;
 		Enumeration children = root.children();
-		System.out.println("Root: " + root.getUserObject().toString());
+		System.out.println("Root: " + root.getUserObject().toString()); //TESTAUSGABE
 		while (children.hasMoreElements()){
 			outputTree((DefaultMutableTreeNode) children.nextElement(),0);
 		}
@@ -1589,7 +1512,7 @@ public class MapDarqTransform extends TransformCopy {
 	private void outputTree(DefaultMutableTreeNode parents, int depth){    		
 		Enumeration children = parents.children();
 		depth++;
-		System.out.println("[Depth " +depth+"] Child of Node: " + parents.getUserObject().toString());
+		System.out.println("[Depth " +depth+"] Child of Node: " + parents.getUserObject().toString()); //TESTAUSGABE
 		while (children.hasMoreElements()){
 			outputTree((DefaultMutableTreeNode) children.nextElement(), depth);
 		}

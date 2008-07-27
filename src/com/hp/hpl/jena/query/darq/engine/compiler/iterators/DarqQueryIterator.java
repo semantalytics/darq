@@ -1,8 +1,8 @@
 package com.hp.hpl.jena.query.darq.engine.compiler.iterators;
 
 import static de.hu_berlin.informatik.wbi.darq.mapping.MapSearch.SWRL_MULTIPLY;
-import static de.hu_berlin.informatik.wbi.darq.mapping.MapSearch.SWRL_STRINGCONCAT;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -100,14 +100,14 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 			ResultSet remoteResults = null;
 			if (cache != null) {
 
-				// cache.output(); // TESTAUSGABE
+//				 cache.output(); // TESTAUSGABE
 
 				/* ask cache */
 				cacheResult = cache.getElement(serviceGroup);
 				
 				/* found in Cache */
 				if (!cacheResult.isEmpty()) {
-					System.out.println("[DarqQueryIterator] Cache Hit");
+					System.out.println("[DarqQueryIterator] Cache Hit"); //TESTAUSGABE
 					int index = 0;
 					cacheResultTransformed.addAll(cacheResult);
 					
@@ -133,14 +133,14 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 //									double objvalue = objLiteral.getFloat();
 
 									Node objLiteral = (Node) obj;
-//									System.out.println("Wert Cache: " + objLiteral.getLiteralValue()); TESTAUSGABE
+									log.debug("Value Cache: " + objLiteral.getLiteralValue()); //TESTAUSGABE
 									String objValueStr = objLiteral.getLiteralValue().toString();
-//									System.out.println("String: "+ objValueStr); //TESTAUSGABE
+									log.debug("String: "+ objValueStr); //TESTAUSGABE
 									Double objValueDouble =  Double.parseDouble(objValueStr);
 									objValueDouble = objValueDouble * multiplier.get(varName);
-									// BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
+//									 BigDecimal objValueDecimal = BigDecimal.valueOf(objValueDouble);
 									Model model = ModelFactory.createDefaultModel();
-									Literal objNode = model.createTypedLiteral(objValueDouble);
+									Literal objNode = model.createLiteral(objValueDouble);
 									bm.add(Var.alloc(varName), objNode.asNode()); /* change binding */
 								}	
 								else{ /* no multiplier, so keep this binding */
@@ -188,15 +188,13 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 								
 								/* concat */
 								if(scSG.isConcat()&& !scSG.getTripleInHead()){
-									HashMap<String, List<String>> concatVariables = getStringConcatVariables();
-//									List<String> conVariables = concatVariables.get("concat"); 
+									HashMap<String, List<String>> concatVariables = getStringConcatVariables(); 
 									HashMap<Integer, String> conVariables = scSG.getVariablesOrderedByRule(); 
 									
 									Integer realIndex =0;
 									if (!conVariables.isEmpty()) {
 										if (conVariables.values().contains(varName)) {
 											transform = true;
-//											Literal objLiteral = (Literal) obj; //Node_Literal
 											String objLiteral = (String) obj.getLiteralValue();
 											for(Integer variableIndex : conVariables.keySet()){
 												if(conVariables.get(variableIndex).equals(varName)){
@@ -205,7 +203,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 											}
 											variableValues.put(realIndex, objLiteral);								
 											countVariables++;
-										}
+										
 										
 										if (countVariables == conVariables.size()) {
 											for(Integer variableIndex = 0 ;  variableIndex < variableValues.size();variableIndex++ ){
@@ -217,20 +215,21 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 												}
 											}
 											originalVariable = concatVariables.get("original").iterator().next();
-											System.out.println("[DarqQueryIterator] new Binding: " + originalVariable + " = " + scObjValue);
+											log.debug("[DarqQueryIterator] new Binding: " + originalVariable + " = " + scObjValue);//TESTAUSGABE
 											Model model = ModelFactory.createDefaultModel();
-											Literal objNode = model.createTypedLiteral(scObjValue);
+											Literal objNode = model.createLiteral(scObjValue);
 											bm.add(Var.alloc(originalVariable), objNode.asNode());
 										}
-
+										}
 									}	
 								}
 								else if(scSG.isConcat() && scSG.getTripleInHead()){
 									/* no transformation, keep this binding*/
-									/*ist der fall, wenn head bei StringConcat abgefragt wird*/
+									/*in concat case if it is in head */
 									newBindings.addAll(cacheResult);
 								}
 								
+								/* split */
 								else if(!scSG.isConcat() && scSG.getTripleInHead()){
 									HashMap<String, List<String>> splitVariables = getStringSplitVariables();
 									List<String> spVariables = splitVariables.get("split");
@@ -248,9 +247,9 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 											variableIndex= 0;
 											HashMap<Integer, String>originalVariables = scSG.getVariablesOrderedByRule();											
 											for (String newValue : scObjValues) {
-												objNode = model.createTypedLiteral(newValue);
+												objNode = model.createLiteral(newValue);
 												originalVariable = originalVariables.get(variableIndex);
-												System.out.println("[DarqQueryIterator] new Binding: "+ originalVariable + " = "+ objNode.toString()+", index "+index);//TESTAUSGABE
+												log.debug("[DarqQueryIterator] new Binding: "+ originalVariable + " = "+ objNode.toString()+", index "+index);//TESTAUSGABE
 												bm.add(Var.alloc(originalVariable), objNode.asNode());
 												variableIndex++;
 											}
@@ -269,7 +268,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 								
 							}
 							cacheResultTransformed.remove(index);
-							cacheResultTransformed.add(index, bm);
+							cacheResultTransformed.add(index, bm); 
 						}
 						if (transform){
 							newBindings.addAll(cacheResultTransformed);
@@ -277,7 +276,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 					}
 					else{
 						/* no transformation */
-						newBindings.addAll(cacheResult);
+						newBindings.addAll(cacheResult); //1 ok
 					}
 				} else {
 					/* element not found in cache */
@@ -288,6 +287,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 				remoteResults = ExecRemoteQuery(query);
 			}
 
+			
 			/* ask remoteservice */
 			if (cacheResult.isEmpty()) {
 				while (remoteResults.hasNext()) {
@@ -320,7 +320,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 							objvalue = objvalue *  multiplier.get(varName);
 //							BigDecimal objValueDecimal = BigDecimal.valueOf(objvalue);
 							Model model = ModelFactory.createDefaultModel();
-							Literal objNode = model.createTypedLiteral(objvalue);
+							Literal objNode = model.createLiteral(objvalue); // TODO FIX ME
 							bm.add(Var.alloc(varName), objNode.asNode());
 						}
 
@@ -348,7 +348,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 										}
 										variableValues.put(realIndex, objLiteral.getString());								
 										countVariables++;
-									}
+
 									if (countVariables == conVariables.size()) {
 										for(Integer index =0 ;  index < variableValues.size();index++ ){
 											if (scObjValue.equals("")){
@@ -360,11 +360,16 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 											
 										}
 										originalVariable = concatVariables.get("original").iterator().next();
-										System.out.println("[DarqQueryIterator] new Binding: " + originalVariable + " = " + scObjValue);
+										log.debug("[DarqQueryIterator] new Binding: " + originalVariable + " = " + scObjValue); //TESTAUSGABE
 										Model model = ModelFactory.createDefaultModel();
-										Literal objNode = model.createTypedLiteral(scObjValue);
+										Literal objNode = model.createLiteral(scObjValue);
 										bm.add(Var.alloc(originalVariable), objNode.asNode());
 									}
+									}
+									else if (obj != null) { /* untransformed part of binding */
+										bm.add(Var.alloc(varName), obj.asNode());
+										bmOriginal.add(Var.alloc(varName), obj.asNode());
+									} 
 								}
 							}
 							/* split */
@@ -388,9 +393,9 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 										index= 0;
 										HashMap<Integer, String>originalVariables = scSG.getVariablesOrderedByRule();											
 										for (String newValue : scObjValues) {
-											objNode = model.createTypedLiteral(newValue);
+											objNode = model.createLiteral(newValue);
 											originalVariable = originalVariables.get(index);
-											System.out.println("[DarqQueryIterator] new Binding: "+ originalVariable + " = "+ objNode.toString()+", index "+index);//TESTAUSGABE
+											log.debug("[DarqQueryIterator] new Binding: "+ originalVariable + " = "+ objNode.toString()+", index "+index);//TESTAUSGABE
 											bm.add(Var.alloc(originalVariable), objNode.asNode());
 											index++;
 										}
@@ -425,8 +430,11 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 					cache.addElement(serviceGroup, BindingsOriginal);
 				}
 			}
-				
-			// cache.output(); //TESTAUSGABE
+			
+//			if (cache != null){
+//				cache.output(); //TESTAUSGABE	
+//			}
+			 
 
 			/*
 			 * if (newBindings.size()>0) concatIterator.add(new
@@ -445,10 +453,8 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 	}
 	
 	private HashMap<String,List<String>> getStringConcatVariables() {
-//		List<String> scVariables = new ArrayList<String>();
 		List<String> originalVariables = new ArrayList<String>();
 		HashMap<String, List<String>> concatVariables = new HashMap<String, List<String>>();
-//		String concat = null;
 		if (serviceGroup instanceof StringConcatServiceGroup) {
 			StringConcatServiceGroup scSG = (StringConcatServiceGroup) serviceGroup;			
 			Triple originalTriple = scSG.getOriginalTriple(scSG.getTriples().iterator().next());
@@ -459,24 +465,7 @@ public abstract class DarqQueryIterator extends QueryIterRepeatApply {
 				originalVariables.add( variable);
 				concatVariables.put("original", originalVariables);
 			}
-//			for (Rule rule : scSG.getPredicateRules()) {
-//				if (rule.isStrincConcat()) {
-//					if (scSG.isConcat()) {
-//						/* concat */
-//						concat = "concat";
-//						for(Triple triple : scSG.getTriples()){
-//							Node tripleObject = triple.getObject();
-//							if (tripleObject.isVariable()){
-//								String variable = tripleObject.toString(); 
-//								variable = variable.substring(1, variable.length()); 
-//								scVariables.add(variable);	
-//							}							
-//						}	
-//					} 
-//				} 
-//			}
 		}
-//		concatVariables.put(concat, scVariables);
 		return concatVariables;
 	}
 	
