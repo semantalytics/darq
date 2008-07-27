@@ -117,7 +117,7 @@ public class query extends CmdARQ
             }
             
             /* Caching */
-            // hier Cache initialisieren
+            // init cache
             String cacheConfig= modCaching.getCacheConfig();
             
             if (cacheConfig!=null){
@@ -130,16 +130,12 @@ public class query extends CmdARQ
             }            
             
  			/* Mapping */ 
-           
-//            ModQueryin erzeugt Fehler, wenn --map mehr als ein Argument hat.
-//            bei mehr als einem --map bekommt man nur Fehler des letzten Map
             String[] mappings = modMapping.getMapping();     
             int transitivity = modMapping.gettransitivity();
             OWLOntology ontology = null;
             if ( modDarq.getConfig()!=null ){
             	if ( mappings !=null ){
             		ontology = MapLoadOntologies.loadCommandline(mappings);	      
-            		System.out.println("[Query.java] Aufruf MapFedQueryEngineFactory");
             		FedQueryEngineFactory.register(modDarq.getConfig(), ontology, transitivity, cache,cacheEnabled);
             	}
             	else{ 
@@ -147,9 +143,6 @@ public class query extends CmdARQ
             	}
             } else throw new CmdException("Argument Error: No config file. use --config=<file>") ;
             	
-            
-           // MAPPING 
-
             
 //            if ( modDarq.getConfig()!=null )
 //            {

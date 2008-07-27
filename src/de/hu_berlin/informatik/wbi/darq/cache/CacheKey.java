@@ -4,7 +4,12 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
-
+/**
+ * need a cache key for caching. ServiceGroup is the best key but the triple within containing
+ * variables. Roughly speeking CacheKey ist a ServiceGroup without Variables. 
+ * @author BabySinclair
+ *
+ */
 public class CacheKey implements Serializable {
 
 	private List<TripleStringURI> tripleStringURI;
@@ -51,6 +56,12 @@ public class CacheKey implements Serializable {
 		return hc;
 	}
 
+	/**
+	 * Cache key does not have to be denpend from variables in query. 
+	 * TripleStringURI does not contain any variable. 
+	 * 
+	 * @return List of TripleStringURI
+	 */
 	public List<TripleStringURI> getTripleStringURI() {
 		return tripleStringURI;
 	}

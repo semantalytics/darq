@@ -1,7 +1,11 @@
 package de.hu_berlin.informatik.wbi.darq.cache;
 
 import java.io.Serializable;
-
+/**
+ * triples without variables (need for cache key)
+ * @author BabySinclair
+ *
+ */
 public class TripleStringURI implements Serializable {
 
 	private String subject, predicate, object;

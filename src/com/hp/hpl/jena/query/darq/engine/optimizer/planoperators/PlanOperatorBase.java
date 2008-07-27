@@ -2,14 +2,19 @@ package com.hp.hpl.jena.query.darq.engine.optimizer.planoperators;
 
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
+import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.optimizer.PlanUnfeasibleException;
 import com.hp.hpl.jena.query.engine1.PlanElement;
 import com.hp.hpl.jena.query.util.Context;
 
 public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
-
+	Log log = LogFactory.getLog(PlanOperatorBase.class);
+	
 	/**
 	 * costs per result
 	 */
@@ -80,13 +85,6 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 		return false;
 	}
 	
-	/* FRAGE ist es möglich, dass mehrere SGs in einer POB sind? 
-	 * Habe jetzt nichts gegenteiliges gefunden! 
-	 * Bastian!
-	 * 
-	 * Logik: Es darf alles gejoint werden ausser es handelt sich um 
-	 *        zwei USGs mit dem selben similar. 
-	 * */
 	public boolean joins(PlanOperatorBase p2) {
 		Set<ServiceGroup> serviceGroupsP1 = this.getServiceGroups();
 		Set<ServiceGroup> serviceGroupsP2 = p2.getServiceGroups();
@@ -94,7 +92,7 @@ public abstract class PlanOperatorBase implements Comparable<PlanOperatorBase>{
 		int similarGroupP2 = -2;
 		
 		if (serviceGroupsP1.size() > 1 || serviceGroupsP2.size()>1 )
-			System.out.println("Error [PlanOperatorBase] More than one (Union-/Multiple-)Servicegroup in a OperatorServiceGroup.");
+			log.debug("Warning [PlanOperatorBase] More than one (Union-/Multiple-)Servicegroup in a OperatorServiceGroup.");
 		
 		if (serviceGroupsP1.iterator().next() instanceof UnionServiceGroup && 
 				serviceGroupsP2.iterator().next() instanceof UnionServiceGroup) {

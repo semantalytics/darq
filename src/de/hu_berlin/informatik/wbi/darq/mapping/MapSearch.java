@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.mindswap.pellet.owlapi.Reasoner;
 import org.semanticweb.owl.apibinding.OWLManager;
 import org.semanticweb.owl.inference.OWLReasoner;
@@ -59,26 +61,8 @@ public class MapSearch {
 	private static HashMap<URI, Rule> rules = new HashMap<URI, Rule>();
 	// stores the rules by URI with all parts of the rule (URI of Rule, Rule)
 	
+	static Log log = LogFactory.getLog(MapSearch.class);
 	
-	
-	
-	
-/* Idee: bekomme Ressource aus der Anfrage uebergeben, zusaetzlich eventuell noch 
-	 * die Mapping-Ontologie.
-	 * Eine Ressource kann sowohl Subjekt, Praedikat und Objekt sein, d.h. für die
-	 * weitere Verarbeitung muss ich ueberpruefen, was vorliegt. 
-	 * Sofern es Subjekte oder Praedikate sind, kann ich nach equivalenten Subjekten,
-	 * Praedikaten suchen. (Class = Menge von Subjekt gleicher Eigenschaft, Praedikat = Property?, Individual = Subjekt)
-	 * Analog Subclass, Subproperty
-	 * Es ist eventuell noch zu ueberpruefen, ob das Praefix des Suchstrings mit den 
-	 * Ergebnisse uebereinstimmen. Die Uebereinstimmungen koennen geloescht werden, da es 
-	 * sich um Ressourcen aus der eigenen Ontologie handelt, diese also sowieso im Ergebnis
-	 * enthalten sein muessten. 
-	 * 
-	 * 
-	 * An dieser Stelle noch keine SWRL Regeln verarbeitet!
-	 * 
-	 */
 	
 //	P3
 //	public Collection SearchSubclass(Cls resource, JenaOWLModel owlModel)
@@ -130,7 +114,7 @@ public class MapSearch {
 			}
 		}
 		catch(OWLReasonerException ex) {
-				  System.out.println("Error:[REASONER] " + ex.getMessage());
+			log.error("Problems with reasoner "+ ex.getMessage());
 		}
 		return subClsesURISet;
 }
@@ -149,7 +133,7 @@ public class MapSearch {
 		
 		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		try {
-			System.out.println(reasoner.getLoadedOntologies()); //TESTAUSGABE
+			log.debug(reasoner.getLoadedOntologies()); //TESTAUSGABE
 			OWLObjectProperty property = owlOntologyManager.getOWLDataFactory().getOWLObjectProperty(resource);
 			subPropSets = reasoner.getSubProperties(property); 
 						
@@ -164,10 +148,10 @@ public class MapSearch {
 			}
 		}
 //		catch(UnsupportedOperationException exception) {
-//				     System.out.println("Error:[MAPSEARCH] Unsupported reasoner operation.");
+//				     log.error("Unsupported reasoner operation.");
 //		}
 		catch(OWLReasonerException ex) {
-				  System.out.println("Error:[MAPSEARCH] " + ex.getMessage());
+			log.error("Problems with reasoner " + ex.getMessage());
 		}
 		return subURIProps;
 	}
@@ -180,7 +164,7 @@ public class MapSearch {
 		
 		if (!init || (init && !ontologyURI.equals(ontology.getURI())) ) init(ontology);
 		try {
-			System.out.println(reasoner.getLoadedOntologies()); //TESTAUSGABE
+			log.debug(reasoner.getLoadedOntologies()); //TESTAUSGABE
 			OWLDataProperty property = owlOntologyManager.getOWLDataFactory().getOWLDataProperty(resource);
 			subPropSets = reasoner.getSubProperties(property); 
 						
@@ -195,10 +179,10 @@ public class MapSearch {
 			}
 		}
 //		catch(UnsupportedOperationException exception) {
-//				     System.out.println("Error:[MAPSEARCH] Unsupported reasoner operation.");
+//				     log.error("Unsupported reasoner operation.");
 //		}
 		catch(OWLReasonerException ex) {
-				  System.out.println("Error:[MAPSEARCH] " + ex.getMessage());
+			log.error("Problems with reasoner " + ex.getMessage());
 		}
 		return subURIProps;
 	}
@@ -228,14 +212,14 @@ public class MapSearch {
 			}
 		}
 //		catch(UnsupportedOperationException exception) {
-//				     System.err.println("Error:[REASONER] Unsupported reasoner operation.");
+//				     log.error("Unsupported reasoner operation.");
 //		}
 		catch(OWLReasonerException ex) {
-				  System.err.println("Error:[REASONER] : " + ex.getMessage());
+			log.error("Problems with reasoner " + ex.getMessage());
 		}
 		catch(RuntimeException ex){ 
 			equClsURISet.clear();
-			System.err.println("Warning: [Equivalent Class] Class" + resource + " not found");
+			log.warn("Equivalent class " + resource + " not found.");
 			/* 
 			 * if there is no equivalent class a RTE is thrown instead of an empty set
 			 * Bugreport for Pellet exists. maybe fixed in a new version
@@ -267,14 +251,14 @@ public class MapSearch {
 			}
 		}
 //		catch(UnsupportedOperationException exception) {
-//				     System.err.println("Error:[REASONER] Unsupported reasoner operation.");
+//				     log.error("Unsupported reasoner operation.");
 //		}
 		catch(OWLReasonerException ex) {
-				  System.err.println("Error:[REASONER] " + ex.getMessage());
+			log.error("Problems with reasoner " + ex.getMessage());
 		}
 		catch(RuntimeException ex){// catches the exception, when property is not found in the ontology 
 			equPropURISet.clear();//returns emtpy set as the other do
-			System.err.println("Warning: [Equivalent Property] Property " + resource + " not found");
+			log.warn("Equivalent property " + resource + " not found.");
 		}
 		return equPropURISet;	
 	}
@@ -293,14 +277,14 @@ public class MapSearch {
 			}
 		}
 //		catch(UnsupportedOperationException exception) {
-//				     System.err.println("Error:[REASONER] Unsupported reasoner operation.");
+//				    log.error("Unsupported reasoner operation.");
 //		}
 		catch(OWLReasonerException ex) {
-				  System.err.println("Error:[REASONER] " + ex.getMessage());
+			log.error("Problems with reasoner " + ex.getMessage());
 		}
 		catch(RuntimeException ex){// catches the exception, when property is not found in the ontology 
 			equPropURISet.clear();//returns emtpy set as the other do
-			System.err.println("Warning: [Equivalent Property] Property " + resource + " not found");
+			log.warn("Equivalent property " + resource + " not found.");
 		}
 		return equPropURISet;	
 	}
@@ -332,8 +316,8 @@ public class MapSearch {
 				sameIndiURISet.add(indi.getURI());
 			}
 		}
-		catch(UnsupportedOperationException exception) {
-				     System.err.println("Error:[MAPSEARCH] Unsupported reasoner operation.");
+		catch(UnsupportedOperationException exception) {				     
+			log.error("Unsupported reasoner operation.");
 		}
 		owlOntologyManager.removeOntology(ontology.getURI());
 		return sameIndiURISet;	
@@ -352,18 +336,12 @@ public class MapSearch {
 		return individuals;
 	}
 	
-	/*
-	 * Idee: SWRL Ontologie wird übergeben, Regeln also auch. Es muss eine neue Struktur aus den Regeln aufgebaut werden.
-	 * Wie kann man verhindern, dass es jedesmal neu gemacht wird?
-	 * Reicht es wenn ich eine Methode init schreibe, wo die Struktur aufgebaut wird und dann init abfrage? 
-	 */
 	
-	
-	
-	/*
+	/**
 	 * Init loads the ontology, creates a reasoner and puts the rules in 
 	 * a searchable structure.
 	 * Init is called if no ontology is available or the ontology has changed
+	 * @param ontology mapping ontology
 	 * 
 	 */
 	private static void init(OWLOntology ontology){
@@ -379,27 +357,23 @@ public class MapSearch {
 			reasoner.loadOntologies(importsClosure);
 		}
 		catch(UnsupportedOperationException exception) {
-			System.err.println("Error:[MAPSEARCH] Unsupported reasoner operation.");
+			log.error("Unsupported reasoner operation.");
 			init= false;
 		}
 		catch(OWLReasonerException ex) {
-			System.err.println("Error:[MAPSEARCH] " + ex.getMessage());
+			log.error("Problems with reasoner " + ex.getMessage());
 			init = false;
 		}
 
 		//create new structure for rules
-		
 		for (SWRLRule swrlRule : ontologyRules) {
 			if (swrlRule.isLogicalAxiom()) {
 				analyzeBody(swrlRule);
 				analyzeHead(swrlRule);	
 			}
 		}
-		/* kann frühestens in AddRulePart geschehen, 
-		 * da dort die Regel erstellt wird. Dies würde
-		 * AddRulePart aber komplexer gestalten, daher der
-		 * einfache Weg die Builtins nachträglich zu setzen
-		 */
+
+		/* set rule type */
 		for(Rule rule : rules.values()){
 			for (RulePart part : rule.getRulePartList()) {
 				if (part.getType().equals(SWRL_MULTIPLY)) {
@@ -413,9 +387,11 @@ public class MapSearch {
 		init = true;
 	}
 
-	/*
-	 * Liefert die Regeln zurück, in denen die übergebene URI 
-	 * enthalten ist. 
+	/**
+	 * return rules for the given URI (of part of a triple)
+	 * @param reference Part of triple
+	 * @param ontology Mapping ontology 
+	 * @return Set of Rules for the given URI
 	 */
 	public static HashSet<Rule> searchRules(URI reference, OWLOntology ontology) {
 		HashSet<URI> rulesURI = null;
@@ -430,25 +406,21 @@ public class MapSearch {
 		return(foundRules);
 	}
 	
-	
-	//TODO Fehlerbehandlung: Wenn im Body Fehler aufgetreten sind, Head nicht weiter bearbeiten
-	//klappt derzeit, weil nur Regeln ohne Kopf als Fehler existieren
-	// sollte nicht mehr nötig sein, sofern Throw Exception funktioniert bzw.
-	//muss diese dann beim Durchlaufen der Regeln abgefangen werden. 
+	/**
+	 * Analyzes the head of a rule and puts it into 
+	 * RulePart
+	 * @param rule SWRL rule
+	 * */
 	private static void analyzeHead(SWRLRule rule) {
 		Set<SWRLAtom> head;
 		OWLObject predicate;
-//		OWLClass owlClass;
-//		OWLDataProperty dataProperty;
-//		OWLObjectProperty objectProperty;
-//		OWLIndividual owlIndividual;
 		RulePart part;
 		Set<URI> uri = new HashSet<URI>();
 		URI ruleURI, partURI;
-//		System.out.println("----------------------------  Start HEAD ------------------------------");
+		log.debug("----------------------------  Start HEAD ------------------------------");
 		head = rule.getHead();
 		ruleURI = rule.getURI();
-		// System.out.println("Kopf: " + head); TESTAUSGABE
+		log.debug("Head: " + head); //TESTAUSGABE
 		if (head.size() == 0) {
 			try {
 				throw new UnsupportedReasonerOperationException("Error [SWRL]: An empty head is not allowed!");
@@ -456,59 +428,42 @@ public class MapSearch {
 				e.printStackTrace();
 			}
 		} else if (head.size() == 1) {
-			// System.out.println("HeadSize 1 "); TESTAUSGABE
+			log.debug("HeadSize 1 "); //TESTAUSGABE
 			if (head.iterator().next().getPredicate() instanceof SWRLBuiltInsVocabulary) {
-				System.err.println("Error [SWRL]: Rule " + rule + " might be correct but is not supported.");
+				log.error("[SWRL]: Rule " + rule + " might be correct but is not supported.");
 			} else {
 				predicate = (OWLObject) head.iterator().next().getPredicate();
-				// System.out.println("Predicate: " + predicate); //TESTAUSGABE
+				log.debug("Predicate: " + predicate); //TESTAUSGABE
 				uri.addAll(getURI(predicate));
 				if (uri.size() == 1) {
-					// System.out.println("URISize 1");//TESTAUSGABE
+					log.debug("URISize 1");//TESTAUSGABE
 					partURI = uri.iterator().next();
-					/* neuen Regelteil erzeugen */
+					/* create new RulePart */
 					part = new RulePart(partURI, ruleURI, "h");
 					addRulePart(partURI, part);
-					/* Typ des Regelteils feststellen */
+					/* get the type of the RulePart */
 					setType(part);
 				} else if (uri.size() > 1) {
-					// System.out.println("URI Size > 1");//TESTAUSGABE
-					System.err.println("Error [SWRL]: The rule " + rule + " might be correct but is not supported");
-					// TODO Was bedeutet das? Body = 1 und Uri > 1? gibt es den
-					// Fall?
-					// 3 intwerte bei multiply?
+					log.debug("URI Size > 1");//TESTAUSGABE
+					log.error("[SWRL]: The rule " + rule + " might be correct but is not supported");				
 				} else {// URIsize == 0
-				// System.out.println("URI Size == 0");//TESTAUSGABE
-					System.err.println("Error [SWRL]: The rule " + rule + " might be correct but is not supported");
+				log.debug("URI Size == 0");//TESTAUSGABE
+					log.error("[SWRL]: The rule " + rule + " might be correct but is not supported");
 				}
 			}
-		} /*-----------------------------------        Head Size > 1              -----------------------------*///TESTAUSGABE
-		else {// Head besteht aus mehrere Atomen
-			System.err.println("Error [SWRL]: Rule is not supported " + rule + ". Just one part in the head allowed");
-
-			// for (SWRLAtom headAtom : head) {
-			// predicate = (OWLObject) headAtom.getPredicate();
-			// }
+		} /*-----------------------------------        Head Size > 1              -----------------------------*/
+		else {// Head consists of multiple atoms
+			log.error("[SWRL]: Rule is not supported " + rule + ". Just one part in the head allowed");
 		}
-//		System.out.println("----------------------------  END HEAD ------------------------------");//TESTAUSGABE
+		log.debug("----------------------------  END HEAD ------------------------------");//TESTAUSGABE
 	}
 	
-	// antecedent
-	/*
-	 * Wie kann der Body aussehen? 1. Fall enthält eine Klasse, hat nur ein
-	 * Argument ?x (Variable) 2. Fall enthält ein Prädikat (Beziehung), hat
-	 * genau zwei Arguemtn ?x,?y 3. Fall enthält ein SWRLBuiltin
-	 * 
-	 * Argument beginnen mit "?" Es können sowohl Variablen als auch Klassen,
-	 * Prädikate als auch Literale (zahlen) sind eingeschlossen in " "
-	 * 
-	 * Wie kann der Head aussehen? 1. Fall enthält Klasse, hat nur ein Argument
-	 * ?x (Variable) --> do nothing (wird bereits mit getsubclass erledigt) 2.
-	 * Fall enthält ein Prädikat (Beziehung), hat genau zwei Arguemtn ?x,?y,
-	 * analog zu Fall 1 3. Fall Unterscheidung der Builtin ins, muss hier
-	 * überhaupt etwas gemacht werden? Sollte der Head nicht leer sein? Stimmt
-	 * es überhaupt, dass hier Builtins überprüft werden müssen? 4. Fall
+	/**
+	 * Analyze the Body of a rule and puts it into
+	 * a RulePart
+	 * @param rule SWRL rule
 	 */
+
 	private static void analyzeBody(SWRLRule rule) {
 		Set<SWRLAtom> body;
 
@@ -524,8 +479,8 @@ public class MapSearch {
 		OWLObject predicate = null;
 		ruleURI = rule.getURI();
 		body = rule.getBody();
-//			System.out.println("----------------------------  START BODY ------------------------------");
-//		 System.out.println("Body: " + body); //TESTAUSGABE
+		log.debug("----------------------------  START BODY ------------------------------");
+		log.debug("Body: " + body); //TESTAUSGABE
 		if (body.size() == 0) {
 			try {
 				throw new UnsupportedReasonerOperationException("Error [SWRL]: An empty body is not allowed!");
@@ -533,60 +488,50 @@ public class MapSearch {
 				e.printStackTrace();
 			}
 		} else if (body.size() == 1) {
-//			 System.out.println("BodySize 1");//TESTAUSGABE
+			 log.debug("BodySize 1");//TESTAUSGABE
 
 			/*------  Builtin  -------*/
 			if (body.iterator().next().getPredicate() instanceof SWRLBuiltInsVocabulary) {
-				System.err.println("Error [SWRL]: Rule " + rule + " might be correct but is not supported.");
+				log.error("[SWRL]: Rule " + rule + " might be correct but is not supported.");
 			}
 
 			/*------ anything else than Builtin -------*/
 			else {
 				predicate = (OWLObject) body.iterator().next().getPredicate();
-//				 System.out.println("Predicate: " + predicate);//TESTAUSGABE
+				 log.debug("Predicate: " + predicate);//TESTAUSGABE
 				uri.addAll(getURI(predicate));
-				// TODO URI auf Class, Property usw. überprüfen
 				if (uri.size() == 1) {
-//					 System.out.println("URISize 1");//TESTAUSGABE
+					log.debug("URISize 1");//TESTAUSGABE
 					partURI = uri.iterator().next();
 					part = new RulePart(partURI, ruleURI, "b");
 					addRulePart(partURI, part);
 					setType(part);
 
 				} else if (uri.size() > 1) {
-//					 System.out.println("Uri Size > 1");//TESTAUSGABE
-					System.err.println("Error [SWRL][1]: The rule " + rule + " might be correct but is not supported");
-					// TODO Was bedeutet das? Body = 1 und Uri > 1? gibt es den
-					// Fall?
-					// 3 intwerte bei multiply?
-				} else {// URI = Empty [] null, es handelt sich um ein Builtin?!
-					// Kann auch ne Variable sein
-					// throw new IllegalArgumentException( "Error [MAPSEARCH]: Illegal body in rule: " + rule);
-					/*
-					 * wenn bodysize = 1, darf es kein SWRLVocabulary sein!
-					 * (Eventuell separat prüfen)
-					 */
-					System.err.println("Error [MAPSEARCH][2]: Illegal body in rule: " + rule);
+					log.debug("Uri Size > 1");//TESTAUSGABE
+					log.error("[SWRL]: The rule " + rule + " might be correct but is not supported");
+				} else {
+					log.error("[SWRL]: Illegal body in rule: " + rule);
 				}
 			}// End Instanceof
 		}
 		/*-----------------------------------        Body Size > 1              -----------------------------*/
 
 		/*
-		 * erst auf BuiltIn prüfen, ansonsten muss es ein OWLObject sein
+		 * first check if it is a builtin otherwise it has to be an OWLObject
 		 */
-		else {// sollten erstmal nur Builtins sein
-//		 System.out.println("BodySize > 1");// TESTAUSGABE
-			// Collection<SWRLAtomObject> arguments = new HashSet<SWRLAtomObject>();
-			for (SWRLAtom bodyAtom : body) { // hier wird der Body durchlaufen
-				RulePart part1; // TEST ob, dann sich im part der richtige String wiederfindet
+		else {// now it should be just builtins
+		 log.debug("BodySize > 1");// TESTAUSGABE
+
+			for (SWRLAtom bodyAtom : body) { // runs through body
+				RulePart part1; 
 				uri.clear();
 
 				/*------ Builtin -------*/
 				if (bodyAtom.getPredicate() instanceof SWRLBuiltInsVocabulary) {
 					SWRLBuiltInsVocabulary builtin = (SWRLBuiltInsVocabulary) bodyAtom.getPredicate();
 					partURI = builtin.getURI();
-//					System.out.println("BuiltIn: "+ partURI);//TESTAUSGABE
+					log.debug("BuiltIn: "+ partURI);//TESTAUSGABE
 					part1 = new RulePart(partURI, ruleURI, "b");
 					addRulePart(partURI, part1);
 					if (builtin.name().equals("MULTIPLY")) {
@@ -601,7 +546,7 @@ public class MapSearch {
 						try {
 							multiplier = Double.valueOf(multiply).doubleValue();
 						} catch (NumberFormatException e) {
-							System.err.println("Error [SWRL]: Multiplier in rule " + rule + " could not be converted into a double value.");
+							log.error("[SWRL]: Multiplier in rule " + rule + " could not be converted into a double value.");
 						}
 						part1.setMultiplier(multiplier);
 
@@ -610,18 +555,16 @@ public class MapSearch {
 						part1.setType(SWRL_STRINGCONCAT);
 					} 
 					else {
-						System.err.println("Error [SWRL][3]: SWRL BuiltIn " + builtin.getShortName() + " not supported.");
+						log.error("[SWRL]: BuiltIn " + builtin.getShortName() + " not supported.");
 					}
 				}
 
 				/*------ anything else than Builtin -------*/
-				else { // dürften nur noch OWLObject sein
+				else { // just OWLObjects
 					try {
 						predicate = (OWLObject) bodyAtom.getPredicate();
-//						 System.out.println("Predicate: " +predicate);//TESTAUSGABE
+						log.debug("Predicate: " +predicate);//TESTAUSGABE
 					} catch (ClassCastException e) {
-						// wenn der Cast nicht klappt, ist es kein
-						// OWLObject(sollte eigentlich nicht passieren)
 						try {
 							throw new Exception("Error: [SWRL][4]: Rule is not supported " + rule);
 						} catch (Exception ex) {
@@ -632,28 +575,26 @@ public class MapSearch {
 					
 					if (uri.size() == 1) {
 						partURI = uri.iterator().next();
-//						System.out.println("PartURI " + partURI); //TESTAUSGABE
+						log.debug("PartURI " + partURI); //TESTAUSGABE
 						part1 = new RulePart(partURI, ruleURI, "b");
 						addRulePart(partURI, part1);
 						setType(part1);
 					} 
 					else { // URIsize != 1
-						System.err.println("Error [SWRL][5]: The rule " + rule + " might be correct but is not supported");
+						log.error("[SWRL]: The rule " + rule + " might be correct but is not supported");
 					}
 				}// End Else Instanceof
 			} // EndFor BodyAtoms
 		}// End Else BodySize
 		
-//		System.out.println("----------------------------  END BODY ------------------------------");//TESTAUSGABE
+		log.debug("----------------------------  END BODY ------------------------------");//TESTAUSGABE
 
 	} // Method close
 
 	
-	/*
-	 * Kann SWRLAtom mehr als ein Object haben, wenn Bodysize == 1? TEST es wird
-	 * nicht nur ein SWRLAtom übergeben, sondern auch Predicate (SWRLObject) und
-	 * Argumente (SWRLObject?)
-	 */
+	/**
+	 *  get the URI of the Atom
+	 *  @param atom Part of the Builtin*/
 	private static Set<URI> getURI(OWLObject atom) {
 		Set<URI> uri = new HashSet<URI>();
 		OWLEntityCollector collector = new OWLEntityCollector();
@@ -664,22 +605,23 @@ public class MapSearch {
 			uri.add(atomParts.iterator().next().getURI());
 		} else {
 			for (OWLEntity object : atomParts) {
-				System.err.println("Error [SWRL][6]: There is more than one URI for this part of the rule: " + object.getURI());
+				log.error("[SWRL]: There is more than one URI for this part of the rule: " + object.getURI());
 				uri.add(object.getURI());
 			}
 		}
 		return uri;
 	}
 
-	/*
+	/**
 	 * checks the object type the URI belongs to and saves it into the
 	 * RulePart, built ins a handled separatly
+	 * @param part Part of a Rule
 	 */
 	private static void setType(RulePart part) {
 		boolean owlClass, dataProperty, objectProperty, owlIndividual;
 		URI partURI = part.getUri();
-		// System.out.println("------------ SET TYPE ------------");//TESTAUSGABE
-		// System.out.println("Part: " + part.getUri());
+		log.debug("------------ SET TYPE ------------");//TESTAUSGABE
+		log.debug("Part: " + part.getUri());
 		owlClass = ontology.containsClassReference(partURI);
 		if (!owlClass) {
 			dataProperty = ontology.containsDataPropertyReference(partURI);
@@ -688,8 +630,7 @@ public class MapSearch {
 				if (!objectProperty) {
 					owlIndividual = ontology.containsIndividualReference(partURI);
 					if (!owlIndividual) {
-						System.err.println("Error [SWRL] Unsupported object in rule" + part.getRuleURI());
-						// Was hat denn noch eine URI?
+						log.error("[SWRL] Unsupported object in rule" + part.getRuleURI());
 					} 
 					else {part.setType(OWL_INDIVIDUAL);}
 				} 
@@ -700,12 +641,12 @@ public class MapSearch {
 		else {part.setType(OWL_CLASS);}
 		
 //		TESTAUSGABE
-		// System.out.println(" Type : " + part.getUri());
-		// System.out.println(" Type : " + part.getType());
-		// System.out.println("------------ END SET TYPE ------------");
+		log.debug(" Type : " + part.getUri());
+		log.debug(" Type : " + part.getType());
+		log.debug("------------ END SET TYPE ------------");
 	}
 
-	/**
+	/*
 	 * There are two structures 'searchIndex' and 'rules'. 'searchIndex'
 	 * contains all the possible parts (Class, Property, Individual,
 	 * SWRLBuiltIn) of a rule and the URI of the rule. Rules contains all rules,
@@ -717,26 +658,32 @@ public class MapSearch {
 	 * Information should be set through the constructor, now it is set through
 	 * set methods
 	 */
+	
+	/**
+	 * Gets a part of a SWRL Rule and puts it into a RulePart
+	 * 
+	 *@param partURI URI of the part to add to the rule
+	 *@param part Part of a rule 
+	 */
 	private static void addRulePart(URI partURI, RulePart part) {
 		ArrayList<RulePart> partList;
 		Rule rule;
 		HashSet<URI> rulesURI;
 		URI ruleURI = part.getRuleURI();
-//		 System.out.println("--------------- Add Rule Part -------------");\\TESTAUSGABE
+		 log.debug("--------------- Add Rule Part -------------");//TESTAUSGABE
 
-		/* 1.Fall Klasse noch nicht vorhanden */
+		/* 1st case class does not exist */
 		if (searchIndex.get(partURI) == null) {
-			/* URI der Klasse existiert noch nicht in der HashMap */
+			/* URI of the class is not in HashMap */
 			rulesURI = new HashSet<URI>(); // new HashSet for the rules
 			rulesURI.add(ruleURI); // add current rule to HashSet
 			searchIndex.put(partURI, rulesURI);
 			// update searchIndex Class and List of rules belonging to the class
 
-			/* 2.Fall Klasse nicht vorhanden, aber Regel exisitiert schon */
-			// (erzeugt von einer anderen Klasse)
+			/* 2nd case class does not exist, but rule (created by an other class) */
 			if (rules.containsKey(ruleURI)) {
 				// if this rule already exists, add part
-//				 System.out.println("2.Fall Klasse existiert nicht, Regel schon"); TESTAUSGABE
+				log.debug("2nd case class does not exist but rule"); //TESTAUSGABE
 				rules.get(ruleURI).addPart(part);
 			} else {
 				// else create new PartList, add part and put into the Hashmap
@@ -746,35 +693,37 @@ public class MapSearch {
 				rules.put(ruleURI, rule); // store rule with partList
 
 //				TESTAUSGABE
-//				 System.out.println("1. Fall (alles neu)");
-//				 System.out.println("Key: " + partURI);
-//				 System.out.println("Rule: " + ruleURI);
-//				 System.out.println("Part: " + part.getUri());
+				 log.debug("1st case all created ");
+				 log.debug("Key: " + partURI);
+				 log.debug("Rule: " + ruleURI);
+				 log.debug("Part: " + part.getUri());
 			}
 		}
 
-		/* prüfen, ob die Regel schon existiert */
-		/* 3.Fall Klasse vorhanden und Regel nicht vorhanden */
+
+		/* 3rd class exist but not rule */
 		else if (!rules.containsKey(ruleURI)) {
 			rulesURI = searchIndex.get(partURI);
 			/* List of all rules connected to the class */
 			// get HashSet with rules from the class
-			rulesURI.add(ruleURI); // add current rule to HashSet of rules,
-			// (Relationship between rules and
-			// searchindex)
+			rulesURI.add(ruleURI); 
+			/*
+			 add current rule to HashSet of rules,
+			 (Relationship between rules and
+			 searchindex) */
 			partList = new ArrayList<RulePart>(); // new PartList
 			partList.add(part); // add RulePart to PartList
 			rule = new Rule(ruleURI, partList); // create new Rule
 			rules.put(ruleURI, rule); // store rule with partList
 
 //			TESTAUSGABE
-//			 System.out.println("2.Fall Klasse existiert, neue Regel");
-//			 System.out.println("Key: " + partURI);
-//			 System.out.println("Rule: " + ruleURI);
-//			 System.out.println("Part: " + part.getUri());
+			 log.debug("3rd case class exist, create rule");
+			 log.debug("Key: " + partURI);
+			 log.debug("Rule: " + ruleURI);
+			 log.debug("Part: " + part.getUri());
 		}
 
-		/* 4. Fall Klasse vorhanden, Regel vorhanden */
+		/* 4th case class and rule exist*/
 		else {
 			if (!searchIndex.get(partURI).contains(ruleURI)) {
 				// searchIndex already contains the class but not the rule
@@ -786,16 +735,14 @@ public class MapSearch {
 			rule.addPart(part); // add part
 
 //			TESTAUSGABE
-//			 System.out.println("3.Fall part hinzufügen"); 
-//			 System.out.println("Key: " + partURI);
-//			 System.out.println("Rule: " + ruleURI);
-//			 System.out.println("Part: " + part.getUri());
+			 log.debug("4th Add rule part "); 
+			 log.debug("Key: " + partURI);
+			 log.debug("Rule: " + ruleURI);
+			 log.debug("Part: " + part.getUri());
 		}
-//		 System.out.println("--------------- End Rule Part -------------");
+		 log.debug("--------------- End Rule Part -------------");
 
-	}
-	
-	//Test End 
+	}//Test End 
 	
 	
 	/**
@@ -839,9 +786,9 @@ public class MapSearch {
         }
     } 
 
-	/*
+	/**
 	 * writes all rules with all parts of a rule to the command line
-	 * (method just for test purpose) 
+	 * (method just for debugging) 
 	 */
 	private static void output() {
 
@@ -858,10 +805,10 @@ public class MapSearch {
 				// holt sich die URI aus den Regellisten
 				rule = rules.get(ruleURIout);
 				partList = rule.getRulePartList();
-				System.out.println("Regel: " + ruleURIout);
+				System.out.println("rule: " + ruleURIout);
 				for (RulePart partout : partList) {
 					i++;
-					System.out.println("	Regelteil : " + partout.getUri() + "(" + i + ")");
+					System.out.println("	RulePart: " + partout.getUri() + "(" + i + ")");
 					System.out.println("	Type : " + partout.getType());
 				}
 			}
@@ -871,56 +818,56 @@ public class MapSearch {
 	
 	
 //Test Begin
-public static void allAxiomsfromClass(URI clsURI, OWLOntology ontology){
-	Set<OWLAxiom> Axioms = new HashSet<OWLAxiom>();
-	Set<OWLClassAxiom> ClassAxioms = new HashSet<OWLClassAxiom>();;
-	OWLClass cls;
-	if (!init) init(ontology);
-	try{
-	cls = owlOntologyManager.getOWLDataFactory().getOWLClass(clsURI);
-	
-//		owlOntologyManager.getOWLDataFactory().getOWLClass(arg0
+	/**
+	 * method write all axioms of the mapping ontology for
+	 * the given URI to commandline.
+	 * Just for debugging. 
+	 */
+	public static void allAxiomsfromClass(URI clsURI, OWLOntology ontology){
+		Set<OWLAxiom> Axioms = new HashSet<OWLAxiom>();
+		Set<OWLClassAxiom> ClassAxioms = new HashSet<OWLClassAxiom>();;
+		OWLClass cls;
+		if (!init) init(ontology);
+		try{
+			cls = owlOntologyManager.getOWLDataFactory().getOWLClass(clsURI);
+
+//			owlOntologyManager.getOWLDataFactory().getOWLClass(arg0
 			Axioms = ontology.getAxioms();
 			ClassAxioms = ontology.getAxioms(cls);
 			//Test Begin
 			System.out.println("Axiome von OWLClass: "+cls); 
 			for(OWLClassAxiom axiom : ClassAxioms) { 
-			  System.out.println("Axioms    " + axiom);
+				System.out.println("Axioms    " + axiom);
 			}
 			for(OWLAxiom axiom : Axioms) { 
-				  System.out.println("Axioms    " + axiom);
+				System.out.println("Axioms    " + axiom);
 			}
 			//Test End
-		
+
 			for(OWLClass clas : ontology.getReferencedClasses()) {
 //				System.out.println("referencedClass: " + clas.getURI());
 				Set<OWLClass> equClsSet = reasoner.getEquivalentClasses(clas);
-				System.out.println("Äquivalente Ref-Klassen von "+clas.getURI());
+				System.out.println("equivalent classes of "+clas.getURI());
 				for(OWLClass subcls : equClsSet) {
-				  	System.out.println("    " + subcls.getURI());
-			  }
+					System.out.println("    " + subcls.getURI());
+				}
 			}
 			for(OWLClass clas : ontology.getReferencedClasses()) {
 				System.out.println("referencedClass: " + clas.getURI());
 			}				
+		}
+		catch(UnsupportedOperationException exception) {
+			log.error("Unsupported reasoner operation.");
+		}
+		catch(OWLReasonerException ex) {
+			log.error("Problems with reasoner " + ex.getMessage());
+		}
+		catch(RuntimeException ex){// catches the exception, when property is not found in the ontology (subs returns null in this case, so there is no need for that) 
+			log.error("Runtime Exception"+ex);
+		}
+		catch(Exception e){
+			log.error("Error in MapSearch "+e);
+		}
 	}
-	catch(UnsupportedOperationException exception) {
-	     System.err.println("Unsupported reasoner operation.");
-	}
-	catch(OWLReasonerException ex) {
-	  System.err.println("Error:[REASONER]  " + ex.getMessage());
-	}
-	catch(RuntimeException ex){// catches the exception, when property is not found in the ontology (subs returns null in this case, so there is no need for that) 
-		System.err.println("Warning:[MAPSEARCH] Runtime Exception"+ex);
-	}
-	catch(Exception e){
-		System.err.println("Error:[MAPSEARCH] "+e);
-	}
+
 }
-
-
-}
-
-//Objectproperty vs Dataproperty?
-//Objectproperty sind Relationen zwischen Individuen
-//DataProperty sind auf Datentypen bezogen, welchen Datentyp (xsd^^int) verlangt die Property

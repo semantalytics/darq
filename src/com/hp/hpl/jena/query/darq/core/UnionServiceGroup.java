@@ -22,11 +22,8 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 	private DefaultTreeModel tree;
 	
 	private HashMap<Triple,ServiceGroup> serviceGroups = new HashMap<Triple,ServiceGroup>();
-    /* Vorsicht: Tricky ein Triple kann nur eine SG haben, aber einer SG können mehrere Triple zugeordnet sein! (insbesondere bei MSG) */ 
+    /* be careful a triple can have only one SG but a SG can contain more than one triple! */ 
 		
-	/* FRAGE brauche ich similar überhaupt? Schließlich gehen alle similarTriples 
-	 * in eine USG, damit sollte es doch egal sein.  
-	 * Antwort: Ja, es kann mehrere USGs geben mit verschiedenen similar Gruppen*/
 	
 	public UnionServiceGroup(Triple triple, ServiceGroup servicegroup, int similar) {
 		serviceGroups.put(triple, servicegroup);  
@@ -114,21 +111,13 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 		this.similar = similar;
 	}
 
+	/* returns xxMSG */
 	public ServiceGroup getServiceGroup(Triple t){
 		return serviceGroups.get(t);
 	}
 
-	/* SG kann auch MSG sein!  */ 
-	/* Logik: In serviceGroups können sich auch MSGs befinden. 
-	 * Diese erzeugen einen Fehler bei getService(), daher müssen
-	 * sie ausgeschlossen werden. Da eine MSG aber auch eine SG ist
-	 * und instanceof keine Negation kennt, muss es in den else Zweig */
 
-	/* Idee:  liefert in jedem Fall nur eine (Multiply) SG aus der USG zurück
-	 * (filtert praktisch die (Multiply) SGs aus der USG), für (Multiply) MSG gibt es 
-	 * msg.getServiceGroup, die dazu ein passende SG 
-	 * bastelt 
-	 */ 
+	/* returns xxSG */ 
 	public ServiceGroup getServiceGroup(RemoteService s){
 		for( ServiceGroup sg :  serviceGroups.values()){
 			if (sg instanceof MultipleServiceGroup || sg instanceof MultiplyMultipleServiceGroup || sg instanceof StringConcatMultipleServiceGroup){}

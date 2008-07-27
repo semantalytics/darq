@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.hp.hpl.jena.query.core.Var;
 import com.hp.hpl.jena.query.darq.core.MultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.MultiplyMultipleServiceGroup;
@@ -11,6 +14,7 @@ import com.hp.hpl.jena.query.darq.core.RemoteService;
 import com.hp.hpl.jena.query.darq.core.ServiceGroup;
 import com.hp.hpl.jena.query.darq.core.StringConcatMultipleServiceGroup;
 import com.hp.hpl.jena.query.darq.core.UnionServiceGroup;
+import com.hp.hpl.jena.query.darq.engine.DarqTransform;
 import com.hp.hpl.jena.query.darq.engine.compiler.iterators.QueryIterUnionParallel;
 import com.hp.hpl.jena.query.darq.util.FedPlanVisitor;
 import com.hp.hpl.jena.query.darq.util.OutputUtils;
@@ -30,6 +34,7 @@ public class FedPlanUnionService extends PlanElement1 {
 private UnionServiceGroup serviceGroup ;
 private Caching cache;	
 private Boolean cacheEnabled;
+Log log = LogFactory.getLog(FedPlanUnionService.class);
 
     public UnionServiceGroup getServiceGroup() {
         return serviceGroup;
@@ -51,18 +56,10 @@ private Boolean cacheEnabled;
     
     public QueryIterator build(QueryIterator input, ExecutionContext execCxt)
     {
-       /* QueryIterConcat concat = new QueryIterConcat(execCxt);
-        
-        for (RemoteService s: serviceGroup.getServices()) {
-            concat.add(new FedQueryIterService(input,serviceGroup.getServiceGroup(s),execCxt,null));
-        }
-        return new QueryIterDistinct(concat,execCxt);*/
-    	System.out.println(" [FedPlanUnionService.build]");
+
+    	log.debug(" [FedPlanUnionService.build]");
         List<PlanElement> list = new ArrayList<PlanElement>();
         
-        /* geht die einzelnen Services der MSG durch  */
-        /* selber Aufruf von FedPlanService wie bei SG nur mit SubElement */
-        /* FRAGE Was ist das SubElement? */
         for(ServiceGroup sg : serviceGroup.getServiceGroups().values()){
         	if (sg instanceof MultipleServiceGroup){
         		MultipleServiceGroup msg = (MultipleServiceGroup) sg;
@@ -98,10 +95,6 @@ private Boolean cacheEnabled;
         for (String s: (List<String>)execCxt.getQuery().getResultVars()) vars.add(Var.alloc(s));
         
         
-        /* Ist das der Union? 
-         * QueryIterator ist ein Zähler über das Ergebnis */
-        /* TODO  Eventuell muss ich das Ergebnis hier nochmal unterteilen um ggf. Transformationen vorzunehmen */
-        /* Problem, welches Triple hat, benötigt welche Transformation? */ 
         QueryIterator qIter = BindingImmutableDistinctUnion.create(vars, (QueryIterator) new QueryIterUnionParallel(input,list,execCxt), execCxt) ;
         
     //    QueryIterator qIter = new QueryIterUnionParallel(input,list,execCxt) ;

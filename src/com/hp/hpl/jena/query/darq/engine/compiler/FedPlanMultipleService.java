@@ -73,9 +73,6 @@ public class FedPlanMultipleService extends PlanElement1
         
         List<PlanElement> list = new ArrayList<PlanElement>();
         
-        /* geht die einzelnen Services der MSG durch  */
-        /* selber Aufruf von FedPlanService wie bei SG nur mit SubElement */
-        /* FRAGE Was ist das SubElement? */
         for (RemoteService s: serviceGroup.getServices()) {
             list.add(FedPlanService.make(this.getContext(),serviceGroup.getServiceGroup(s),this.getSubElement(),cache, cacheEnabled));
             
@@ -91,8 +88,7 @@ public class FedPlanMultipleService extends PlanElement1
         
         for (String s: (List<String>)execCxt.getQuery().getResultVars()) vars.add(Var.alloc(s));
         
-        
-        /* Ist das der Union? */
+                
         QueryIterator qIter = BindingImmutableDistinctUnion.create(vars, (QueryIterator) new QueryIterUnionParallel(input,list,execCxt), execCxt) ;
         
     //    QueryIterator qIter = new QueryIterUnionParallel(input,list,execCxt) ;

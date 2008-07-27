@@ -12,10 +12,7 @@ import java.lang.String;
 public class ModCaching implements ArgModuleGeneral {
 
 	protected final ArgDecl argDarqCache = new ArgDecl(ArgDecl.HasValue, "cache");
-	/*
-	 * Liefert zurück, ob "map" einen Wert hat (d.h., ob es in der Kommandozeile
-	 * aufgerufen wurde).
-	 */
+	/* return a value if cache parameter was given by commandline */
 	private String cacheConfig;
 	private String cacheConfigFile;
 	private File file;
@@ -41,12 +38,8 @@ public class ModCaching implements ArgModuleGeneral {
 		} else {
 			if (cacheConfig.equals("enable")) {
 
-				String path = System.getProperty("user.dir") + "\\DarqCacheConfigurationMemory.xml";// FRAGE
-																									// Klappt
-																									// das
-																									// auch
-																									// auf
-																									// Linux?
+				String path = System.getProperty("user.dir") + "\\DarqCacheConfigurationMemory.xml";
+				// FRAGE Do it work on Linux?
 				cacheConfigFile = path;
 				file = new File(path);
 			} else if (cacheConfig != null) {

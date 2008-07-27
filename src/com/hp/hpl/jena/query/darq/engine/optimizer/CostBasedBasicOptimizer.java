@@ -77,30 +77,25 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
                 			requiredBindingMSG=true;
                 			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
                 				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMSG=false; 
-                				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
-                				//theoretisch könnte da auc nen break rein, da einmal false = immer false
+                				//looks if RequiredBindings from Service with Triple fit, if not get next service
                 			}                				
-                			if (!requiredBindingMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
+                			if (!requiredBindingMSG) continue; //if RB does not fit, get next MSG
                 		}
                 		
                 		else if (serviceGroup instanceof MultiplyMultipleServiceGroup) {
                 			requiredBindingMuMSG=true;
                 			for (RemoteService s:((MultiplyMultipleServiceGroup)serviceGroup).getServices()){
                 				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMuMSG=false; 
-                				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
-                				//theoretisch könnte da auc nen break rein, da einmal false = immer false
                 			}                				
-                			if (!requiredBindingMuMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
+                			if (!requiredBindingMuMSG) continue; 
                 		}
                 		
                 		else if (serviceGroup instanceof StringConcatMultipleServiceGroup) {
                 			requiredBindingScMSG=true;
                 			for (RemoteService s:((StringConcatMultipleServiceGroup)serviceGroup).getServices()){
                 				if (!checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingScMSG=false; 
-                				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
-                				//theoretisch könnte da auc nen break rein, da einmal false = immer false
                 			}                				
-                			if (!requiredBindingMuMSG) continue; //wenn requiredBinding nicht passt, nächste MSG holen
+                			if (!requiredBindingMuMSG) continue; 
                 		}
                 		
                 		else {/* SG, MuSG, ScSG */
@@ -110,7 +105,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
                 		}
                 	}
                 	b = requiredBindingMSG && requiredBindingSG && requiredBindingMuMSG && requiredBindingScMSG;
-                	// es müssen alle RBs passen, dann Plan bauen
+                	// all RB have to fit, if true build plan
                 	if (!b) continue;
                 	rsg = getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
                 }
@@ -218,9 +213,9 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
         resultsg.setTriples(rsg.getElement().getTriples());
         OptimizerElement<ServiceGroup> result = new OptimizerElement<ServiceGroup>(resultsg, costs,usg); // TODO return optimized triples!!
         return result;
-    } //TODO Test, ob setTriples funktioniert für USG, denn theoretisch befinden sich die Triple in den SG innerhalb der USG
+    } 
     
-    /* Idee: geht einfach alles RS für MSG durch und bastelt aus den RS+Tripel+Filter eine SG  */ 
+ 
     public static OptimizerElement<ServiceGroup> getCheapestPlanForMultipleServiceGroup(MultipleServiceGroup sg, Set<String> bound) throws PlanUnfeasibleException{
         double costs = 0;
 
@@ -229,8 +224,7 @@ public class CostBasedBasicOptimizer implements BasicOptimizer {
         for (RemoteService s : sg.getServices()) {
             rsg = getCheapestPlanForServiceGroup(sg.getServiceGroup(s), bound);
             costs += rsg.getRankvalue();
-        }
-        //rsg ist null, 
+        } 
         MultipleServiceGroup resultsg = sg.clone();
         resultsg.setTriples(rsg.getElement().getTriples());
 

@@ -3,6 +3,9 @@ package de.hu_berlin.informatik.wbi.darq.mapping;
 import java.net.URI;
 import java.util.ArrayList;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class RulePart {
 
 	private URI uri;
@@ -16,6 +19,8 @@ public class RulePart {
 	private URI ruleURI;
 	//URI of the rule
 	private double multiplier;
+	
+	Log log = LogFactory.getLog(RulePart.class);
 	
 	/**
 	 * Object which is a part of rule, 
@@ -65,7 +70,7 @@ public class RulePart {
 			this.part = part;
 		}
 		else{
-			System.err.println("Error [RuleParts]: Use 'h' for head and 'b' for body.");
+			log.error("Use 'h' for head and 'b' for body.");
 		}
 	}
 
