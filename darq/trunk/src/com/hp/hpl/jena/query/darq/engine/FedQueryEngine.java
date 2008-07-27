@@ -162,7 +162,6 @@ public class FedQueryEngine extends QueryEngine {
         return config;
     }
     
- // TODO  es wird in jedem Fall MapDarqTransform aufgerufen! 
     
     /* (non-Javadoc)
      * @see com.hp.hpl.jena.query.engine1.QueryEngine#queryPlanHook(com.hp.hpl.jena.query.util.Context, com.hp.hpl.jena.query.engine1.PlanElement)

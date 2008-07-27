@@ -10,16 +10,20 @@ import java.io.File;
 import java.lang.String;
 import java.util.regex.*;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import de.hu_berlin.informatik.wbi.darq.mapping.MapLoadOntologies;
+
 public class ModMapping implements ArgModuleGeneral {
 
 
     protected final ArgDecl argDarqMap = new ArgDecl(ArgDecl.HasValue, "map") ;
     protected final ArgDecl argDarqMapTrans = new ArgDecl(ArgDecl.HasValue, "t") ;
-    /* Liefert zurück, ob "map" einen Wert hat (d.h., ob es in der Kommandozeile 
-     * aufgerufen wurde).
-     */     
+    /* return a value of map if called by commandline  */     
     private String[] maps = null;
     private int transitivity = 1;
+    static Log log = LogFactory.getLog(ModMapping.class);
     
     /*
      * (non-Javadoc)
@@ -39,16 +43,14 @@ public class ModMapping implements ArgModuleGeneral {
 		String map;
 		map = cmdLine.getValue(argDarqMap);
 		String transitivity = cmdLine.getValue(argDarqMapTrans);
-		/*FRAGE
-		 * hier ist noch eine Fehler bzw. im Aufruf Was passiert, wenn kein
-		 * --map vorhanden ist. das klappt noch nicht
-		 */
+
 		if (map != null) {
 			/*
 			 * splits String
 			 */
-			Pattern p = Pattern.compile(System.getProperty("path.separator")); // Windows
-			// ":"
+			Pattern p = Pattern.compile(System.getProperty("path.separator")); 
+			// Windows ":"
+			log.debug("path separator: " + System.getProperty("path.separator"));
 			maps = p.split(map);
 
 			for (String filepath : maps) {
@@ -61,16 +63,16 @@ public class ModMapping implements ArgModuleGeneral {
 				try {
 					this.transitivity = Integer.parseInt(transitivity);
 					if(this.transitivity < 1){
-						System.err.println("Warning [MODMAPPING]: The value for transitivity has be greater than zero, using default value(1).");
+						log.warn("The value for transitivity has be greater than zero, using default value(1).");
 					}
 				} catch (Exception ex) {
-					System.err.println("Warning [MODMAPPING]: Transitivity has to be an integer! Value ignored, using default value(1).");
+					log.warn("Transitivity has to be an integer! Value ignored, using default value(1).");
 				}
 			}
-		} else {//Das ist der Fall, wo es keine cmdline option map gibt. FRAGE Wo ist der Fall, dass sie leer ist?
+		} else {
 			if (transitivity != null) {
 
-				System.err.println("Warning [MODMAPPING]: A value for transitivity does not make sense without a mapping.");
+				log.warn("A value for transitivity does not make sense without a mapping.");
 			}
 		}
 	}

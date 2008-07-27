@@ -32,8 +32,6 @@ public class OperatorServiceGroup extends PlanOperatorBase {
 	}
 
 	
-	/* FRAGE Verwendung von getBoundVariables_ prüfen. 
-	 * Ist die Rückgabe der Variablen bei der USG in dieser Art sinnvoll? */ 
 	@Override
 	public Set<String> getBoundVariables_() {
 		if (sg instanceof UnionServiceGroup) {
@@ -75,10 +73,9 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         			requiredBindingMSG=true;
         			for (RemoteService s:((MultipleServiceGroup)serviceGroup).getServices()){
         				if (!CostBasedBasicOptimizer.checkInput(serviceGroup.getTriples(), bound, s)) requiredBindingMSG=false; 
-        				//schaut, RequiredBindings vom Service mit Triple passen, sobald eins nicht passt, nächster Service
-        				//theoretisch könnte da auc nen break rein, da einmal false = immer false
+        				//looks if  RequiredBindings from service with Triple fits, if not next service
         			}                				
-        			if (!requiredBindingMSG) throw new PlanUnfeasibleException(); //wenn requiredBinding nicht passt, nächste MSG holen
+        			if (!requiredBindingMSG) throw new PlanUnfeasibleException(); //if requiredBinding does not fit, get next MSG 
         		} 
 
         		else if(serviceGroup instanceof MultiplyMultipleServiceGroup){
@@ -104,7 +101,7 @@ public class OperatorServiceGroup extends PlanOperatorBase {
         		}
         	}
         	b = requiredBindingMSG && requiredBindingSG && requiredBindingMuMSG && requiredBindingScMSG;
-        	// es müssen alle RBs passen, dann Plan bauen
+        	// if all RB fit build plan
         	if (!b) throw new PlanUnfeasibleException();
         	rsg = CostBasedBasicOptimizer.getCheapestPlanForUnionServiceGroup((UnionServiceGroup)sg, bound);
 		}
