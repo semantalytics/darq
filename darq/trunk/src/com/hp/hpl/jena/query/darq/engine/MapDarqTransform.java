@@ -766,16 +766,16 @@ public class MapDarqTransform extends TransformCopy {
 			else if (serviceSize > 1){/* 1.2 MSG */
 				for (RemoteService service:services){
 					sg = usg.getServiceGroup(triple);
-					if (sg == null && scTripleInHead != null) {
-						if (!foundRulesForPredicate.isEmpty()){
-							for(Rule rule : foundRulesForPredicate.get(URI.create(triple.getPredicate().getURI()))){
-								sg = scServiceGroup.get(rule);	
-								if (!(sg instanceof StringConcatMultipleServiceGroup) && !(sg instanceof MultiplyMultipleServiceGroup) && !(sg instanceof MultipleServiceGroup)) {
-									sg = null; /*sg has to be a (sc/mu)multipleServiceGroup*/
-								}
-							}
-						}
-					}
+//					if (sg == null && scTripleInHead != null) {
+//						if (!foundRulesForPredicate.isEmpty()){
+//							for(Rule rule : foundRulesForPredicate.get(URI.create(triple.getPredicate().getURI()))){
+//								sg = scServiceGroup.get(rule);	
+//								if (!(sg instanceof StringConcatMultipleServiceGroup) && !(sg instanceof MultiplyMultipleServiceGroup) && !(sg instanceof MultipleServiceGroup)) {
+//									sg = null; /*sg has to be a (sc/mu)multipleServiceGroup*/
+//								}
+//							}
+//						}
+//					}
 					/* MSG does not exist */
 					if (sg == null){
 						/* multiply */	
@@ -802,7 +802,7 @@ public class MapDarqTransform extends TransformCopy {
 							URI PredicateURI=URI.create(triple.getPredicate().getURI());
 							for(Rule rule : foundRulesForPredicate.get(PredicateURI)){
 								if (rule.getPart(PredicateURI).isHead()) {
-									scSG.setTripleInHead(true);
+									scMSG.setTripleInHead(true);
 								}
 							}
 						}
