@@ -111,8 +111,18 @@ public class UnionServiceGroup extends MultipleServiceGroup {
 		this.similar = similar;
 	}
 
-	/* returns xxMSG */
+	/* returns xxMSG 
+	 * scMSG can contain generated triple, so object does not have to fit */
 	public ServiceGroup getServiceGroup(Triple t){
+		for(Triple triple: serviceGroups.keySet()){
+			if(triple.getSubject().equals(t.getSubject()) && triple.getPredicate().equals(t.getPredicate())){
+				ServiceGroup sg = serviceGroups.get(triple);
+				if(sg instanceof StringConcatMultipleServiceGroup){
+					return sg;
+				}
+				
+			}
+		}
 		return serviceGroups.get(t);
 	}
 
