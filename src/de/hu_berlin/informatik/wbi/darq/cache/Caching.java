@@ -23,6 +23,7 @@ import com.hp.hpl.jena.query.darq.engine.compiler.iterators.DarqQueryIterator;
 import com.hp.hpl.jena.query.engine.Binding;
 import com.hp.hpl.jena.query.engine.BindingMap;
 import com.hp.hpl.jena.query.expr.Expr;
+import com.hp.hpl.jena.query.extension.library.assign;
 
 public class Caching {
 
@@ -33,7 +34,7 @@ public class Caching {
 	Cache darqCache;
 	Log log = LogFactory.getLog(Caching.class);
 	private Caching() {
-
+		long t2, t1, loadCacheTime;
 		/* Cache parameters */
 		/*
 		 * see http://ehcache.sourceforge.net/documentation/configuration.html
@@ -63,9 +64,15 @@ public class Caching {
 		// timeToIdleSeconds, diskPersistent,diskExpiryThreadIntervalSeconds,
 		// registeredEventListeners,bootstrapCacheLoader,maxElementsOnDisk,diskSpoolBufferSizeMB);
 		// singletonManager.addCache("DarqResultSetCache");
-		/* create() use log, constructor does not */
+		/* create() use log, constructor does not */ 
+		
+		//t1 = System.nanoTime(); //time just for benchmark
 		singletonManager = CacheManager.create(configFile);
+		//t2=System.nanoTime();
+		//loadCacheTime=(t2-t1);
+		//System.out.println("Create Cache " + loadCacheTime /1000000);
 		darqCache = singletonManager.getCache("DarqResultSetCache");
+		
 	}
 
 	public synchronized static Caching getInstance(String confFile) {
@@ -195,6 +202,7 @@ public class Caching {
 		subj = null;
 		pred = null;
 		obj = null;
+		List<CacheTripleVariables> listCTV =  new ArrayList<CacheTripleVariables>();
 		List<TripleStringURI> tripleList = new ArrayList<TripleStringURI>();
 		List<Triple> triples = serviceGroup.getTriples();
 		for (Triple triple : triples) {
@@ -210,7 +218,8 @@ public class Caching {
 			TripleStringURI tripleURI = new TripleStringURI(subj, pred, obj);
 			tripleList.add(tripleURI);
 		}
-		key = new CacheKey(tripleList, serviceGroup.getService().getUrl(), serviceGroup.getFilters().toString(), serviceGroup);
+		listCTV = equalVariables(serviceGroup.getTriples());
+		key = new CacheKey(tripleList, serviceGroup.getService().getUrl(), serviceGroup.getFilters().toString(), serviceGroup, listCTV);
 		return key;
 	}
 
@@ -260,6 +269,80 @@ public class Caching {
 		} else {
 			return new HashMap<Node,Node>();
 		}
+	}
+	
+	private List<CacheTripleVariables> equalVariables(List<Triple> triples) {
+		Node aS, aP, aO, bS, bP, bO;
+		List<CacheTripleVariables> listCTV = new ArrayList<CacheTripleVariables>();
+		if (triples.size() > 1) {
+			for (Triple tripleA : triples) {
+				aS = tripleA.getSubject();
+				aP = tripleA.getPredicate();
+				aO = tripleA.getObject();
+				for (Triple tripleB : triples) {
+					if (!tripleA.equals(tripleB)) {
+						CacheTripleVariables ctv = new CacheTripleVariables(tripleA, tripleB);
+						bS = tripleB.getSubject();
+						bP = tripleB.getPredicate();
+						bO = tripleB.getObject();
+						if (aS.isVariable()) {
+							if (bS.isVariable()) {
+								if (aS.equals(bS)) {
+									ctv.setSs(aS.toString());
+								}
+							}
+							if (bP.isVariable()) {
+								if (aS.equals(bP)) {
+									ctv.setSp(aS.toString());
+								}
+							}
+							if (bO.isVariable()) {
+								if (aS.equals(bO)) {
+									ctv.setSo(aS.toString());
+								}
+							}
+						}
+						if (aP.isVariable()) {
+							if (bS.isVariable()) {
+								if (aP.equals(bS)) {
+									ctv.setPs(aP.toString());
+								}
+							}
+							if (bP.isVariable()) {
+								if (aP.equals(bP)) {
+									ctv.setPp(aP.toString());
+								}
+							}
+							if (bO.isVariable()) {
+								if (aP.equals(bO)) {
+									ctv.setPo(aP.toString());
+								}
+							}
+						}
+						if (aO.isVariable()) {
+							if (bS.isVariable()) {
+								if (aO.equals(bS)) {
+									ctv.setOs(aO.toString());
+								}
+							}
+							if (bP.isVariable()) {
+								if (aO.equals(bP)) {
+									ctv.setOp(aO.toString());
+								}
+							}
+							if (bO.isVariable()) {
+								if (aO.equals(bO)) {
+									ctv.setOo(aO.toString());
+								}
+							}
+						}
+//						ctv.output(); // TESTAUSGABE
+						listCTV.add(ctv);
+					}
+				}
+			}
+		}
+		return listCTV;
 	}
 
 	/**

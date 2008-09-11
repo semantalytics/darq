@@ -16,19 +16,24 @@ public class CacheKey implements Serializable {
 	private String remoteURL;
 	private String filters;
 	private ServiceGroup serviceGroup;
-
-	public CacheKey(List<TripleStringURI> tripleStringURI, String remoteURL, String filters, ServiceGroup serviceGroup) {
+	private List<CacheTripleVariables> listCTV;
+	
+	public CacheKey(List<TripleStringURI> tripleStringURI, String remoteURL, String filters, ServiceGroup serviceGroup, List<CacheTripleVariables> listCTV ) {
 		this.tripleStringURI = tripleStringURI;
 		this.remoteURL = remoteURL;
 		this.filters = filters;
 		this.serviceGroup = serviceGroup;
+		this.listCTV = listCTV;
 	}
 
 	public boolean equals(Object obj) {
 		CacheKey cacheKey = null;
 		if (obj instanceof CacheKey) {
 			cacheKey = (CacheKey) obj;
-			if (remoteURL.equals(cacheKey.getRemoteURL()) && tripleStringURI.equals(cacheKey.getTripleStringURI())&& filters.equals(cacheKey.getFilters())) {
+			if (remoteURL.equals(cacheKey.getRemoteURL()) && 
+				tripleStringURI.equals(cacheKey.getTripleStringURI())&& 
+				filters.equals(cacheKey.getFilters())&& 
+				listCTV.equals(cacheKey.listCTV))  {
 				return true;
 			}
 		}
@@ -38,7 +43,7 @@ public class CacheKey implements Serializable {
 	public int hashCode() {
 		String s, p, o;
 		int hc;
-		hc = remoteURL.hashCode() ^ filters.hashCode();
+		hc = remoteURL.hashCode() ^ filters.hashCode() ^ listCTV.hashCode();
 		for (TripleStringURI t : tripleStringURI) {
 
 			s = t.getSubject();
